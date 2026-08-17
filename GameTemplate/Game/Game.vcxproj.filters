@@ -13,27 +13,6 @@
     </ClCompile>
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameCamera.cpp" />
-    <ClCompile Include="RhythmGame.cpp" />
-    <ClCompile Include="SelectMusical.cpp" />
-    <ClCompile Include="ReadJSON.cpp" />
-    <ClCompile Include="GameSettings.cpp" />
-    <ClCompile Include="Note.cpp" />
-    <ClCompile Include="NoteData.cpp" />
-    <ClCompile Include="ChartData.cpp" />
-    <ClCompile Include="Title.cpp" />
-    <ClCompile Include="SongData.cpp" />
-    <ClCompile Include="Result.cpp" />
-    <ClCompile Include="Loading.cpp" />
-    <ClCompile Include="LoadingCircle.cpp" />
-    <ClCompile Include="HitEffect.cpp" />
-    <ClCompile Include="UIHPGauge.cpp" />
-    <ClCompile Include="UIVoltageGauge.cpp" />
-    <ClCompile Include="UISPGauge.cpp" />
-    <ClCompile Include="SeekBar.cpp" />
-    <ClCompile Include="DeckEdit.cpp" />
-    <ClCompile Include="SelectDeck.cpp" />
-    <ClCompile Include="Pause.cpp" />
-    <ClCompile Include="Scenemanager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -42,31 +21,11 @@
     </ClInclude>
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameCamera.h" />
-    <ClInclude Include="RhythmGame.h" />
-    <ClInclude Include="SelectMusical.h" />
-    <ClInclude Include="ReadJSON.h" />
-    <ClInclude Include="GameSettings.h" />
-    <ClInclude Include="Note.h" />
-    <ClInclude Include="NoteData.h" />
-    <ClInclude Include="ChartData.h" />
-    <ClInclude Include="Title.h" />
-    <ClInclude Include="SongData.h" />
-    <ClInclude Include="Result.h" />
-    <ClInclude Include="Loading.h" />
-    <ClInclude Include="LoadingCircle.h" />
-    <ClInclude Include="HitEffect.h" />
-    <ClInclude Include="UIHPGauge.h" />
-    <ClInclude Include="UIVoltageGauge.h" />
-    <ClInclude Include="UISPGauge.h" />
-    <ClInclude Include="SeekBar.h" />
-    <ClInclude Include="CharacterData.h" />
-    <ClInclude Include="DeckEdit.h" />
-    <ClInclude Include="SelectDeck.h" />
-    <ClInclude Include="Pause.h" />
-    <ClInclude Include="Scenemanager.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Assets\shader\PMX_PS.hlsl" />
     <FxCompile Include="Assets\shader\PMX_VS.hlsl" />
+    <FxCompile Include="Assets\shader\Penlight_PS.hlsl" />
+    <FxCompile Include="Assets\shader\Penlight_VS.hlsl" />
   </ItemGroup>
 </Project>
