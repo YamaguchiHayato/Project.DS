@@ -1,9 +1,6 @@
 #include "stdafx.h"
 #include "system/system.h"
 #include "Game.h"
-#include "Title.h"
-#include "GameSettings.h"
-
 
 // K2EngineLowのグローバルアクセスポイント。
 K2EngineLow* g_k2EngineLow = nullptr;
@@ -66,13 +63,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	g_k2EngineLow = new K2EngineLow();
 	g_k2EngineLow->Init(g_hWnd, FRAME_BUFFER_W, FRAME_BUFFER_H);
 
-	// ★ライブ設定・音量設定を読み込んで適用する（サウンドエンジン初期化後に行うこと）。
-	GameSettings::Get().Load();
-	g_camera3D->SetPosition({ 0.0f, 10.0f, -30.0f });
-	g_camera3D->SetTarget({ 0.0f, 10.0f, 0.0f });
-	g_gameTime->EnableFixedFrameDeltaTime(0.0166f);
-	//NewGO<Game>(0, "game"); // ゲームオブジェクトを生成。
-	NewGO<Title>(0, "title"); // タイトルオブジェクトを生成。
+	NewGO<Game>(0, "game"); // ゲームオブジェクトを生成。
 	// ここからゲームループ。
 	while (DispatchWindowMessage()&&g_gameLoop.m_isLoop==true)
 	{
