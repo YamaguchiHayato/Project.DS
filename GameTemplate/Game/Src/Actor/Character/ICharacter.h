@@ -80,6 +80,15 @@ namespace nsApp
 			}
 
 			/**
+			 * @brief 死亡しているか。
+			 * @return HPが0以下ならtrue。
+			 */
+			inline bool IsDead() const
+			{
+				return stCharacterStatus_.stHp_.iCurrentHP_ <= 0;
+			}
+
+			/**
 			 * @brief ダメージを与える。
 			 * @param iDamage ダメージ量。
 			 */

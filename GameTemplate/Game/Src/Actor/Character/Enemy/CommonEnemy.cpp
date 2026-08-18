@@ -128,14 +128,24 @@ namespace nsApp
 		{
 			/* 対象が無ければ攻撃しない。*/
 			if (pTarget_ == nullptr)
+			{
 				return;
+			}
+
+			/* 対象が死亡していれば攻撃しない。*/
+			if (pTarget_->IsDead())
+			{
+				return;
+			}
 
 			/* 対象の方向を向く。*/
 			LookAtTarget();
 
 			/* 攻撃間隔が残っているなら撃たない。*/
 			if (fAttackTimer_ < fAttackInterval_)
+			{
 				return;
+			}
 
 			/* ダメージを与えてタイマーを戻す。*/
 			pTarget_->ApplyDamage(iAttackPower_);

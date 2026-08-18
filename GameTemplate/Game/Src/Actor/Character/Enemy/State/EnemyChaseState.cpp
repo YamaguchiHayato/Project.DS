@@ -2,6 +2,7 @@
 #include "EnemyChaseState.h"
 #include "Src/Actor/Character/Enemy/CommonEnemy.h"
 #include "Src/Actor/Character/Enemy/State/EnemyAttackState.h"
+#include "Src/Actor/Character/Enemy/State/EnemyIdleState.h"
 
 namespace nsApp
 {
@@ -14,6 +15,13 @@ namespace nsApp
 
 		void EnemyChaseState::Update()
 		{
+			/* 対象が死亡していれば待機へ戻す。*/
+			if (static_cast<CommonEnemy*>(pOwner_)->IsTargetDead())
+			{
+				pStateMachine_->ChangeState(new EnemyIdleState());
+				return;
+			}
+
 			/* 対象へ近づく。*/
 			static_cast<CommonEnemy*>(pOwner_)->MoveToTarget();
 

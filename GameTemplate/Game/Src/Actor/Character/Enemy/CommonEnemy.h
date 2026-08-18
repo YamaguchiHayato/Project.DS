@@ -61,6 +61,20 @@ namespace nsApp
 			}
 
 			/**
+			 * @brief 追跡対象が死亡しているか。
+			 * @return 対象がいない、または死亡していればtrue。
+			 */
+			inline bool IsTargetDead() const
+			{
+				/* 対象が無ければ死亡扱い。*/
+				if (pTarget_ == nullptr)
+					return true;
+
+				/* 対象の死亡フラグを返す。*/
+				return pTarget_->IsDead();
+			}
+
+			/**
 	          * @brief すぐに攻撃できる状態にする。
                */
 			inline void ReadyAttack()

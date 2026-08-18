@@ -22,5 +22,8 @@ namespace nsApp
 			/* キャラクターを描画する。*/
 			stModel_.DrawCharacterModel(rc);
 		}
+
+
+
 	}
 }
