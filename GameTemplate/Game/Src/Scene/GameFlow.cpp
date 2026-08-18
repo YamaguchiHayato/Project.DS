@@ -2,6 +2,7 @@
 #include "GameFlow.h"
 #include "InGameScene.h"
 #include "Src/Scene/TitleScene.h"
+#include "Src/Scene/Debug/DebugEnemyScene.h"
 
 namespace
 {
@@ -56,6 +57,14 @@ namespace nsApp
 			mapSceneFactory_[MakeSceneKey(EnSceneID::InGame, EnDebugSceneID::None)] = [](GameFlow* pGameFlow) -> IScene*
 				{
 					InGameScene* pScene = NewGO<InGameScene>(0, "inGameScene");
+					pScene->SetGameFlow(pGameFlow);
+					return pScene;
+				};
+
+			/* Debug配下のシーン。*/
+			mapSceneFactory_[MakeSceneKey(EnSceneID::Debug, EnDebugSceneID::EnemySolo)] = [](GameFlow* pGameFlow) -> IScene*
+				{
+					DebugEnemyScene* pScene = NewGO<DebugEnemyScene>(0, "debugEnemyScene");
 					pScene->SetGameFlow(pGameFlow);
 					return pScene;
 				};

@@ -12,7 +12,6 @@ namespace nsApp
 		 * @TODO: UI系統のクラスは処理を細分化。
 		 * @details 過去タイトルからクラスを引用予定。
 		 */
-
 		class TitleUI : public IGameObject
 		{
 		public:
@@ -29,7 +28,7 @@ namespace nsApp
 
 
 		private:
-			SpriteRender stTitleSprite_;		//! タイトル画像。
+			SpriteRender stTitleSprite_; //! タイトル画像。
 		};
 	}
 }

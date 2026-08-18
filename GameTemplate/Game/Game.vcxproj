@@ -238,8 +238,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Actor\Character\Enemy\CommonEnemy.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameCamera.cpp" />
+    <ClCompile Include="Src\Scene\Debug\DebugEnemyScene.cpp" />
+    <ClCompile Include="Src\Scene\Debug\DebugPlayer.cpp" />
     <ClCompile Include="Src\Scene\InGameScene.cpp" />
     <ClCompile Include="Src\Scene\GameFlow.cpp" />
     <ClCompile Include="main.cpp" />
@@ -258,8 +261,11 @@
     <ClCompile Include="Src\UI\Title\TitleUI.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Actor\Character\Enemy\CommonEnemy.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameCamera.h" />
+    <ClInclude Include="Src\Scene\Debug\DebugEnemyScene.h" />
+    <ClInclude Include="Src\Scene\Debug\DebugPlayer.h" />
     <ClInclude Include="Src\Scene\InGameScene.h" />
     <ClInclude Include="Src\Scene\GameFlow.h" />
     <ClInclude Include="Src\Actor\Actor.h" />
