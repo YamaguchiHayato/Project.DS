@@ -13,6 +13,11 @@
     </ClCompile>
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameCamera.cpp" />
+    <ClCompile Include="Src\Actor\Actor.cpp" />
+    <ClCompile Include="Src\Actor\Character\ICharacter.cpp" />
+    <ClCompile Include="Src\Actor\Character\Common\CharacterModel.cpp" />
+    <ClCompile Include="Src\Actor\Character\Common\CharacterAnimation.cpp" />
+    <ClCompile Include="Src\StateMachine\StateMachine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -21,6 +26,13 @@
     </ClInclude>
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameCamera.h" />
+    <ClInclude Include="Src\Actor\Actor.h" />
+    <ClInclude Include="Src\Actor\Character\ICharacter.h" />
+    <ClInclude Include="Src\Actor\Character\Common\CharacterModel.h" />
+    <ClInclude Include="Src\Actor\Character\Common\CharacterAnimation.h" />
+    <ClInclude Include="Src\StateMachine\IState.h" />
+    <ClInclude Include="Src\StateMachine\NullState.h" />
+    <ClInclude Include="Src\StateMachine\StateMachine.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Assets\shader\PMX_PS.hlsl" />
