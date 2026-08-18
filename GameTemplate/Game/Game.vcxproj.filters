@@ -25,6 +25,9 @@
     <ClCompile Include="Src\Actor\Character\Enemy\CommonEnemy.cpp" />
     <ClCompile Include="Src\Scene\Debug\DebugEnemyScene.cpp" />
     <ClCompile Include="Src\Scene\Debug\DebugPlayer.cpp" />
+    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyIdleState.cpp" />
+    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyChaseState.cpp" />
+    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyAttackState.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -48,6 +51,9 @@
     <ClInclude Include="Src\Actor\Character\Enemy\CommonEnemy.h" />
     <ClInclude Include="Src\Scene\Debug\DebugEnemyScene.h" />
     <ClInclude Include="Src\Scene\Debug\DebugPlayer.h" />
+    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyIdleState.h" />
+    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyChaseState.h" />
+    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyAttackState.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Assets\shader\PMX_PS.hlsl" />

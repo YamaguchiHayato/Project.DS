@@ -238,6 +238,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyAttackState.cpp" />
+    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyChaseState.cpp" />
+    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyIdleState.cpp" />
     <ClCompile Include="Src\Actor\Character\Enemy\CommonEnemy.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameCamera.cpp" />
@@ -261,6 +264,9 @@
     <ClCompile Include="Src\UI\Title\TitleUI.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyAttackState.h" />
+    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyChaseState.h" />
+    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyIdleState.h" />
     <ClInclude Include="Src\Actor\Character\Enemy\CommonEnemy.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameCamera.h" />
