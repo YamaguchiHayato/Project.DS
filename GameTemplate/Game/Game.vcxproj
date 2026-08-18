@@ -240,6 +240,8 @@
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameCamera.cpp" />
+    <ClCompile Include="Src\Scene\InGameScene.cpp" />
+    <ClCompile Include="Src\Scene\GameFlow.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Src\Actor\Actor.cpp" />
     <ClCompile Include="Src\Actor\Character\Common\CharacterAnimation.cpp" />
@@ -252,19 +254,26 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Preview|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="system\system.cpp" />
+    <ClCompile Include="Src\Scene\TitleScene.cpp" />
+    <ClCompile Include="Src\UI\Title\TitleUI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameCamera.h" />
+    <ClInclude Include="Src\Scene\InGameScene.h" />
+    <ClInclude Include="Src\Scene\GameFlow.h" />
     <ClInclude Include="Src\Actor\Actor.h" />
     <ClInclude Include="Src\Actor\Character\Common\CharacterAnimation.h" />
     <ClInclude Include="Src\Actor\Character\Common\CharacterModel.h" />
     <ClInclude Include="Src\Actor\Character\ICharacter.h" />
+    <ClInclude Include="Src\Scene\IScene.h" />
     <ClInclude Include="Src\StateMachine\IState.h" />
     <ClInclude Include="Src\StateMachine\NullState.h" />
     <ClInclude Include="Src\StateMachine\StateMachine.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="system\system.h" />
+    <ClInclude Include="Src\Scene\TitleScene.h" />
+    <ClInclude Include="Src\UI\Title\TitleUI.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Assets\shader\PMX_PS.hlsl">
