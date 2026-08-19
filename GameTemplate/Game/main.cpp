@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "system/system.h"
+#include "Src/Scene/GameFlow.h"
 #include "Game.h"
 
 // K2EngineLowのグローバルアクセスポイント。
@@ -63,7 +64,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	g_k2EngineLow = new K2EngineLow();
 	g_k2EngineLow->Init(g_hWnd, FRAME_BUFFER_W, FRAME_BUFFER_H);
 
-	NewGO<Game>(0, "game"); // ゲームオブジェクトを生成。
+
+	// ゲームフローを生成。
+	NewGO<nsApp::nsScene::GameFlow>(0, "gameFlow");
+
 	// ここからゲームループ。
 	while (DispatchWindowMessage()&&g_gameLoop.m_isLoop==true)
 	{

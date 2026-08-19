@@ -18,6 +18,16 @@
     <ClCompile Include="Src\Actor\Character\Common\CharacterModel.cpp" />
     <ClCompile Include="Src\Actor\Character\Common\CharacterAnimation.cpp" />
     <ClCompile Include="Src\StateMachine\StateMachine.cpp" />
+    <ClCompile Include="Src\Scene\GameFlow.cpp" />
+    <ClCompile Include="Src\Scene\TitleScene.cpp" />
+    <ClCompile Include="Src\UI\Title\TitleUI.cpp" />
+    <ClCompile Include="Src\Scene\InGameScene.cpp" />
+    <ClCompile Include="Src\Actor\Character\Enemy\CommonEnemy.cpp" />
+    <ClCompile Include="Src\Scene\Debug\DebugEnemyScene.cpp" />
+    <ClCompile Include="Src\Scene\Debug\DebugPlayer.cpp" />
+    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyIdleState.cpp" />
+    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyChaseState.cpp" />
+    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyAttackState.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -33,6 +43,17 @@
     <ClInclude Include="Src\StateMachine\IState.h" />
     <ClInclude Include="Src\StateMachine\NullState.h" />
     <ClInclude Include="Src\StateMachine\StateMachine.h" />
+    <ClInclude Include="Src\Scene\IScene.h" />
+    <ClInclude Include="Src\Scene\GameFlow.h" />
+    <ClInclude Include="Src\Scene\TitleScene.h" />
+    <ClInclude Include="Src\UI\Title\TitleUI.h" />
+    <ClInclude Include="Src\Scene\InGameScene.h" />
+    <ClInclude Include="Src\Actor\Character\Enemy\CommonEnemy.h" />
+    <ClInclude Include="Src\Scene\Debug\DebugEnemyScene.h" />
+    <ClInclude Include="Src\Scene\Debug\DebugPlayer.h" />
+    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyIdleState.h" />
+    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyChaseState.h" />
+    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyAttackState.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Assets\shader\PMX_PS.hlsl" />

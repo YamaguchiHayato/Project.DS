@@ -8,27 +8,27 @@ namespace nsApp
 	{
 		/**
 		 * @file   Actor.h
-		 * @brief  IGameObject‚ğŒp³‚µA•K—v‚È—v‘f‚ğ”²‚«æ‚Á‚½ƒNƒ‰ƒXB
+		 * @brief  IGameObjectã‚’ç¶™æ‰¿ã—ã€å¿…è¦ãªè¦ç´ ã‚’æŠœãå–ã£ãŸã‚¯ãƒ©ã‚¹ã€‚
 		 * @author Yamaguchi Hayato
 		 * @date   2026/08/18
 		 */
 		class Actor : public IGameObject
 		{
 		public:
-			/* ƒRƒ“ƒXƒgƒ‰ƒNƒ^‚ÆƒfƒXƒgƒ‰ƒNƒ^B*/
+			/* ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ã¨ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ã€‚*/
 			Actor();
 			virtual ~Actor();
 
 
 		public:
-			/* ƒ‰ƒCƒtƒTƒCƒNƒ‹B*/
+			/* ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ«ã€‚*/
 			virtual bool Start() = 0;
 			virtual void Update();
 			virtual void Render(RenderContext& rc) = 0;
 
 
 		protected:
-			nsState::StateMachine<Actor>* pStateMachine_ = nullptr;		//! ‹¤’Ê‚ÌƒXƒe[ƒgƒ}ƒV[ƒ“B
+			nsState::StateMachine<Actor>* pStateMachine_ = nullptr; //! å…±é€šã®ã‚¹ãƒ†ãƒ¼ãƒˆãƒã‚·ãƒ¼ãƒ³ã€‚
 		};
 	}
 }

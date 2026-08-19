@@ -45,9 +45,7 @@ namespace nsApp
 		{
 			/* キャラモデルが確認できない場合、処理を終了させる。*/
 			if (pCharacterModelRender_ != nullptr)
-			{
 				pCharacterModelRender_->PlayAnimation(iAnimationNumber, fInterpolateTime);
-			}
 		}
 
 		/**

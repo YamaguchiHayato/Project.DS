@@ -6,84 +6,106 @@ namespace nsApp
 {
 	/**
 	 * @struct AttackStatus
-	 * @details UŒ‚—Í‚Ìƒpƒ‰ƒ[ƒ^‚ğ’è‹`B
+	 * @details æ”»æ’ƒåŠ›ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’å®šç¾©ã€‚
 	 */
 	struct AttackStatus
 	{
-		float fNormalDamage_;		//! ’Êí‚ÌUŒ‚—ÍB
-		float fCriticalDamage_;		//! ƒNƒŠƒeƒBƒJƒ‹ƒ_ƒ[ƒWB
-		float fCriticalRate_;		//! ƒNƒŠƒeƒBƒJƒ‹—¦B
+		float fNormalDamage_;		//! é€šå¸¸ã®æ”»æ’ƒåŠ›ã€‚
+		float fCriticalDamage_;		//! ã‚¯ãƒªãƒ†ã‚£ã‚«ãƒ«ãƒ€ãƒ¡ãƒ¼ã‚¸ã€‚
+		float fCriticalRate_;		//! ã‚¯ãƒªãƒ†ã‚£ã‚«ãƒ«ç‡ã€‚
 	};
 
 	/**
 	 * @struct HPStatus
-	 * @details HP‚Ìƒpƒ‰ƒ[ƒ^‚ğ’è‹`B
+	 * @details HPã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’å®šç¾©ã€‚
 	 */
 	struct HPStatus
 	{
-		int iCurrentHP_;			//! Œ»İHPB
-		int iMaxHP_;				//! Å‘åHPB
+		int iCurrentHP_;			//! ç¾åœ¨HPã€‚
+		int iMaxHP_;				//! æœ€å¤§HPã€‚
 	};
 
 	/**
 	 * @struct CharacterStatus
-	 * @details ƒLƒƒƒ‰ƒNƒ^[‚ÌƒXƒe[ƒ^ƒX‚ğ‚Ü‚Æ‚ß‚½\‘¢‘ÌB
+	 * @details ã‚­ãƒ£ãƒ©ã‚¯ã‚¿ãƒ¼ã®ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ã‚’ã¾ã¨ã‚ãŸæ§‹é€ ä½“ã€‚
 	 */
 	struct CharacterStatus
 	{
-		AttackStatus stAttack_;		//! UŒ‚‚ÌƒXƒe[ƒ^ƒXB
-		HPStatus stHp_;				//! ‘Ì—Í‚ÌƒXƒe[ƒ^ƒXB
+		AttackStatus stAttack_;		//! æ”»æ’ƒã®ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ã€‚
+		HPStatus stHp_;				//! ä½“åŠ›ã®ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ã€‚
 	};
 
 	namespace nsActor
 	{
 		/**
           * @file   ICharacter.h
-          * @brief  À‘Ô‚Ì‚ ‚éƒLƒƒƒ‰ƒNƒ^[‚ªŒp³‚·‚éŠî’êƒNƒ‰ƒXB
-          *         ƒXƒe[ƒ^ƒXŠÇ—‚à‚±‚±‚Ås‚¢‚Ü‚·B
+          * @brief  å®Ÿæ…‹ã®ã‚ã‚‹ã‚­ãƒ£ãƒ©ã‚¯ã‚¿ãƒ¼ãŒç¶™æ‰¿ã™ã‚‹åŸºåº•ã‚¯ãƒ©ã‚¹ã€‚
+          *         ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ç®¡ç†ã‚‚ã“ã“ã§è¡Œã„ã¾ã™ã€‚
           * @author Yamaguchi Hayato
           * @date   2026/08/18
           */
 		class ICharacter : public Actor
 		{
 		public:
-			/* ƒRƒ“ƒXƒgƒ‰ƒNƒ^‚ÆƒfƒXƒgƒ‰ƒNƒ^*/
+			/* ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ã¨ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿*/
 			ICharacter() = default;
 			virtual ~ICharacter() = default;
 
 
 		public:
-			/* ƒ‰ƒCƒtƒTƒCƒNƒ‹B*/
-			/* ‰Šú‰»ˆ—B*/
+			/* ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ«ã€‚*/
+			/* åˆæœŸåŒ–å‡¦ç†ã€‚*/
 			virtual bool Start() override = 0;
-			/* XVˆ—B*/
+			/* æ›´æ–°å‡¦ç†ã€‚*/
 			virtual void Update() override;
-			/* •`‰æˆ—B*/
+			/* æç”»å‡¦ç†ã€‚*/
 			virtual void Render(RenderContext& rc) override;
 
 
-		/* ƒQƒbƒ^[B*/
+		/* ã‚²ãƒƒã‚¿ãƒ¼ã€‚*/
 		public:
 			/**
-			 * @brief ƒLƒƒƒ‰ƒNƒ^[‚ÌˆÊ’u‚ğæ“¾‚·‚éB
-			 * @return ƒLƒƒƒ‰ƒNƒ^[‚ÌˆÊ’uB
+			 * @brief ã‚­ãƒ£ãƒ©ã‚¯ã‚¿ãƒ¼ã®ä½ç½®ã‚’å–å¾—ã™ã‚‹ã€‚
+			 * @return ã‚­ãƒ£ãƒ©ã‚¯ã‚¿ãƒ¼ã®ä½ç½®ã€‚
 			 */
 			virtual Vector3& GetPosition() = 0;
 
 			/**
-			 * @brief Œ»İ‚ÌHP‚ğæ“¾‚·‚éB
-			 * @return Œ»İ‚ÌHPB
+			 * @brief ç¾åœ¨ã®HPã‚’å–å¾—ã™ã‚‹ã€‚
+			 * @return ç¾åœ¨ã®HPã€‚
 			 */
 			inline int GetCurrentHP() const
 			{
 				return stCharacterStatus_.stHp_.iCurrentHP_;
 			}
 
+			/**
+			 * @brief æ­»äº¡ã—ã¦ã„ã‚‹ã‹ã€‚
+			 * @return HPãŒ0ä»¥ä¸‹ãªã‚‰trueã€‚
+			 */
+			inline bool IsDead() const
+			{
+				return stCharacterStatus_.stHp_.iCurrentHP_ <= 0;
+			}
+
+			/**
+			 * @brief ãƒ€ãƒ¡ãƒ¼ã‚¸ã‚’ä¸ãˆã‚‹ã€‚
+			 * @param iDamage ãƒ€ãƒ¡ãƒ¼ã‚¸é‡ã€‚
+			 */
+			inline void ApplyDamage(int iDamage)
+			{
+				/* ç¾åœ¨HPã‹ã‚‰ãƒ€ãƒ¡ãƒ¼ã‚¸ã‚’å¼•ãã€‚*/
+				stCharacterStatus_.stHp_.iCurrentHP_ -= iDamage;
+
+				/* 0æœªæº€ã«ã¯ã—ãªã„ã€‚*/
+				if (stCharacterStatus_.stHp_.iCurrentHP_ < 0)
+					stCharacterStatus_.stHp_.iCurrentHP_ = 0;
+			}
 
 		protected:
-			CharacterStatus stCharacterStatus_; //! ƒLƒƒƒ‰ƒNƒ^[‚ÌƒXƒe[ƒ^ƒXB
-			CharacterModel stModel_; //! ƒLƒƒƒ‰ƒNƒ^[ƒ‚ƒfƒ‹B
-			int iHitStopFrame_; //! ƒqƒbƒgƒXƒgƒbƒv‚ÌƒtƒŒ[ƒ€”B
+			CharacterStatus stCharacterStatus_; //! ã‚­ãƒ£ãƒ©ã‚¯ã‚¿ãƒ¼ã®ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ã€‚
+			CharacterModel stModel_; //! ã‚­ãƒ£ãƒ©ã‚¯ã‚¿ãƒ¼ãƒ¢ãƒ‡ãƒ«ã€‚
+			int iHitStopFrame_; //! ãƒ’ãƒƒãƒˆã‚¹ãƒˆãƒƒãƒ—ã®ãƒ•ãƒ¬ãƒ¼ãƒ æ•°ã€‚
 		};
 	}
 }

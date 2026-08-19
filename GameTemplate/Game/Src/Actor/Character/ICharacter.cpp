@@ -3,8 +3,9 @@
 
 namespace
 {
-	const int HP_MIN = 0;		//! HPの下限。
+	const int HP_MIN = 0; //! HPの下限。
 }
+
 
 namespace nsApp
 {
