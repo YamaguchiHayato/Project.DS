@@ -4,6 +4,48 @@
     <Filter Include="system">
       <UniqueIdentifier>{22dd8095-74f9-46df-81a1-36675a040b1f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Src">
+      <UniqueIdentifier>{ecd93005-b1a4-43d7-83a1-f0adaf6da702}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Actor">
+      <UniqueIdentifier>{9fe7f3d6-7a7a-4ed6-8e1c-4f6c85310584}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Actor\Character">
+      <UniqueIdentifier>{99543f7f-91dd-4664-a4e0-e18ff6fe05af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Actor\Character\Player">
+      <UniqueIdentifier>{5cdb75f3-5a32-404c-8699-4fea7e254d0f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Actor\Character\Enemy">
+      <UniqueIdentifier>{80f59118-cd56-410e-9832-8b2591f353b3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Actor\Character\Enemy\State">
+      <UniqueIdentifier>{4c8c8a9e-7148-4af2-9ad4-65fe88f295d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Scene">
+      <UniqueIdentifier>{5b95985f-eb5e-4f1b-8098-2aa0b9aa47a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Scene\Debug">
+      <UniqueIdentifier>{768bc7fa-b83a-4aef-bf75-3a2f99a6ad77}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\UI">
+      <UniqueIdentifier>{42d58b4d-92b1-4e36-9806-14b3d3e07c4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\UI\Title">
+      <UniqueIdentifier>{6ad8042d-0f8d-4387-a9c8-34f9c0a55029}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Actor\Common">
+      <UniqueIdentifier>{7a1076f5-4aa7-4256-bb30-7b178704b46e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Actor\Character\Player\State">
+      <UniqueIdentifier>{206394ef-a978-4b46-8f29-2112634db8c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Actor\Weapon">
+      <UniqueIdentifier>{c999b17d-cf76-4c1a-ad3f-cec33fb12ab1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\StateMachine">
+      <UniqueIdentifier>{22f85fe2-2597-4dc0-8711-28f15cbcf865}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
@@ -13,21 +55,78 @@
     </ClCompile>
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameCamera.cpp" />
-    <ClCompile Include="Src\Actor\Actor.cpp" />
-    <ClCompile Include="Src\Actor\Character\ICharacter.cpp" />
-    <ClCompile Include="Src\Actor\Character\Common\CharacterModel.cpp" />
-    <ClCompile Include="Src\Actor\Character\Common\CharacterAnimation.cpp" />
-    <ClCompile Include="Src\StateMachine\StateMachine.cpp" />
-    <ClCompile Include="Src\Scene\GameFlow.cpp" />
-    <ClCompile Include="Src\Scene\TitleScene.cpp" />
-    <ClCompile Include="Src\UI\Title\TitleUI.cpp" />
-    <ClCompile Include="Src\Scene\InGameScene.cpp" />
-    <ClCompile Include="Src\Actor\Character\Enemy\CommonEnemy.cpp" />
-    <ClCompile Include="Src\Scene\Debug\DebugEnemyScene.cpp" />
-    <ClCompile Include="Src\Scene\Debug\DebugPlayer.cpp" />
-    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyIdleState.cpp" />
-    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyChaseState.cpp" />
-    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyAttackState.cpp" />
+    <ClCompile Include="Src\Actor\Character\Common\CharacterAnimation.cpp">
+      <Filter>Src\Actor\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Common\CharacterModel.cpp">
+      <Filter>Src\Actor\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyAttackState.cpp">
+      <Filter>Src\Actor\Character\Enemy\State</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyChaseState.cpp">
+      <Filter>Src\Actor\Character\Enemy\State</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyIdleState.cpp">
+      <Filter>Src\Actor\Character\Enemy\State</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Enemy\CommonEnemy.cpp">
+      <Filter>Src\Actor\Character\Enemy</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\ICharacter.cpp">
+      <Filter>Src\Actor\Character</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Actor.cpp">
+      <Filter>Src\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\GameFlow.cpp">
+      <Filter>Src\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\ResultScene.cpp">
+      <Filter>Src\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\InGameScene.cpp">
+      <Filter>Src\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\TitleScene.cpp">
+      <Filter>Src\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\StateMachine\StateMachine.cpp">
+      <Filter>Src\StateMachine</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\UI\Title\TitleUI.cpp">
+      <Filter>Src\UI\Title</Filter>
+    </ClCompile>
+    <ClCompile Include="Player.cpp">
+      <Filter>Src\Actor\Character\Player</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerInput.cpp">
+      <Filter>Src\Actor\Character\Player</Filter>
+    </ClCompile>
+    <ClCompile Include="LocalPlayerController.cpp">
+      <Filter>Src\Actor\Character\Player</Filter>
+    </ClCompile>
+    <ClCompile Include="WeaponManager.cpp">
+      <Filter>Src\Actor\Weapon</Filter>
+    </ClCompile>
+    <ClCompile Include="Weapon.cpp">
+      <Filter>Src\Actor\Weapon</Filter>
+    </ClCompile>
+    <ClCompile Include="Tracer.cpp">
+      <Filter>Src\Actor\Weapon</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugPlayer.cpp">
+      <Filter>Src\Scene\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugEnemyScene.cpp">
+      <Filter>Src\Scene\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugPlayerScene.cpp">
+      <Filter>Src\Scene\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="InGameBuildHelper.cpp">
+      <Filter>Src\Scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -36,29 +135,102 @@
     </ClInclude>
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameCamera.h" />
-    <ClInclude Include="Src\Actor\Actor.h" />
-    <ClInclude Include="Src\Actor\Character\ICharacter.h" />
-    <ClInclude Include="Src\Actor\Character\Common\CharacterModel.h" />
-    <ClInclude Include="Src\Actor\Character\Common\CharacterAnimation.h" />
-    <ClInclude Include="Src\StateMachine\IState.h" />
-    <ClInclude Include="Src\StateMachine\NullState.h" />
-    <ClInclude Include="Src\StateMachine\StateMachine.h" />
-    <ClInclude Include="Src\Scene\IScene.h" />
-    <ClInclude Include="Src\Scene\GameFlow.h" />
-    <ClInclude Include="Src\Scene\TitleScene.h" />
-    <ClInclude Include="Src\UI\Title\TitleUI.h" />
-    <ClInclude Include="Src\Scene\InGameScene.h" />
-    <ClInclude Include="Src\Actor\Character\Enemy\CommonEnemy.h" />
-    <ClInclude Include="Src\Scene\Debug\DebugEnemyScene.h" />
-    <ClInclude Include="Src\Scene\Debug\DebugPlayer.h" />
-    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyIdleState.h" />
-    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyChaseState.h" />
-    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyAttackState.h" />
+    <ClInclude Include="Src\Actor\Character\Common\CharacterAnimation.h">
+      <Filter>Src\Actor\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Common\CharacterModel.h">
+      <Filter>Src\Actor\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyAttackState.h">
+      <Filter>Src\Actor\Character\Enemy\State</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyChaseState.h">
+      <Filter>Src\Actor\Character\Enemy\State</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyIdleState.h">
+      <Filter>Src\Actor\Character\Enemy\State</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Enemy\CommonEnemy.h">
+      <Filter>Src\Actor\Character\Enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\ICharacter.h">
+      <Filter>Src\Actor\Character</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Actor.h">
+      <Filter>Src\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Scene\GameFlow.h">
+      <Filter>Src\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Scene\ResultScene.h">
+      <Filter>Src\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Scene\InGameScene.h">
+      <Filter>Src\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Scene\TitleScene.h">
+      <Filter>Src\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Scene\IScene.h">
+      <Filter>Src\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="Src\StateMachine\StateMachine.h">
+      <Filter>Src\StateMachine</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\StateMachine\NullState.h">
+      <Filter>Src\StateMachine</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\StateMachine\IState.h">
+      <Filter>Src\StateMachine</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\UI\Title\TitleUI.h">
+      <Filter>Src\UI\Title</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>Src\Actor\Character\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerInput.h">
+      <Filter>Src\Actor\Character\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerIntent.h">
+      <Filter>Src\Actor\Character\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="IPlayerController.h">
+      <Filter>Src\Actor\Character\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="LocalPlayerController.h">
+      <Filter>Src\Actor\Character\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="Weapon.h">
+      <Filter>Src\Actor\Weapon</Filter>
+    </ClInclude>
+    <ClInclude Include="Tracer.h">
+      <Filter>Src\Actor\Weapon</Filter>
+    </ClInclude>
+    <ClInclude Include="WeaponManager.h">
+      <Filter>Src\Actor\Weapon</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugPlayer.h">
+      <Filter>Src\Scene\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugEnemyScene.h">
+      <Filter>Src\Scene\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugPlayerScene.h">
+      <Filter>Src\Scene\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="InGameBuildHelper.h">
+      <Filter>Src\Scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Assets\shader\PMX_PS.hlsl" />
     <FxCompile Include="Assets\shader\PMX_VS.hlsl" />
     <FxCompile Include="Assets\shader\Penlight_PS.hlsl" />
     <FxCompile Include="Assets\shader\Penlight_VS.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Game.rc" />
   </ItemGroup>
 </Project>

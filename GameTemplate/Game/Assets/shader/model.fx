@@ -245,26 +245,26 @@ SPSOut PSMain( SPSIn psIn,int isShadowReceiver ) : SV_Target0
     //影のカラーを乗算。
     albedoColor.xyz *= shadow;
     
-    // ==========================================
-    // ★追加: フォグの計算
-    // ==========================================
+    //// ==========================================
+    //// ★追加: フォグの計算
+    //// ==========================================
     
-    // 1. カメラとピクセルの距離を測る
-    // (psIn.worldPos と eyePos を使います)
-    float dist = distance(psIn.worldPos, eyePos);
+    //// 1. カメラとピクセルの距離を測る
+    //// (psIn.worldPos と eyePos を使います)
+    //float dist = distance(psIn.worldPos, eyePos);
 
-    // 2. フォグの設定 (シーンの広さに合わせて数値をいじってください)
-    float fogStart = 100.0f; // 霧がかかり始める距離
-    float fogEnd = 400.0f; // 真っ白になる距離
-    float3 fogColor = float3(0.8f, 0.8f, 0.9f); // 霧の色（白っぽい青）
+    //// 2. フォグの設定 (シーンの広さに合わせて数値をいじってください)
+    //float fogStart = 100.0f; // 霧がかかり始める距離
+    //float fogEnd = 400.0f; // 真っ白になる距離
+    //float3 fogColor = float3(0.8f, 0.8f, 0.9f); // 霧の色（白っぽい青）
 
-    // 3. 霧の濃さを計算 (0.0～1.0)
-    float fogFactor = saturate((dist - fogStart) / (fogEnd - fogStart));
+    //// 3. 霧の濃さを計算 (0.0～1.0)
+    //float fogFactor = saturate((dist - fogStart) / (fogEnd - fogStart));
 
-    // 4. 元の色と霧の色を混ぜる
-    albedoColor.rgb = lerp(albedoColor.rgb, fogColor, fogFactor);
+    //// 4. 元の色と霧の色を混ぜる
+    //albedoColor.rgb = lerp(albedoColor.rgb, fogColor, fogFactor);
 
-    // ==========================================
+    //// ==========================================
     
     shadowColor.color = albedoColor;
        
