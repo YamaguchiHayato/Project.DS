@@ -17,24 +17,17 @@ namespace nsApp
 		 */
 		struct PlayerIntent
 		{
-			Vector3	vMoveAxis_ = { 0.0f, 0.0f, 0.0f };	//! 移動入力(カメラ相対。x:左右, z:前後。長さが入力の強さ)。
-
+			Vector3	vMoveAxis_ = Vector3::Zero;	//! 移動入力(カメラ相対。x:左右, z:前後。長さが入力の強さ)。
 			float	fLookYawDelta_ = 0.0f;		//! 視点の旋回量(このフレーム、ラジアン)。デバイス感度は充填側で吸収済み。
 			float	fLookPitchDelta_ = 0.0f;	//! 視点の上下量(このフレーム、ラジアン)。ピッチ実装まで0。
-
 			bool	bFirePress_ = false;		//! 射撃(押しっぱなし=フルオート)。
 			bool	bFireTrigger_ = false;		//! 射撃(押した瞬間=単発)。
-
 			bool	bShoveTrigger_ = false;		//! 近接(shove。押した瞬間)。
-
 			bool	bReloadTrigger_ = false;	//! リロード(押した瞬間)。
-
 			bool	bUseTrigger_ = false;		//! 使用・インタラクト(押した瞬間。武器/アイテム/ドア等)。
 			bool	bUseHold_ = false;			//! 使用・蘇生ホールド(押しっぱなし。ダウン中の味方を起こす)。
-
 			bool	bWeaponNextTrigger_ = false;	//! 武器切替(次)。
 			bool	bWeaponPrevTrigger_ = false;	//! 武器切替(前)。
-
 			bool	bLightTrigger_ = false;		//! ライトON/OFF(押した瞬間)。
 			bool	bPauseTrigger_ = false;		//! ポーズ・メニュー(押した瞬間)。
 		};
