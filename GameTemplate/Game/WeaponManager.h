@@ -19,7 +19,7 @@ namespace nsApp
 		public:
 			/* コンストラクタとデストラクタ。*/
 			WeaponManager() = default;
-			~WeaponManager() = default;
+			virtual ~WeaponManager() = default;
 
 
 		public:
