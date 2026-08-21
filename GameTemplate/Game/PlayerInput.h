@@ -24,7 +24,7 @@ namespace nsApp
 		{
 		public:
 			PlayerInput() = default;
-			~PlayerInput();
+			virtual ~PlayerInput();
 
 
 		public:
