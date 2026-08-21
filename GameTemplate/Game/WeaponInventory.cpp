@@ -1,11 +1,11 @@
 #include "stdafx.h"
-#include "WeaponManager.h"
+#include "WeaponInventory.h"
 
 namespace nsApp
 {
 	namespace nsWeapon
 	{
-		void WeaponManager::AddWeapon(EnWeaponType enType)
+		void WeaponInventory::AddWeapon(EnWeaponType enType)
 		{
 			/* 新しい武器を末尾に追加し、種類で初期化する。*/
 			Weapon weapon;
@@ -14,7 +14,7 @@ namespace nsApp
 		}
 
 
-		void WeaponManager::Update(float fDeltaTime)
+		void WeaponInventory::Update(float fDeltaTime)
 		{
 			/* 現在の武器だけ更新する。*/
 			Weapon* pCurrent = GetCurrentWeapon();
@@ -23,7 +23,7 @@ namespace nsApp
 		}
 
 
-		bool WeaponManager::Fire(const Vector3& vPosition, const Vector3& vDirection)
+		bool WeaponInventory::Fire(const Vector3& vPosition, const Vector3& vDirection)
 		{
 			/* 現在の武器で発射する。*/
 			Weapon* pCurrent = GetCurrentWeapon();
@@ -34,7 +34,7 @@ namespace nsApp
 		}
 
 
-		void WeaponManager::Reload()
+		void WeaponInventory::Reload()
 		{
 			/* 現在の武器をリロードする。*/
 			Weapon* pCurrent = GetCurrentWeapon();
@@ -43,7 +43,7 @@ namespace nsApp
 		}
 
 
-		void WeaponManager::SwitchNext()
+		void WeaponInventory::SwitchNext()
 		{
 			/* 未所持なら何もしない。*/
 			if (vecWeapons_.empty())
@@ -54,7 +54,7 @@ namespace nsApp
 		}
 
 
-		void WeaponManager::SwitchPrev()
+		void WeaponInventory::SwitchPrev()
 		{
 			/* 未所持なら何もしない。*/
 			if (vecWeapons_.empty())
@@ -65,7 +65,7 @@ namespace nsApp
 		}
 
 
-		Weapon* WeaponManager::GetCurrentWeapon()
+		Weapon* WeaponInventory::GetCurrentWeapon()
 		{
 			/* 未所持ならnullptrを返す。*/
 			if (vecWeapons_.empty())
