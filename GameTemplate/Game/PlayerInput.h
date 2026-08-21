@@ -51,6 +51,9 @@ namespace nsApp
 			//! 左クリックを押した瞬間か(単発武器の発射判定)。
 			inline bool IsFireTrigger() const { return bFireTrigger_; }
 
+			//! 右クリックを押した瞬間か(近接=突き飛ばし)。
+			inline bool IsShoveTrigger() const { return bShoveTrigger_; }
+
 			//! ホイールを奥に回した瞬間か(次の武器へ切り替え)。
 			inline bool IsWeaponSwitchNextTrigger() const { return bWeaponSwitchNextTrigger_; }
 
@@ -94,6 +97,7 @@ namespace nsApp
 
 			bool	bFirePress_ = false;					//! 左クリック押下中か。
 			bool	bFireTrigger_ = false;					//! 左クリックを押した瞬間か。
+			bool	bShoveTrigger_ = false;					//! 右クリックを押した瞬間か(突き飛ばし)。
 			bool	bWeaponSwitchNextTrigger_ = false;		//! ホイール奥回転トリガー。
 			bool	bWeaponSwitchPrevTrigger_ = false;		//! ホイール手前回転トリガー。
 			bool	bReloadTrigger_ = false;				//! Rキートリガー。

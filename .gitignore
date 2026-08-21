@@ -447,3 +447,6 @@ GameTemplate/Game/Assets/data/highscores.json
 # アトミック保存用の一時・バックアップファイル
 GameTemplate/Game/Assets/data/*.json.tmp
 GameTemplate/Game/Assets/data/*.json.bak
+
+# --- Claude Code のワークツリー・セッション管理用（リポジトリに含めない） ---
+.claude/

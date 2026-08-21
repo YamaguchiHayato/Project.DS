@@ -35,11 +35,13 @@ namespace nsApp
 			stOut.bLightTrigger_ = stInput_.IsLightTrigger();
 			stOut.bPauseTrigger_ = stInput_.IsPauseTrigger();
 
+			/* 突き飛ばし(右クリック)。*/
+			stOut.bShoveTrigger_ = stInput_.IsShoveTrigger();
+
 			/*
-			 * TODO(Phase1/2): shove(右クリック)・蘇生ホールド(Eキー長押し)を PlayerInput に
-			 *   追加してここで充填する。今はまだ実装していないので false 固定。
+			 * TODO(Phase2): 蘇生ホールド(Eキー長押し)を PlayerInput に追加してここで充填する。
+			 *   今はまだ実装していないので false 固定。
 			 */
-			stOut.bShoveTrigger_ = false;
 			stOut.bUseHold_ = false;
 		}
 	}

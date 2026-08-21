@@ -2,9 +2,12 @@
 #include "Src/Actor/Character/ICharacter.h"
 #include "IPlayerController.h"
 #include "WeaponInventory.h"
+#include "Src/Event/GameEvent.h"
 
 namespace nsApp
 {
+	namespace nsEvent { class EventBus; }	//! 前方宣言。
+
 	namespace nsActor
 	{
 		/**
@@ -20,9 +23,20 @@ namespace nsApp
 		};
 
 		/**
+		 * @enum  EnLifeState
+		 * @brief プレイヤーの生命状態(L4D2風の行動不能→救助/死亡)。
+		 */
+		enum class EnLifeState : uint8_t
+		{
+			Alive,	//! 生存(通常行動可能)。
+			Down,	//! ダウン(行動不能・出血中。救助されれば復帰)。
+			Dead,	//! 死亡。
+		};
+
+		/**
 		 * @file   Player.h
 		 * @brief  プレイヤーキャラクター。
-		 *         PlayerInput(入力)WeaponInventory(武器)を持ち、
+		 *         PlayerInput(入力)とWeaponInventory(武器)を持ち、
 		 *         入力結果を見て移動と発射を実行する司令塔の役割に徹する。
 		 *         操作は本家(L4D2)準拠のキーボード＆マウス(nsK2EngineLow::Mouse経由)。
 		 *         射撃=左クリック、武器切り替え=マウスホイール、リロード=R。
@@ -73,6 +87,57 @@ namespace nsApp
 				return fCameraYaw_;
 			}
 
+			/**
+			 * @brief 行動不能(ダウンまたは死亡)かどうか。
+			 * @return 生存していなければ true。
+			 */
+			inline bool IsIncapacitated() const
+			{
+				return enLifeState_ != EnLifeState::Alive;
+			}
+
+			/**
+			 * @brief 現在の生命状態を取得する。
+			 * @return 生命状態。
+			 */
+			inline EnLifeState GetLifeState() const
+			{
+				return enLifeState_;
+			}
+
+			/**
+			 * @brief 最大HPを取得する(UI表示用)。
+			 * @return 最大HP。
+			 */
+			inline int GetMaxHP() const
+			{
+				return stCharacterStatus_.stHp_.iMaxHP_;
+			}
+
+			/**
+			 * @brief ダウン中の出血残り時間を取得する(UI表示用)。
+			 * @return 残り時間(秒)。
+			 */
+			inline float GetBleedOutRemain() const
+			{
+				return fBleedOutTimer_;
+			}
+
+			/**
+			 * @brief 現在装備中の武器を取得する(UI表示用。無ければnullptr)。
+			 * @return 現在の武器。
+			 */
+			inline nsWeapon::Weapon* GetEquippedWeapon()
+			{
+				return stWeaponInventory_.GetCurrentWeapon();
+			}
+
+			/**
+			 * @brief ダウン中のプレイヤーを救助して復帰させる(将来の味方/BOT用)。
+			 *        ダウン中以外は何もしない。
+			 */
+			void Revive();
+
 
 		private:
 			/**
@@ -96,6 +161,24 @@ namespace nsApp
 			 * @brief 入力結果を見てインタラクト・ライトなどその他の操作を処理する。
 			 */
 			void UpdateAction();
+
+			/**
+			 * @brief 突き飛ばし(近接)入力を処理する。前方近距離の敵を押し返す。
+			 * @param fDeltaTime 1フレームの経過時間(秒)。
+			 */
+			void UpdateShove(float fDeltaTime);
+
+			/**
+			 * @brief 生命状態(生存/ダウン/死亡)を更新する。HP0でダウン、出血タイマー切れで死亡。
+			 * @param fDeltaTime 1フレームの経過時間(秒)。
+			 */
+			void UpdateLifeState(float fDeltaTime);
+
+			/**
+			 * @brief イベントバスへゲームイベントを発行する(バスが無ければ何もしない)。
+			 * @param enType 発行するイベント種別。
+			 */
+			void PublishGameEvent(nsEvent::EnGameEvent enType);
 
 			/**
 			 * @brief 移動状態に応じてモデルの位置・回転・アニメーションを更新する。
@@ -147,6 +230,11 @@ namespace nsApp
 			bool		bIsMoving_ = false;					//! 移動中か。
 			bool		bIsLightOn_ = false;				//! ライトが点いているか。
 			EnPlayerAnimation	enPlayingAnimation_ = EnPlayerAnimation::Num;	//! 再生中のアニメーション。
+
+			EnLifeState			enLifeState_ = EnLifeState::Alive;	//! 生命状態(生存/ダウン/死亡)。
+			float				fBleedOutTimer_ = 0.0f;				//! ダウン中の出血残り時間(秒)。0で死亡。
+			float				fShoveCooldown_ = 0.0f;				//! 突き飛ばしのクールダウン残り(秒)。
+			nsEvent::EventBus*	pEventBus_ = nullptr;				//! イベント発行先(生成時にFindGOで取得。無ければ発行しない)。
 		};
 	}
 }
