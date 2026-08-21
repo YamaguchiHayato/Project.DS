@@ -2,7 +2,9 @@
 #include "GameFlow.h"
 #include "InGameScene.h"
 #include "Src/Scene/TitleScene.h"
-#include "Src/Scene/Debug/DebugEnemyScene.h"
+#include "DebugEnemyScene.h"
+#include "DebugPlayerScene.h"
+#include "Src/Scene/ResultScene.h"
 
 namespace
 {
@@ -61,10 +63,26 @@ namespace nsApp
 					return pScene;
 				};
 
-			/* Debug配下のシーン。*/
+			/* リザルトシーン(勝敗表示→タイトル)。*/
+			mapSceneFactory_[MakeSceneKey(EnSceneID::Result, EnDebugSceneID::None)] = [](GameFlow* pGameFlow) -> IScene*
+				{
+					ResultScene* pScene = NewGO<ResultScene>(0, "resultScene");
+					pScene->SetGameFlow(pGameFlow);
+					return pScene;
+				};
+
+			/* Debug配下のシーン(敵単体)。*/
 			mapSceneFactory_[MakeSceneKey(EnSceneID::Debug, EnDebugSceneID::EnemySolo)] = [](GameFlow* pGameFlow) -> IScene*
 				{
 					DebugEnemyScene* pScene = NewGO<DebugEnemyScene>(0, "debugEnemyScene");
+					pScene->SetGameFlow(pGameFlow);
+					return pScene;
+				};
+
+			/* Debug配下のシーン(プレイヤー単体)。*/
+			mapSceneFactory_[MakeSceneKey(EnSceneID::Debug, EnDebugSceneID::PlayerSolo)] = [](GameFlow* pGameFlow) -> IScene*
+				{
+					DebugPlayerScene* pScene = NewGO<DebugPlayerScene>(0, "debugPlayerScene");
 					pScene->SetGameFlow(pGameFlow);
 					return pScene;
 				};

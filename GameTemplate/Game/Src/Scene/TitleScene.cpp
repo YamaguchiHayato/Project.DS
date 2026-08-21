@@ -36,6 +36,10 @@ namespace nsApp
 			/* キー2でデバッグ(敵単体)へ遷移予約。*/
 			if (GetAsyncKeyState('2') & 0x8000)
 				pGameFlow_->ChangeScene(EnSceneID::Debug, EnDebugSceneID::EnemySolo);
+
+			/* キー3でデバッグ(プレイヤー単体)へ遷移予約。*/
+			if (GetAsyncKeyState('3') & 0x8000)
+				pGameFlow_->ChangeScene(EnSceneID::Debug, EnDebugSceneID::PlayerSolo);
 		}
 	}
 }

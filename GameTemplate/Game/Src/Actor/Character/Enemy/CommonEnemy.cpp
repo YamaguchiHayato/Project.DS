@@ -13,6 +13,13 @@ namespace nsApp
 	{
 		bool CommonEnemy::Start()
 		{
+			/*
+			 * ★体力を初期化する。未設定だと HP が不定で ApplyDamage/IsDead が正しく働かず、
+			 *   ヒットスキャンで倒せない。本来は敵側パラメータ。要チーム調整(山口担当領域)。
+			 */
+			stCharacterStatus_.stHp_.iMaxHP_ = 30;
+			stCharacterStatus_.stHp_.iCurrentHP_ = 30;
+
 			/* 仮モデルをロードする。*/
 			stModelRender_.Init(sUnityChanModelPath_, nullptr, 0, enModelUpAxisZ);
 

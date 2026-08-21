@@ -52,6 +52,26 @@ namespace nsApp
 				enReserveDebugSceneID_ = enDebugSceneID;
 			}
 
+			/**
+			 * @brief 直近の試合結果(勝ち=true)を記録する。ResultScene へ渡す受け皿。
+			 * @param bWon 勝利したら true。
+			 */
+			inline void SetMatchWon(bool bWon)
+			{
+				/* 勝敗を保持する。*/
+				bMatchWon_ = bWon;
+			}
+
+			/**
+			 * @brief 直近の試合結果を取得する。
+			 * @return 勝利していたら true。
+			 */
+			inline bool IsMatchWon() const
+			{
+				/* 保持した勝敗を返す。*/
+				return bMatchWon_;
+			}
+
 
 		private:
 			/**
@@ -85,6 +105,7 @@ namespace nsApp
 			IScene* pCurrentScene_ = nullptr; //! 現在のシーン。
 			EnSceneID enReserveSceneID_ = EnSceneID::None; //! 予約された通常シーンID。
 			EnDebugSceneID enReserveDebugSceneID_ = EnDebugSceneID::None; //! 予約されたDebugシーンID。
+			bool bMatchWon_ = false; //! 直近の試合結果(勝ち=true)。ResultSceneへ渡す。
 		};
 	}
 }
