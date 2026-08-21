@@ -1,7 +1,7 @@
 #pragma once
 #include "Src/Actor/Character/ICharacter.h"
 #include "IPlayerController.h"
-#include "WeaponManager.h"
+#include "WeaponInventory.h"
 
 namespace nsApp
 {
@@ -22,7 +22,7 @@ namespace nsApp
 		/**
 		 * @file   Player.h
 		 * @brief  プレイヤーキャラクター。
-		 *         PlayerInput(入力)とWeaponManager(武器)を持ち、
+		 *         PlayerInput(入力)WeaponInventory(武器)を持ち、
 		 *         入力結果を見て移動と発射を実行する司令塔の役割に徹する。
 		 *         操作は本家(L4D2)準拠のキーボード＆マウス(nsK2EngineLow::Mouse経由)。
 		 *         射撃=左クリック、武器切り替え=マウスホイール、リロード=R。
@@ -125,7 +125,7 @@ namespace nsApp
 		private:
 			IPlayerController*			pController_ = nullptr;	//! 操作意図の供給源(ローカル/ネットで差し替え可能)。
 			PlayerIntent				stIntent_;				//! このフレームの操作意図。
-			nsWeapon::WeaponManager		stWeaponManager_;	//! 武器の所持・切り替え担当。
+			nsWeapon::WeaponInventory		stWeaponInventory_;	//! 武器の所持・切り替え担当。
 
 			ModelRender	stModelRender_;											//! プレイヤーモデル。
 			AnimationClip aAnimationClip_[static_cast<int>(EnPlayerAnimation::Num)];	//! Idle/Walk/Run。
