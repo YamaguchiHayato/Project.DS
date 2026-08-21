@@ -56,8 +56,8 @@ namespace nsApp
 			stCharacterStatus_.stHp_.iMaxHP_ = 100;
 
 			/* 初期所持武器を登録する。マウスホイールで順番に切り替わる。*/
-			stWeaponManager_.AddWeapon(nsWeapon::EnWeaponType::Handgun);
-			stWeaponManager_.AddWeapon(nsWeapon::EnWeaponType::AssaultRifle);
+			stWeaponInventory_.AddWeapon(nsWeapon::EnWeaponType::Handgun);
+			stWeaponInventory_.AddWeapon(nsWeapon::EnWeaponType::AssaultRifle);
 
 			return true;
 		}
@@ -170,17 +170,17 @@ namespace nsApp
 		void Player::UpdateWeapon(float fDeltaTime)
 		{
 			/* 武器のクールタイム・リロード等を進める。*/
-			stWeaponManager_.Update(fDeltaTime);
+			stWeaponInventory_.Update(fDeltaTime);
 
 			/* リロード。*/
 			if (stIntent_.bReloadTrigger_)
-				stWeaponManager_.Reload();
+				stWeaponInventory_.Reload();
 
 			/* 照準方向はカメラの前方(一人称なので常に画面中央=クロスヘア方向)。*/
 			const Vector3 vAimDir = { sinf(fCameraYaw_), 0.0f, cosf(fCameraYaw_) };
 
 			/* 現在の武器に応じて、発射入力を押しっぱなし(フルオート)か押した瞬間(単発)で判定する。*/
-			nsWeapon::Weapon* pWeapon = stWeaponManager_.GetCurrentWeapon();
+			nsWeapon::Weapon* pWeapon = stWeaponInventory_.GetCurrentWeapon();
 			if (pWeapon != nullptr)
 			{
 				const bool bWantFire = pWeapon->IsFullAuto()
@@ -195,7 +195,7 @@ namespace nsApp
 					vMuzzlePos.y += kMuzzleHeight;
 
 					/* 発射に成功したら、ヒットスキャン判定＋トレーサー表示を行う。*/
-					if (stWeaponManager_.Fire(vMuzzlePos, vAimDir))
+					if (stWeaponInventory_.Fire(vMuzzlePos, vAimDir))
 					{
 						/* レイの終点(最大射程)。命中したらここを命中点に置き換える。*/
 						Vector3 vRayEnd = vMuzzlePos + vAimDir * kWeaponRange;
@@ -252,9 +252,9 @@ namespace nsApp
 
 			/* 武器切り替え(マウスホイール)。*/
 			if (stIntent_.bWeaponNextTrigger_)
-				stWeaponManager_.SwitchNext();
+				stWeaponInventory_.SwitchNext();
 			else if (stIntent_.bWeaponPrevTrigger_)
-				stWeaponManager_.SwitchPrev();
+				stWeaponInventory_.SwitchPrev();
 		}
 
 
@@ -300,7 +300,7 @@ namespace nsApp
 
 		void Player::UpdateWeaponModel()
 		{
-			nsWeapon::Weapon* pWeapon = stWeaponManager_.GetCurrentWeapon();
+			nsWeapon::Weapon* pWeapon = stWeaponInventory_.GetCurrentWeapon();
 			if (pWeapon == nullptr)
 				return;
 
