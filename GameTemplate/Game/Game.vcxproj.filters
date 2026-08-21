@@ -106,7 +106,7 @@
     <ClCompile Include="LocalPlayerController.cpp">
       <Filter>Src\Actor\Character\Player</Filter>
     </ClCompile>
-    <ClCompile Include="WeaponManager.cpp">
+    <ClCompile Include="WeaponInventory.cpp">
       <Filter>Src\Actor\Weapon</Filter>
     </ClCompile>
     <ClCompile Include="Weapon.cpp">
@@ -208,7 +208,7 @@
     <ClInclude Include="Tracer.h">
       <Filter>Src\Actor\Weapon</Filter>
     </ClInclude>
-    <ClInclude Include="WeaponManager.h">
+    <ClInclude Include="WeaponInventory.h">
       <Filter>Src\Actor\Weapon</Filter>
     </ClInclude>
     <ClInclude Include="DebugPlayer.h">
