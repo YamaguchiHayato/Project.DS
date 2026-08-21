@@ -14,12 +14,12 @@ namespace nsApp
 		 * @author Izumida Kiryu
 		 * @date   2026/08/19
 		 */
-		class WeaponManager
+		class WeaponInventory
 		{
 		public:
 			/* コンストラクタとデストラクタ。*/
-			WeaponManager() = default;
-			virtual ~WeaponManager() = default;
+			WeaponInventory() = default;
+			virtual ~WeaponInventory() = default;
 
 
 		public:
