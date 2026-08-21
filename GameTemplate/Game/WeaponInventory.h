@@ -7,7 +7,7 @@ namespace nsApp
 	namespace nsWeapon
 	{
 		/**
-		 * @file   WeaponManager.h
+		 * @file   WeaponInventory.h
 		 * @brief  所持している武器のリストを管理し、現在の武器の切り替え・発射を
 		 *         まとめて扱うクラス。データ駆動のWeaponを値で複数所持する。
 		 *         Player/Enemyどちらからも使える。
