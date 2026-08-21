@@ -3,6 +3,10 @@
 #include "Player.h"
 #include "Src/Actor/Character/Enemy/CommonEnemy.h"
 #include "Src/Scene/GameFlow.h"
+#include "Src/Event/EventBus.h"
+#include "Src/Rule/ResolveGameWinner.h"
+#include "Src/UI/InGameHud.h"
+#include "Src/Director/EnemyDirector.h"
 
 namespace
 {
@@ -20,19 +24,46 @@ namespace nsApp
 	{
 		InGameScene::~InGameScene()
 		{
+			/* 敵の湧き係を破棄する(以降の生成を止める)。*/
+			if (pEnemyDirector_ != nullptr)
+			{
+				DeleteGO(pEnemyDirector_);
+				pEnemyDirector_ = nullptr;
+			}
+
 			/*
 			 * 残っている敵を全て破棄する。ヒットスキャンで先に倒された個体は
 			 * FindGOs に含まれないため、二重破棄(ダングリング)にならない。
 			 */
 			for (nsActor::CommonEnemy* pEnemy : FindGOs<nsActor::CommonEnemy>("commonEnemy"))
 				DeleteGO(pEnemy);
-			pTestEnemy_ = nullptr;
 
 			/* 生成したプレイヤーを破棄する。*/
 			if (pPlayer_ != nullptr)
 			{
 				DeleteGO(pPlayer_);
 				pPlayer_ = nullptr;
+			}
+
+			/* HUDを破棄する。*/
+			if (pHud_ != nullptr)
+			{
+				DeleteGO(pHud_);
+				pHud_ = nullptr;
+			}
+
+			/* ルールをバスから購読解除してから、ルール・バスを破棄する(解放後アクセス防止)。*/
+			if (pEventBus_ != nullptr && pGameRule_ != nullptr)
+				pEventBus_->Unsubscribe(pGameRule_);
+			if (pGameRule_ != nullptr)
+			{
+				DeleteGO(pGameRule_);
+				pGameRule_ = nullptr;
+			}
+			if (pEventBus_ != nullptr)
+			{
+				DeleteGO(pEventBus_);
+				pEventBus_ = nullptr;
 			}
 		}
 
@@ -41,6 +72,10 @@ namespace nsApp
 		{
 			/* カメラを初期化する。*/
 			InitCamera();
+
+			/* イベントバスと勝敗管理を先に生成する(他GOが購読/発行できるように)。*/
+			pEventBus_ = NewGO<nsEvent::EventBus>(0, "eventBus");
+			pGameRule_ = NewGO<nsRule::ResolveGameWinner>(0, "gameRule");
 
 			/* 地面を読み込んで大きく敷く。*/
 			stGroundModel_.Init(sGroundModelPath_, nullptr, 0, enModelUpAxisY);
@@ -61,13 +96,11 @@ namespace nsApp
 			/* プレイヤーを生成する。*/
 			pPlayer_ = NewGO<nsActor::Player>(0, "player");
 
-			/*
-			 * ★v1動作確認用: 雑魚敵を1体だけ生成し、プレイヤーを標的にする。
-			 *   敵はこれだけで追跡・攻撃(プレイヤーへの ApplyDamage)まで動く。
-			 *   EnemyDirector(波湧き)を実装したら、この直接生成は取り除く。
-			 */
-			pTestEnemy_ = NewGO<nsActor::CommonEnemy>(0, "commonEnemy");
-			pTestEnemy_->SetTarget(pPlayer_);
+			/* 敵の湧き係(EnemyDirector)を生成する。時間・同時数上限に応じて雑魚敵を湧かせ続ける。*/
+			pEnemyDirector_ = NewGO<nsDirector::EnemyDirector>(0, "enemyDirector");
+
+			/* HUDを生成する(毎フレーム player を参照して数値を表示)。*/
+			pHud_ = NewGO<nsUI::InGameHud>(0, "inGameHud");
 
 			/* 生成直後のプレイヤー位置へカメラを合わせる。*/
 			UpdateCamera();
@@ -128,32 +161,35 @@ namespace nsApp
 
 		void InGameScene::UpdateResultJudge()
 		{
-			/* 既に予約済み、または前提が無ければ何もしない。*/
-			if (bResultRequested_ || pPlayer_ == nullptr || pGameFlow_ == nullptr)
+			/* プレイヤーが無ければ判定できない。*/
+			if (pPlayer_ == nullptr)
 				return;
 
-			bool bDecided = false;
-			bool bWon = false;
+			/* --- センサ: 状況をイベントとして発行する(各種一度だけ) --- */
+			if (pEventBus_ != nullptr)
+			{
+				/* セーフルーム到達(高さ無視の水平距離)。*/
+				if (!bReachPublished_)
+				{
+					Vector3 vToGoal = vSafeRoomPos_ - pPlayer_->GetPosition();
+					vToGoal.y = 0.0f;
+					if (vToGoal.Length() <= fSafeRoomRadius_)
+					{
+						pEventBus_->Publish({ nsEvent::EnGameEvent::PlayerReachedSafeRoom });
+						bReachPublished_ = true;
+					}
+				}
 
-			/* 勝利: セーフルームへ到達したか(高さ無視の水平距離)。*/
-			Vector3 vToGoal = vSafeRoomPos_ - pPlayer_->GetPosition();
-			vToGoal.y = 0.0f;
-			if (vToGoal.Length() <= fSafeRoomRadius_)
-			{
-				bDecided = true;
-				bWon = true;
-			}
-			/* 敗北: プレイヤーが死亡したか。*/
-			else if (pPlayer_->IsDead())
-			{
-				bDecided = true;
-				bWon = false;
+				/*
+				 * プレイヤーの死亡宣言は Player 側が生命状態(ダウン→出血→死亡)に基づいて
+				 * EventBus へ発行する。ここでは検知しない(HP0=即敗北にしないため)。
+				 */
 			}
 
-			/* 決着したら結果を記録してリザルトへ遷移予約する。*/
-			if (bDecided)
+			/* --- 橋渡し: 勝敗管理が決着していればリザルトへ遷移予約する --- */
+			if (!bResultRequested_ && pGameRule_ != nullptr && pGameRule_->IsOver() && pGameFlow_ != nullptr)
 			{
-				pGameFlow_->SetMatchWon(bWon);
+				pGameFlow_->SetMatchWon(pGameRule_->IsWin());
 				pGameFlow_->ChangeScene(EnSceneID::Result);
 				bResultRequested_ = true;
 			}

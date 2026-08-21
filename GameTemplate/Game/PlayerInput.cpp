@@ -27,6 +27,9 @@ namespace nsApp
 				bFirePress_ = pMouse->IsPress(nsK2EngineLow::enMouseButtonLeft);
 				bFireTrigger_ = pMouse->IsTrigger(nsK2EngineLow::enMouseButtonLeft);
 
+				/* 右クリックで突き飛ばし(近接)。*/
+				bShoveTrigger_ = pMouse->IsTrigger(nsK2EngineLow::enMouseButtonRight);
+
 				/* ホイールで武器切り替え(奥へ1ノッチ=次の武器、手前へ1ノッチ=前の武器)。*/
 				const int iWheelDelta = pMouse->GetWheelDelta();
 				bWeaponSwitchNextTrigger_ = (iWheelDelta > 0);
@@ -36,6 +39,7 @@ namespace nsApp
 				/* g_mouseが未初期化の場合は何もしない(安全側に倒す)。*/
 				bFirePress_ = false;
 				bFireTrigger_ = false;
+				bShoveTrigger_ = false;
 				bWeaponSwitchNextTrigger_ = false;
 				bWeaponSwitchPrevTrigger_ = false;
 			}

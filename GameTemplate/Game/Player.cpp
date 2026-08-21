@@ -4,6 +4,7 @@
 #include "Weapon.h"
 #include "Tracer.h"
 #include "Src/Actor/Character/Enemy/CommonEnemy.h"
+#include "Src/Event/EventBus.h"
 
 namespace
 {
@@ -26,6 +27,12 @@ namespace
 	const float	kViewModelDown = -26.0f;		//! ビューモデル銃の下オフセット(負で下)。
 	const float	kTargetGunSize = 45.0f;			//! ビューモデル銃の目標サイズ(一番長い辺をこの長さに自動スケール)。
 	const float	kWeaponRange = 3000.0f;			//! 射程(ヒットスキャンのレイ・トレーサーの長さ)。
+	const float	kBleedOutTime = 15.0f;			//! ダウンしてから死亡するまでの出血時間(秒)。
+	const int	kReviveHP = 30;					//! 救助で復帰したときのHP。
+	const float	kShoveRange = 180.0f;			//! 突き飛ばしが届く距離。
+	const float	kShovePush = 120.0f;			//! 突き飛ばしで敵を押し返す距離。
+	const float	kShoveFrontDot = 0.5f;			//! 正面判定のしきい値(0.5=正面±60度)。
+	const float	kShoveCooldownTime = 0.7f;		//! 突き飛ばしのクールダウン(秒)。
 }
 
 namespace nsApp
@@ -55,6 +62,9 @@ namespace nsApp
 			stCharacterStatus_.stHp_.iCurrentHP_ = 100;
 			stCharacterStatus_.stHp_.iMaxHP_ = 100;
 
+			/* イベント発行先(勝敗管理などが購読)を取得する。デバッグシーン等、無い場合は発行しない。*/
+			pEventBus_ = FindGO<nsEvent::EventBus>("eventBus");
+
 			/* 初期所持武器を登録する。マウスホイールで順番に切り替わる。*/
 			stWeaponInventory_.AddWeapon(nsWeapon::EnWeaponType::Handgun);
 			stWeaponInventory_.AddWeapon(nsWeapon::EnWeaponType::AssaultRifle);
@@ -74,16 +84,25 @@ namespace nsApp
 			/* 1.操作意図を取得する(ローカル入力 or ネット受信をコントローラが吸収する)。*/
 			pController_->PollIntent(stIntent_);
 
-			/* 2.入力結果を使って移動する。*/
-			UpdateMove(fDeltaTime);
+			/* 2.生命状態を更新する(HP0でダウン→出血タイマー切れで死亡)。*/
+			UpdateLifeState(fDeltaTime);
 
-			/* 3.入力結果を使って武器の更新・発射・切り替えを行う。*/
-			UpdateWeapon(fDeltaTime);
+			/* 3.生存しているときだけ移動・武器・アクションを処理する(ダウン/死亡中は行動不能)。*/
+			if (enLifeState_ == EnLifeState::Alive)
+			{
+				UpdateMove(fDeltaTime);
+				UpdateWeapon(fDeltaTime);
+				UpdateShove(fDeltaTime);
+				UpdateAction();
+			}
+			else
+			{
+				/* 行動不能中も武器のクールダウン等は進め、移動フラグは倒しておく。*/
+				stWeaponInventory_.Update(fDeltaTime);
+				bIsMoving_ = false;
+			}
 
-			/* 4.入力結果を使ってインタラクト・ライト等その他の操作を行う。*/
-			UpdateAction();
-
-			/* 5.移動状態をモデル(位置・回転・アニメーション)へ反映する。*/
+			/* 4.移動状態をモデル(位置・回転・アニメーション)へ反映する。*/
 			UpdateModel();
 		}
 
@@ -283,6 +302,50 @@ namespace nsApp
 		}
 
 
+		void Player::UpdateShove(float fDeltaTime)
+		{
+			/* クールダウンを進める。*/
+			if (fShoveCooldown_ > 0.0f)
+				fShoveCooldown_ -= fDeltaTime;
+
+			/* 突き飛ばし入力が無い、またはクールダウン中なら何もしない。*/
+			if (!stIntent_.bShoveTrigger_ || fShoveCooldown_ > 0.0f)
+				return;
+
+			/* クールダウンを設定する。*/
+			fShoveCooldown_ = kShoveCooldownTime;
+
+			/* 正面(水平)方向。*/
+			const Vector3 vAimDir = { sinf(fCameraYaw_), 0.0f, cosf(fCameraYaw_) };
+
+			/* 前方の近距離にいる敵を押し返す。*/
+			for (nsActor::CommonEnemy* pEnemy : FindGOs<nsActor::CommonEnemy>("commonEnemy"))
+			{
+				if (pEnemy == nullptr)
+					continue;
+
+				/* プレイヤーから敵への水平ベクトル。*/
+				Vector3 vToEnemy = pEnemy->GetPosition() - vPosition_;
+				vToEnemy.y = 0.0f;
+				const float fDist = vToEnemy.Length();
+
+				/* 近距離かつ正面(約120度以内)のみ対象。*/
+				if (fDist <= 0.0001f || fDist > kShoveRange)
+					continue;
+				Vector3 vDir = vToEnemy;
+				vDir.Normalize();
+				if (vDir.Dot(vAimDir) < kShoveFrontDot)
+					continue;
+
+				/* 敵を外側へ押し返す(のけぞりの簡易版)。*/
+				pEnemy->GetPosition() += vDir * kShovePush;
+			}
+
+			/* TODO: 突き飛ばしのSE/モーション、特殊感染者への効果差など。*/
+			OutputDebugStringA("[Player] Shove!\n");
+		}
+
+
 		void Player::UpdateModel()
 		{
 			/* 移動状態に応じてアニメーションを切り替える。*/
@@ -409,6 +472,59 @@ namespace nsApp
 
 			enPlayingAnimation_ = enAnimation;
 			stModelRender_.PlayAnimation(static_cast<int>(enAnimation), kAnimInterpolateTime);
+		}
+
+
+		void Player::UpdateLifeState(float fDeltaTime)
+		{
+			switch (enLifeState_)
+			{
+			case EnLifeState::Alive:
+				/* HPが尽きたらダウンへ移行する(まだ死亡ではない)。*/
+				if (IsDead())
+				{
+					enLifeState_ = EnLifeState::Down;
+					fBleedOutTimer_ = kBleedOutTime;
+					PublishGameEvent(nsEvent::EnGameEvent::PlayerDowned);
+				}
+				break;
+
+			case EnLifeState::Down:
+				/* 出血で残り時間が減り、尽きたら死亡する(ソロは救助者がいないので通常ここへ至る)。*/
+				fBleedOutTimer_ -= fDeltaTime;
+				if (fBleedOutTimer_ <= 0.0f)
+				{
+					fBleedOutTimer_ = 0.0f;
+					enLifeState_ = EnLifeState::Dead;
+					PublishGameEvent(nsEvent::EnGameEvent::PlayerDead);
+				}
+				break;
+
+			case EnLifeState::Dead:
+				/* 何もしない。*/
+				break;
+			}
+		}
+
+
+		void Player::Revive()
+		{
+			/* ダウン中のみ救助可能。既定HPで生存へ戻す(将来の味方/BOTが呼ぶ想定)。*/
+			if (enLifeState_ != EnLifeState::Down)
+				return;
+
+			stCharacterStatus_.stHp_.iCurrentHP_ = kReviveHP;
+			enLifeState_ = EnLifeState::Alive;
+			fBleedOutTimer_ = 0.0f;
+			PublishGameEvent(nsEvent::EnGameEvent::PlayerRevived);
+		}
+
+
+		void Player::PublishGameEvent(nsEvent::EnGameEvent enType)
+		{
+			/* バスが取得できていれば発行する。*/
+			if (pEventBus_ != nullptr)
+				pEventBus_->Publish({ enType });
 		}
 	}
 }
