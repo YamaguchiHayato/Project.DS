@@ -29,17 +29,21 @@ namespace nsApp
 
 		void TitleScene::Update()
 		{
-			/* キー1で本編へ遷移予約。*/
-			if (GetAsyncKeyState('1') & 0x8000)
+			/* 今フレームのキー状態を取る。*/
+			const bool bPress1 = (GetAsyncKeyState('1') & 0x8000) != 0;
+			const bool bPress2 = (GetAsyncKeyState('2') & 0x8000) != 0;
+
+			/* キー1を押した瞬間だけ本編へ遷移予約。*/
+			if (bPress1 && !bWasPress1_)
 				pGameFlow_->ChangeScene(EnSceneID::InGame);
 
-			/* キー2でデバッグ(敵単体)へ遷移予約。*/
-			if (GetAsyncKeyState('2') & 0x8000)
-				pGameFlow_->ChangeScene(EnSceneID::Debug, EnDebugSceneID::EnemySolo);
+			/* キー2を押した瞬間だけDebug選択へ遷移予約。*/
+			if (bPress2 && !bWasPress2_)
+				pGameFlow_->ChangeScene(EnSceneID::Debug);
 
-			/* キー3でデバッグ(プレイヤー単体)へ遷移予約。*/
-			if (GetAsyncKeyState('3') & 0x8000)
-				pGameFlow_->ChangeScene(EnSceneID::Debug, EnDebugSceneID::PlayerSolo);
+			/* 次フレーム判定用に今の状態を残す。*/
+			bWasPress1_ = bPress1;
+			bWasPress2_ = bPress2;
 		}
 	}
 }

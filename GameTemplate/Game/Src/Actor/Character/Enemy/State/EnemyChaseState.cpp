@@ -10,29 +10,42 @@ namespace nsApp
 	{
 		void EnemyChaseState::Enter()
 		{
+			/* 歩きアニメを再生する。*/
+			static_cast<CommonEnemy*>(pOwner_)->PlayWalk();
 		}
 
 
 		void EnemyChaseState::Update()
 		{
-			/* 対象が死亡していれば待機へ戻す。*/
-			if (static_cast<CommonEnemy*>(pOwner_)->IsTargetDead())
+			/* 追跡対象が死亡している場合は待機ステートに遷移する。*/
+			CommonEnemy* pEnemy = static_cast<CommonEnemy*>(pOwner_);
+
+			/* 追跡対象が攻撃距離に入っている場合は攻撃ステートに遷移する。*/
+			if (pEnemy->IsTargetDead())
 			{
 				pStateMachine_->ChangeState(new EnemyIdleState());
 				return;
 			}
 
-			/* 対象へ近づく。*/
-			static_cast<CommonEnemy*>(pOwner_)->MoveToTarget();
+			/* 追跡対象が攻撃距離に入っている場合は攻撃ステートに遷移する。*/
+			if (pEnemy->IsTargetInAttackRange())
+			{
+				pStateMachine_->ChangeState(new EnemyAttackState());
+				return;
+			}
 
-			/* 攻撃距離に入ったら攻撃へ切り替える。*/
-			if (static_cast<CommonEnemy*>(pOwner_)->IsTargetInAttackRange())
+			/* 追跡対象が発見距離から外れている場合は待機ステートに遷移する。*/
+			pEnemy->MoveToTarget();
+
+			/* 追跡対象が攻撃距離に入っている場合は攻撃ステートに遷移する。*/
+			if(pEnemy->IsTargetInAttackRange())
 				pStateMachine_->ChangeState(new EnemyAttackState());
 		}
 
 
 		void EnemyChaseState::Exit()
 		{
+
 		}
 	}
 }

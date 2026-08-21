@@ -4,37 +4,37 @@ namespace nsApp
 {
 	namespace nsState
 	{
-		/* zŠÂ‚ğ–h‚®‚½‚ß‚É‘O•ûéŒ¾B*/
+		/* å¾ªç’°ã‚’é˜²ããŸã‚ã«å‰æ–¹å®£è¨€ã€‚*/
 		template <class CharacterTemplate>
-		/* ƒXƒe[ƒgƒ}ƒV[ƒ“ƒNƒ‰ƒX–{‘ÌB*/
+		/* ã‚¹ãƒ†ãƒ¼ãƒˆãƒã‚·ãƒ¼ãƒ³ã‚¯ãƒ©ã‚¹æœ¬ä½“ã€‚*/
 		class StateMachine;
 
-		/* ƒXƒe[ƒgì¬—p‚Ìƒeƒ“ƒvƒŒ[ƒgB*/
+		/* ã‚¹ãƒ†ãƒ¼ãƒˆä½œæˆç”¨ã®ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆã€‚*/
 		template <class CharacterTemplate>
 
 		/**
 		 * @file   IState.h
-		 * @brief  ƒXƒe[ƒg‚ÌƒCƒ“ƒ^[ƒtƒF[ƒXB
-		 * @author Yamaguchi HayatoB
-		 * @date   2026/03/05B
+		 * @brief  ã‚¹ãƒ†ãƒ¼ãƒˆã®ã‚¤ãƒ³ã‚¿ãƒ¼ãƒ•ã‚§ãƒ¼ã‚¹ã€‚
+		 * @author Yamaguchi Hayatoã€‚
+		 * @date   2026/03/05ã€‚
 		 */
 		class IState
 		{
 		protected:
-			CharacterTemplate* pOwner_; //! ƒXƒe[ƒg‚ğ‚ÂÀ‘Ô‚Ö‚Ìƒ|ƒCƒ“ƒ^B
-			StateMachine<CharacterTemplate>* pStateMachine_ = nullptr;	//! ƒXƒe[ƒgƒ}ƒV[ƒ“‚Ö‚Ìƒ|ƒCƒ“ƒ^B
+			CharacterTemplate* pOwner_; //! ã‚¹ãƒ†ãƒ¼ãƒˆã‚’æŒã¤å®Ÿæ…‹ã¸ã®ãƒã‚¤ãƒ³ã‚¿ã€‚
+			StateMachine<CharacterTemplate>* pStateMachine_ = nullptr;	//! ã‚¹ãƒ†ãƒ¼ãƒˆãƒã‚·ãƒ¼ãƒ³ã¸ã®ãƒã‚¤ãƒ³ã‚¿ã€‚
 
 
 		public:
-			/* ƒfƒXƒgƒ‰ƒNƒ^B*/
+			/* ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ã€‚*/
 			virtual ~IState() = default;
 
 
 		public:
 			/**
-			 * @brie f ƒXƒe[ƒg‚ğ“o˜^‚·‚éB
-			 * @param pOwner ƒXƒe[ƒg‚ğ‚ÂÀ‘Ô‚Ö‚Ìƒ|ƒCƒ“ƒ^B
-			 * @param pStateMachine ƒXƒe[ƒgƒ}ƒV[ƒ“‚Ö‚Ìƒ|ƒCƒ“ƒ^B
+			 * @brie f ã‚¹ãƒ†ãƒ¼ãƒˆã‚’ç™»éŒ²ã™ã‚‹ã€‚
+			 * @param pOwner ã‚¹ãƒ†ãƒ¼ãƒˆã‚’æŒã¤å®Ÿæ…‹ã¸ã®ãƒã‚¤ãƒ³ã‚¿ã€‚
+			 * @param pStateMachine ã‚¹ãƒ†ãƒ¼ãƒˆãƒã‚·ãƒ¼ãƒ³ã¸ã®ãƒã‚¤ãƒ³ã‚¿ã€‚
 			 */
 			inline void Register(CharacterTemplate* pOwner, StateMachine<CharacterTemplate>* pStateMachine)
 			{
@@ -44,7 +44,7 @@ namespace nsApp
 
 
 		public:
-			/* ƒ‰ƒCƒtƒTƒCƒNƒ‹B */
+			/* ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ«ã€‚ */
 			virtual void Enter() = 0;
 			virtual void Update() = 0;
 			virtual void Exit() = 0;

@@ -9,6 +9,8 @@ namespace nsApp
 	{
 		void EnemyIdleState::Enter()
 		{
+			/* 待機アニメを再生する。*/
+			static_cast<CommonEnemy*>(pOwner_)->PlayIdle();
 		}
 
 

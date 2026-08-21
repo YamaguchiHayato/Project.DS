@@ -2,9 +2,11 @@
 #include "GameFlow.h"
 #include "InGameScene.h"
 #include "Src/Scene/TitleScene.h"
-#include "DebugEnemyScene.h"
 #include "DebugPlayerScene.h"
 #include "Src/Scene/ResultScene.h"
+#include "Src/Scene/Debug/DebugEnemyScene.h"
+#include "Src/Scene/Debug/DebugSelectScene.h"
+#include "Src/Scene/Debug/DebugShootingRangeScene.h"
 
 namespace
 {
@@ -79,10 +81,18 @@ namespace nsApp
 					return pScene;
 				};
 
-			/* Debug配下のシーン(プレイヤー単体)。*/
-			mapSceneFactory_[MakeSceneKey(EnSceneID::Debug, EnDebugSceneID::PlayerSolo)] = [](GameFlow* pGameFlow) -> IScene*
+			/* Debug選択シーン。*/
+			mapSceneFactory_[MakeSceneKey(EnSceneID::Debug, EnDebugSceneID::None)] = [](GameFlow* pGameFlow) -> IScene*
 				{
-					DebugPlayerScene* pScene = NewGO<DebugPlayerScene>(0, "debugPlayerScene");
+					DebugSelectScene* pScene = NewGO<DebugSelectScene>(0, "debugSelectScene");
+					pScene->SetGameFlow(pGameFlow);
+					return pScene;
+				};
+
+			/* 射撃場デバッグシーン。*/
+			mapSceneFactory_[MakeSceneKey(EnSceneID::Debug, EnDebugSceneID::ShootingRange)] = [](GameFlow* pGameFlow) -> IScene*
+				{
+					DebugShootingRangeScene* pScene = NewGO<DebugShootingRangeScene>(0, "debugShootingRangeScene");
 					pScene->SetGameFlow(pGameFlow);
 					return pScene;
 				};

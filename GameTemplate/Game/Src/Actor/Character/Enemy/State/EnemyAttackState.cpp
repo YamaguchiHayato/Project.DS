@@ -12,6 +12,9 @@ namespace nsApp
 		{
 			/* 攻撃ステートに入ったらすぐ攻撃できるようにする。*/
 			static_cast<CommonEnemy*>(pOwner_)->ReadyAttack();
+
+			/* 攻撃アニメを再生する。*/
+			static_cast<CommonEnemy*>(pOwner_)->PlayIdle();
 		}
 
 

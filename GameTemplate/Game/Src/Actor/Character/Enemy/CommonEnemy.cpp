@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "CommonEnemy.h"
 #include "Src/Actor/Character/Enemy/State/EnemyIdleState.h"
+#include "Src/Actor/Character/Enemy/State/EnemyChaseState.h"
+#include "Src/Actor/Character/Enemy/State/EnemyAttackState.h"
+#include "Src/Actor/Character/Enemy/State/EnemyDeadState.h"
 
 namespace
 {
@@ -13,27 +16,43 @@ namespace nsApp
 	{
 		bool CommonEnemy::Start()
 		{
-			/*
-			 * ★体力を初期化する。未設定だと HP が不定で ApplyDamage/IsDead が正しく働かず、
-			 *   ヒットスキャンで倒せない。本来は敵側パラメータ。要チーム調整(山口担当領域)。
-			 */
+			/* 体力を初期化する。*/
+			/* @todo: 外部Parameter化。*/
 			stCharacterStatus_.stHp_.iMaxHP_ = 30;
 			stCharacterStatus_.stHp_.iCurrentHP_ = 30;
 
 			/* 仮モデルをロードする。*/
 			stModelRender_.Init(sUnityChanModelPath_, nullptr, 0, enModelUpAxisZ);
+			stModelRender_.SetPosition(vPosition_);
+
 
 			/* 初期位置をモデルへ反映する。*/
 			ApplyModelTransform();
 
 			/* 最初は待機ステートから始める。*/
 			pStateMachine_->ChangeState(new EnemyIdleState());
+
 			return true;
 		}
 
 
 		void CommonEnemy::Update()
 		{
+			/* 対象が死亡している場合は死亡ステートに遷移する。*/
+			if(IsDead() && !IsDeathState())
+				pStateMachine_->ChangeState(new EnemyDeathState());
+
+
+			/* 死亡ステートなら何もしない。*/
+			if (IsDeathState())
+			{
+				/* ステートマシーンを更新する。*/
+				ICharacter::Update();
+				/* 位置をモデルへ反映する。*/
+				ApplyModelTransform();
+				return;
+			}
+
 			/* ステートマシーンを更新する。*/
 			ICharacter::Update();
 
@@ -91,14 +110,16 @@ namespace nsApp
 
 		void CommonEnemy::LookAtTarget()
 		{
+			/* 対象が無ければ向きを変えない。*/
+			if (!IsTargetInDetectRange())
+				return;
+
 			/* 対象へのベクトルを更新する。*/
 			UpdateToTargetVector();
 
 			/* ベクトルが無ければ向きを変えない。*/
 			if (vToTarget_.Length() <= 0.0f)
-			{
 				return;
-			}
 
 			/* 対象の方向を向く。*/
 			qLook_.SetRotationY(atan2f(vToTarget_.x, vToTarget_.z));
@@ -110,9 +131,7 @@ namespace nsApp
 		{
 			/* 対象が無ければ動かない。*/
 			if (pTarget_ == nullptr)
-			{
 				return;
-			}
 
 			/* 攻撃距離なら止まる。*/
 			if (IsTargetInAttackRange())
@@ -135,24 +154,18 @@ namespace nsApp
 		{
 			/* 対象が無ければ攻撃しない。*/
 			if (pTarget_ == nullptr)
-			{
 				return;
-			}
 
 			/* 対象が死亡していれば攻撃しない。*/
 			if (pTarget_->IsDead())
-			{
 				return;
-			}
 
 			/* 対象の方向を向く。*/
 			LookAtTarget();
 
 			/* 攻撃間隔が残っているなら撃たない。*/
 			if (fAttackTimer_ < fAttackInterval_)
-			{
 				return;
-			}
 
 			/* ダメージを与えてタイマーを戻す。*/
 			pTarget_->ApplyDamage(iAttackPower_);
@@ -165,6 +178,67 @@ namespace nsApp
 			/* 位置をモデルへ反映する。*/
 			stModelRender_.SetPosition(vPosition_);
 			stModelRender_.Update();
+		}
+
+
+		void CommonEnemy::PlayAnimation(int iAnimationNumber)
+		{
+			/* 同じアニメなら再生し直さない。*/
+			if (iPlayingAnimation_ == iAnimationNumber)
+				return;
+
+			/* 指定アニメを再生する。*/
+			iPlayingAnimation_ = iAnimationNumber;
+			stModelRender_.PlayAnimation(iAnimationNumber, 0.2f);
+		}
+
+
+		void CommonEnemy::PlayIdle()
+		{
+			/* 待機を再生する。*/
+			PlayAnimation(0);
+		}
+
+
+		void CommonEnemy::PlayWalk()
+		{
+			/* 歩きを再生する。*/
+			PlayAnimation(1);
+		}
+
+
+		bool CommonEnemy::IsDeathState()const
+		{
+			/* ステートマシーンが無ければ死亡ステートではない。*/
+			if (pStateMachine_ == nullptr || pStateMachine_->GetCurrentState() == nullptr)
+				return false;
+
+			/* 現在のステートが死亡ステートかを判定する。*/
+			return dynamic_cast<EnemyDeathState*>(pStateMachine_->GetCurrentState()) != nullptr;
+		}
+
+
+		const wchar_t* CommonEnemy::GetCurrentStateName() const
+		{
+			/* ステートマシーンが無ければNone。*/
+			if (pStateMachine_ == nullptr || pStateMachine_->GetCurrentState() == nullptr)
+				return L"None";
+
+			/* 現在のステートを取得して名前を返す。*/
+			nsState::IState<Actor>* pState = pStateMachine_->GetCurrentState();
+
+			/* ステートの型を判定して名前を返す。*/
+			/* ここではdynamic_castを使ってステートの型を判定している。*/
+			/* @todo TSVファイルを用いて文字列化する。*/
+			if (dynamic_cast<EnemyIdleState*>(pState) != nullptr)
+				return L"Idle";
+			if (dynamic_cast<EnemyChaseState*>(pState) != nullptr)
+				return L"Chase";
+			if (dynamic_cast<EnemyAttackState*>(pState) != nullptr)
+				return L"Attack";
+			if (dynamic_cast<EnemyDeathState*>(pState) != nullptr)
+				return L"Death";
+			return L"Unknown";
 		}
 	}
 }
