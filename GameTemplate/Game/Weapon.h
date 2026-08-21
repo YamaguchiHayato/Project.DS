@@ -48,7 +48,7 @@ namespace nsApp
 		public:
 			/* コンストラクタとデストラクタ。*/
 			Weapon() = default;
-			~Weapon() = default;
+			virtual ~Weapon() = default;
 
 
 		public:
