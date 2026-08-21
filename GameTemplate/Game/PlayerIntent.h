@@ -17,39 +17,26 @@ namespace nsApp
 		 */
 		struct PlayerIntent
 		{
-			//! 移動入力(カメラ相対。x:左右, z:前後。長さが入力の強さ)。
-			Vector3	vMoveAxis_ = { 0.0f, 0.0f, 0.0f };
+			Vector3	vMoveAxis_ = { 0.0f, 0.0f, 0.0f };	//! 移動入力(カメラ相対。x:左右, z:前後。長さが入力の強さ)。
 
-			//! 視点の旋回量(このフレーム、ラジアン)。デバイス感度は充填側で吸収済み。
-			float	fLookYawDelta_ = 0.0f;
-			//! 視点の上下量(このフレーム、ラジアン)。ピッチ実装まで0。
-			float	fLookPitchDelta_ = 0.0f;
+			float	fLookYawDelta_ = 0.0f;		//! 視点の旋回量(このフレーム、ラジアン)。デバイス感度は充填側で吸収済み。
+			float	fLookPitchDelta_ = 0.0f;	//! 視点の上下量(このフレーム、ラジアン)。ピッチ実装まで0。
 
-			//! 射撃(押しっぱなし=フルオート)。
-			bool	bFirePress_ = false;
-			//! 射撃(押した瞬間=単発)。
-			bool	bFireTrigger_ = false;
+			bool	bFirePress_ = false;		//! 射撃(押しっぱなし=フルオート)。
+			bool	bFireTrigger_ = false;		//! 射撃(押した瞬間=単発)。
 
-			//! 近接(shove。押した瞬間)。※Phase2で実装。
-			bool	bShoveTrigger_ = false;
+			bool	bShoveTrigger_ = false;		//! 近接(shove。押した瞬間)。
 
-			//! リロード(押した瞬間)。
-			bool	bReloadTrigger_ = false;
+			bool	bReloadTrigger_ = false;	//! リロード(押した瞬間)。
 
-			//! 使用・インタラクト(押した瞬間。武器/アイテム/ドア等)。
-			bool	bUseTrigger_ = false;
-			//! 使用・蘇生ホールド(押しっぱなし。ダウン中の味方を起こす)。※Phase1で実装。
-			bool	bUseHold_ = false;
+			bool	bUseTrigger_ = false;		//! 使用・インタラクト(押した瞬間。武器/アイテム/ドア等)。
+			bool	bUseHold_ = false;			//! 使用・蘇生ホールド(押しっぱなし。ダウン中の味方を起こす)。
 
-			//! 武器切替(次)。
-			bool	bWeaponNextTrigger_ = false;
-			//! 武器切替(前)。
-			bool	bWeaponPrevTrigger_ = false;
+			bool	bWeaponNextTrigger_ = false;	//! 武器切替(次)。
+			bool	bWeaponPrevTrigger_ = false;	//! 武器切替(前)。
 
-			//! ライトON/OFF(押した瞬間)。
-			bool	bLightTrigger_ = false;
-			//! ポーズ・メニュー(押した瞬間)。
-			bool	bPauseTrigger_ = false;
+			bool	bLightTrigger_ = false;		//! ライトON/OFF(押した瞬間)。
+			bool	bPauseTrigger_ = false;		//! ポーズ・メニュー(押した瞬間)。
 		};
 	}
 }
