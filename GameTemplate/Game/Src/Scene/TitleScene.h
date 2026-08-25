@@ -33,6 +33,8 @@ namespace nsApp
 
 		private:
 			nsUI::TitleUI* pTitleUI_ = nullptr; //! タイトル本体。
+			bool bWasPress1_ = false;			//! 前フレームでキー1が押されていたか。
+			bool bWasPress2_ = false;			//! 前フレームでキー2が押されていたか。
 		};
 	}
 }

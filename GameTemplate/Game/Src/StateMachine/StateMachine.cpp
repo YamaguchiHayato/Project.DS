@@ -4,12 +4,12 @@
 #include "Src/Actor/Actor.h"
 
 /* @def
- * @brief ƒeƒ“ƒvƒŒ[ƒg‚Ìƒ}ƒNƒB
+ * @brief ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆã®ãƒã‚¯ãƒ­ã€‚
  */
 #define CLASS_T template<class CharacterTemplete>
 
  /* @def
-  * @brief ƒeƒ“ƒvƒŒ[ƒg–¼‚Ìƒ}ƒNƒB
+  * @brief ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆåã®ãƒã‚¯ãƒ­ã€‚
   */
 #define T_NAME CharacterTemplete
 
@@ -20,22 +20,22 @@ namespace nsApp
 		CLASS_T
 		StateMachine<T_NAME>::StateMachine(T_NAME* pOwner) : pOwner_(pOwner)
 		{
-			/* nullƒXƒe[ƒg‚Ìì¬B*/
+			/* nullã‚¹ãƒ†ãƒ¼ãƒˆã®ä½œæˆã€‚*/
 			pCurrentState_ = new NullState<T_NAME>();
 
-			/* nullƒXƒe[ƒg‚Ì‰Šú‰»B*/
+			/* nullã‚¹ãƒ†ãƒ¼ãƒˆã®åˆæœŸåŒ–ã€‚*/
 			pCurrentState_->Register(pOwner_, this);
 		}
 
 
 		CLASS_T
-			StateMachine<T_NAME>::~StateMachine()
+		StateMachine<T_NAME>::~StateMachine()
 		{
 			if (pCurrentState_ != nullptr)
 			{
-				/* ƒXƒe[ƒg‚ğI—¹‚·‚éB*/
+				/* ã‚¹ãƒ†ãƒ¼ãƒˆã‚’çµ‚äº†ã™ã‚‹ã€‚*/
 				pCurrentState_->Exit();
-				/* ƒXƒe[ƒg‚ÌíœB*/
+				/* ã‚¹ãƒ†ãƒ¼ãƒˆã®å‰Šé™¤ã€‚*/
 				delete pCurrentState_;
 			}
 		}
@@ -44,11 +44,11 @@ namespace nsApp
 		CLASS_T
 		void StateMachine<T_NAME>::ChangeState(IState<T_NAME>* pNewState)
 		{
-			/* nullƒXƒe[ƒg‚Ìì¬B*/
+			/* nullã‚¹ãƒ†ãƒ¼ãƒˆã®ä½œæˆã€‚*/
 			if (pNewState == nullptr)
 				pNewState = new NullState<T_NAME>();
 
-			/* ƒXƒe[ƒgƒ}ƒV[ƒ“‚ªXV’†‚Ìê‡AŸ‚ÌƒXƒe[ƒg‚ğİ’è‚·‚éB*/
+			/* ã‚¹ãƒ†ãƒ¼ãƒˆãƒã‚·ãƒ¼ãƒ³ãŒæ›´æ–°ä¸­ã®å ´åˆã€æ¬¡ã®ã‚¹ãƒ†ãƒ¼ãƒˆã‚’è¨­å®šã™ã‚‹ã€‚*/
 			if (bIsUpdating_)
 			{
 				if (pNextState_ != nullptr)
@@ -61,7 +61,7 @@ namespace nsApp
 				return;
 			}
 
-			/* Œ»İ‚ÌƒXƒe[ƒg‚ğI—¹‚·‚éB*/
+			/* ç¾åœ¨ã®ã‚¹ãƒ†ãƒ¼ãƒˆã‚’çµ‚äº†ã™ã‚‹ã€‚*/
 			if (pCurrentState_ != nullptr)
 			{
 				pCurrentState_->Exit();
@@ -69,7 +69,7 @@ namespace nsApp
 				pCurrentState_ = nullptr;
 			}
 
-			/* V‚µ‚¢ƒXƒe[ƒg‚ğİ’è‚·‚éB*/
+			/* æ–°ã—ã„ã‚¹ãƒ†ãƒ¼ãƒˆã‚’è¨­å®šã™ã‚‹ã€‚*/
 			pCurrentState_ = pNewState;
 			pCurrentState_->Register(pOwner_, this);
 			pCurrentState_->Enter();
@@ -79,17 +79,17 @@ namespace nsApp
 		CLASS_T
 		void StateMachine<T_NAME>::Update()
 		{
-			/* ƒXƒe[ƒgƒ}ƒV[ƒ“‚ªXV’†‚Å‚ ‚é‚±‚Æ‚ğ¦‚·ƒtƒ‰ƒO‚ğİ’è‚·‚éB*/
+			/* ã‚¹ãƒ†ãƒ¼ãƒˆãƒã‚·ãƒ¼ãƒ³ãŒæ›´æ–°ä¸­ã§ã‚ã‚‹ã“ã¨ã‚’ç¤ºã™ãƒ•ãƒ©ã‚°ã‚’è¨­å®šã™ã‚‹ã€‚*/
 			bIsUpdating_ = true;
 
-			/* Œ»İ‚ÌƒXƒe[ƒg‚ğXV‚·‚éB*/
+			/* ç¾åœ¨ã®ã‚¹ãƒ†ãƒ¼ãƒˆã‚’æ›´æ–°ã™ã‚‹ã€‚*/
 			if (pCurrentState_ != nullptr)
 				pCurrentState_->Update();
 
-			/* ƒXƒe[ƒgƒ}ƒV[ƒ“‚ªXV’†‚Å‚È‚¢‚±‚Æ‚ğ¦‚·ƒtƒ‰ƒO‚ğ‰ğœ‚·‚éB*/
+			/* ã‚¹ãƒ†ãƒ¼ãƒˆãƒã‚·ãƒ¼ãƒ³ãŒæ›´æ–°ä¸­ã§ãªã„ã“ã¨ã‚’ç¤ºã™ãƒ•ãƒ©ã‚°ã‚’è§£é™¤ã™ã‚‹ã€‚*/
 			bIsUpdating_ = false;
 
-			/* Ÿ‚ÌƒXƒe[ƒg‚ªİ’è‚³‚ê‚Ä‚¢‚éê‡AƒXƒe[ƒg‚ğ•ÏX‚·‚éB*/
+			/* æ¬¡ã®ã‚¹ãƒ†ãƒ¼ãƒˆãŒè¨­å®šã•ã‚Œã¦ã„ã‚‹å ´åˆã€ã‚¹ãƒ†ãƒ¼ãƒˆã‚’å¤‰æ›´ã™ã‚‹ã€‚*/
 			if (pNextState_ != nullptr)
 			{
 				IState<T_NAME>* pNextState = pNextState_;
@@ -98,7 +98,7 @@ namespace nsApp
 			}
 		}
 
-		/* ActorƒNƒ‰ƒX‚É‘Î‚µ‚Äƒeƒ“ƒvƒŒ[ƒg‚Ìg—p‰Â”\‚É‚·‚éB*/
+		/* Actorã‚¯ãƒ©ã‚¹ã«å¯¾ã—ã¦ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆã®ä½¿ç”¨å¯èƒ½ã«ã™ã‚‹ã€‚*/
 		template class StateMachine<nsApp::nsActor::Actor>;
 	}
 }

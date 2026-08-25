@@ -238,9 +238,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="DebugEnemyScene.cpp" />
-    <ClCompile Include="DebugPlayer.cpp" />
-    <ClCompile Include="DebugPlayerScene.cpp" />
+    <ClCompile Include="Src\Scene\Debug\DebugEnemyScene.cpp" />
+    <ClCompile Include="Src\Scene\Debug\DebugObstacle.cpp" />
+    <ClCompile Include="Src\Scene\Debug\DebugPlayer.cpp" />
+    <ClCompile Include="Src\Scene\Debug\DebugSelectScene.cpp" />
+    <ClCompile Include="Src\Scene\Debug\DebugShootingRangeScene.cpp" />
+    <ClCompile Include="Src\System\RayTest\SightCheck.cpp" />
+    <ClCompile Include="Src\System\RayTest\RaycastQuery.cpp" />
+    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyDeadState.cpp" />
     <ClCompile Include="InGameBuildHelper.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="PlayerInput.cpp" />
@@ -277,9 +282,14 @@
     <ClCompile Include="Tracer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="DebugEnemyScene.h" />
-    <ClInclude Include="DebugPlayer.h" />
-    <ClInclude Include="DebugPlayerScene.h" />
+    <ClInclude Include="Src\Scene\Debug\DebugEnemyScene.h" />
+    <ClInclude Include="Src\Scene\Debug\DebugObstacle.h" />
+    <ClInclude Include="Src\Scene\Debug\DebugPlayer.h" />
+    <ClInclude Include="Src\Scene\Debug\DebugSelectScene.h" />
+    <ClInclude Include="Src\Scene\Debug\DebugShootingRangeScene.h" />
+    <ClInclude Include="Src\System\RayTest\SightCheck.h" />
+    <ClInclude Include="Src\System\RayTest\RaycastQuery.h" />
+    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyDeadState.h" />
     <ClInclude Include="InGameBuildHelper.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="PlayerInput.h" />

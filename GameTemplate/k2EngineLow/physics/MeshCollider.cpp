@@ -6,6 +6,12 @@ namespace nsK2EngineLow {
 
 	void MeshCollider::CreateFromModel(const Model& model, const Matrix& worldMatrix)
 	{
+		/* 再作成用にリセットをする。*/
+		m_vertexBufferArray.clear();
+		m_indexBufferArray.clear();
+		m_meshShape.reset();	
+		m_stridingMeshInterface.reset();
+
 		m_stridingMeshInterface = std::make_unique<btTriangleIndexVertexArray>();
 		int numMesh = 0;
 		const auto& tkmFile = model.GetTkmFile();

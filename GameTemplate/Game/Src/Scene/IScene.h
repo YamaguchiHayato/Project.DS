@@ -28,11 +28,12 @@ namespace nsApp
 		 */
 		enum class EnDebugSceneID : uint8_t
 		{
-			EnemySolo,	//! 敵単体テスト。
-			PlayerSolo,	//! プレイヤー単体テスト。
-			SpawnTest,	//! スポーンテスト。
-			AITest,		//! AIテスト。
-			None,		//! 切替なし。
+			EnemySolo,		//! 敵単体テスト。
+			ShootingRange,	//! 射撃場テスト。
+			PlayerSolo,		//! プレイヤー単体テスト。
+			SpawnTest,		//! スポーンテスト。
+			AITest,			//! AIテスト。
+			None,			//! 切替なし。
 		};
 
 		/**
