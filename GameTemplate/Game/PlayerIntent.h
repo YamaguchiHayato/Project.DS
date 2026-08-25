@@ -30,6 +30,11 @@ namespace nsApp
 			bool	bWeaponPrevTrigger_ = false;	//! 武器切替(前)。
 			bool	bLightTrigger_ = false;		//! ライトON/OFF(押した瞬間)。
 			bool	bPauseTrigger_ = false;		//! ポーズ・メニュー(押した瞬間)。
+
+			bool	bHealTrigger_ = false;		//! 回復アイテム使用(押した瞬間)。
+			bool	bThrowTrigger_ = false;		//! 投擲アイテム(押した瞬間)。
+
+			bool	bSprintPress_ = false;		//! スプリント(Shift押しっぱなし)。
 		};
 	}
 }

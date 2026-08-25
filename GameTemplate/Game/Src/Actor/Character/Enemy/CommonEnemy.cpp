@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "CommonEnemy.h"
 #include "Src/Actor/Character/Enemy/State/EnemyIdleState.h"
+#include "Src/System/GamePause.h"
 #include "Src/Actor/Character/Enemy/State/EnemyChaseState.h"
 #include "Src/Actor/Character/Enemy/State/EnemyAttackState.h"
 #include "Src/Actor/Character/Enemy/State/EnemyDeadState.h"
@@ -43,6 +44,12 @@ namespace nsApp
 
 		void CommonEnemy::Update()
 		{
+			/* ポーズ中は動かさない。*/
+			if (nsSystem::IsGamePaused())
+				return;
+
+			/* ステートマシーンを更新する。*/
+			ICharacter::Update();
 			/* 対象が死亡している場合は死亡ステートに遷移する。*/
 			if(IsDead() && !IsDeathState())
 				pStateMachine_->ChangeState(new EnemyDeathState());

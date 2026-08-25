@@ -263,6 +263,9 @@
     <ClCompile Include="Src\Rule\ResolveGameWinner.cpp" />
     <ClCompile Include="Src\UI\InGameHud.cpp" />
     <ClCompile Include="Src\Director\EnemyDirector.cpp" />
+    <ClCompile Include="Src\Effect\HitEffect.cpp" />
+    <ClCompile Include="Src\System\GamePause.cpp" />
+    <ClCompile Include="Src\Item\Grenade.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Src\Actor\Actor.cpp" />
     <ClCompile Include="Src\Actor\Character\Common\CharacterAnimation.cpp" />
@@ -311,6 +314,9 @@
     <ClInclude Include="Src\Rule\ResolveGameWinner.h" />
     <ClInclude Include="Src\UI\InGameHud.h" />
     <ClInclude Include="Src\Director\EnemyDirector.h" />
+    <ClInclude Include="Src\Effect\HitEffect.h" />
+    <ClInclude Include="Src\System\GamePause.h" />
+    <ClInclude Include="Src\Item\Grenade.h" />
     <ClInclude Include="Src\Actor\Actor.h" />
     <ClInclude Include="Src\Actor\Character\Common\CharacterAnimation.h" />
     <ClInclude Include="Src\Actor\Character\Common\CharacterModel.h" />

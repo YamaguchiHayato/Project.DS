@@ -2,6 +2,7 @@
 #include "InGameHud.h"
 #include "Player.h"
 #include "Weapon.h"
+#include "Src/System/GamePause.h"
 #include <cstdio>
 
 namespace
@@ -10,9 +11,12 @@ namespace
 	const Vector3	vHpPos_ = { -900.0f, -470.0f, 0.0f };		//! HP(左下)。
 	const Vector3	vAmmoPos_ = { 700.0f, -470.0f, 0.0f };		//! 弾数(右下)。
 	const Vector3	vObjectivePos_ = { -420.0f, 500.0f, 0.0f };	//! 目標(上)。
+	const Vector3	vItemPos_ = { -160.0f, -440.0f, 0.0f };		//! アイテム所持数(下・中央)。
 	const Vector3	vStatusPos_ = { -230.0f, 140.0f, 0.0f };	//! 状態(中央やや上)。
 	const float		fHudFontScale_ = 0.8f;						//! 通常表示の大きさ。
 	const float		fStatusFontScale_ = 2.0f;					//! 状態表示の大きさ。
+	const Vector3	vPausePos_ = { -340.0f, 40.0f, 0.0f };		//! ポーズ表示(中央やや上)。
+	const float		fPauseFontScale_ = 1.3f;					//! ポーズ表示の大きさ。
 }
 
 namespace nsApp
@@ -45,11 +49,23 @@ namespace nsApp
 			stObjective_.SetColor(1.0f, 0.9f, 0.4f, 1.0f);
 			stObjective_.SetText(L"OBJECTIVE: REACH THE SAFE ROOM");
 
+			/* アイテム所持数(下・中央)。*/
+			stItemText_.SetPosition(vItemPos_);
+			stItemText_.SetScale(fHudFontScale_);
+			stItemText_.SetColor(0.6f, 0.9f, 1.0f, 1.0f);
+			stItemText_.SetText(wcItem_);
+
 			/* 状態(ダウン等。通常時は空・赤)。*/
 			stStatusText_.SetPosition(vStatusPos_);
 			stStatusText_.SetScale(fStatusFontScale_);
 			stStatusText_.SetColor(1.0f, 0.3f, 0.3f, 1.0f);
 			stStatusText_.SetText(wcStatus_);
+
+			/* ポーズ表示(中央・通常時は空)。*/
+			stPauseText_.SetPosition(vPausePos_);
+			stPauseText_.SetScale(fPauseFontScale_);
+			stPauseText_.SetColor(1.0f, 0.95f, 0.4f, 1.0f);
+			stPauseText_.SetText(L"");
 			return true;
 		}
 
@@ -88,6 +104,10 @@ namespace nsApp
 			}
 			stAmmoText_.SetText(wcAmmo_);
 
+			/* アイテム所持数(回復/投擲)。*/
+			swprintf_s(wcItem_, L"MEDKIT x%d    GRENADE x%d   ( H / G )", pPlayer->GetMedkitCount(), pPlayer->GetGrenadeCount());
+			stItemText_.SetText(wcItem_);
+
 			/* 状態(ダウン中は出血残り秒を大きく表示。それ以外は空)。*/
 			if (pPlayer->GetLifeState() == nsActor::EnLifeState::Down)
 			{
@@ -99,6 +119,12 @@ namespace nsApp
 				wcStatus_[0] = L'\0';
 			}
 			stStatusText_.SetText(wcStatus_);
+
+			/* ポーズ中だけ中央にPAUSED表示。*/
+			if (nsSystem::IsGamePaused())
+				stPauseText_.SetText(L"- PAUSED -    [Esc] 再開    [Enter] タイトルへ");
+			else
+				stPauseText_.SetText(L"");
 		}
 
 
@@ -109,7 +135,9 @@ namespace nsApp
 			stHpText_.Draw(rc);
 			stAmmoText_.Draw(rc);
 			stObjective_.Draw(rc);
+			stItemText_.Draw(rc);
 			stStatusText_.Draw(rc);
+			stPauseText_.Draw(rc);
 		}
 	}
 }

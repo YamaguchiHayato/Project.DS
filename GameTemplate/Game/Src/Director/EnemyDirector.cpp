@@ -2,6 +2,7 @@
 #include "EnemyDirector.h"
 #include "Player.h"
 #include "Src/Actor/Character/Enemy/CommonEnemy.h"
+#include "Src/System/GamePause.h"
 #include <cstdlib>
 
 namespace
@@ -31,6 +32,10 @@ namespace nsApp
 
 		void EnemyDirector::Update()
 		{
+			/* ポーズ中は湧かせない。*/
+			if (nsSystem::IsGamePaused())
+				return;
+
 			/* プレイヤーがいなければ湧かせない。*/
 			nsActor::Player* pPlayer = FindGO<nsActor::Player>("player");
 			if (pPlayer == nullptr)

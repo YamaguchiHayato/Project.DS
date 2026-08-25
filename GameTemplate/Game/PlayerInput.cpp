@@ -52,6 +52,9 @@ namespace nsApp
 			bInteractTrigger_ = CheckTrigger('E', bPrevInteractPress_);
 			bLightTrigger_ = CheckTrigger('F', bPrevLightPress_);
 			bPauseTrigger_ = CheckTrigger(VK_ESCAPE, bPrevPausePress_);
+			bHealTrigger_ = CheckTrigger('H', bPrevHealPress_);
+			bThrowTrigger_ = CheckTrigger('G', bPrevThrowPress_);
+			bSprintPress_ = (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
 		}
 
 		PlayerInput::~PlayerInput()
@@ -64,6 +67,7 @@ namespace nsApp
 		void PlayerInput::UpdateMouseLook()
 		{
 			fMouseDeltaX_ = 0.0f;
+			fMouseDeltaY_ = 0.0f;
 
 			/* ウィンドウがフォアグラウンドの時だけカーソルをロックする。*/
 			if (g_hWnd == nullptr || GetForegroundWindow() != g_hWnd)
@@ -86,6 +90,7 @@ namespace nsApp
 			POINT cursor;
 			GetCursorPos(&cursor);
 			fMouseDeltaX_ = static_cast<float>(cursor.x - center.x);
+			fMouseDeltaY_ = static_cast<float>(cursor.y - center.y);
 
 			/* カーソルを中央へ戻す(端で止まらず無限に旋回できる)。*/
 			SetCursorPos(center.x, center.y);

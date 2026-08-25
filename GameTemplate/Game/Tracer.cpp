@@ -24,12 +24,19 @@ namespace nsApp
 			Vector3 vMid = vStart_ + vEnd_;
 			vMid *= 0.5f;
 
-			/* 中点に置き、モデルのローカルZ軸を進行方向へ向ける(照準は水平なのでヨー回転のみ)。*/
+			/* 中点に置き、モデルのローカルZ軸を射線方向(ヨー＋ピッチの3D)へ向ける。*/
 			stModel_.Init(sTracerModelPath_, nullptr, 0, enModelUpAxisY);
 			stModel_.SetPosition(vMid);
 
 			Quaternion qRotation;
-			qRotation.SetRotationY(atan2f(vDir.x, vDir.z));
+			qRotation.SetRotationY(atan2f(vDir.x, vDir.z));	// まず水平のヨー。
+			{
+				/* 上下のピッチをローカル軸で後乗せ(細い線を射線に沿わせる)。asinfのNaN回避でクランプ。*/
+				float fSin = vDir.y;
+				if (fSin > 1.0f) fSin = 1.0f;
+				else if (fSin < -1.0f) fSin = -1.0f;
+				qRotation.AddRotationX(-asinf(fSin));
+			}
 			stModel_.SetRotation(qRotation);
 
 			/* 太さは細く、長さ方向(Z)は区間の長さぶん伸ばして1本の線にする。*/

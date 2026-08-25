@@ -5,6 +5,9 @@
 #include "Tracer.h"
 #include "Src/Actor/Character/Enemy/CommonEnemy.h"
 #include "Src/Event/EventBus.h"
+#include "Src/Effect/HitEffect.h"
+#include "Src/System/GamePause.h"
+#include "Src/Item/Grenade.h"
 
 namespace
 {
@@ -20,6 +23,8 @@ namespace
 
 	const float	kMuzzleForward = 50.0f;		//! 銃口の前方オフセット(照準方向)。
 	const float	kMuzzleHeight = 150.0f;		//! 銃口の高さ(目線付近から撃つ)。
+	const float	kMuzzleRight = 40.0f;		//! トレーサー始点を目線から右へずらす量(線を斜めに見せる)。
+	const float	kMuzzleDown = -32.0f;		//! トレーサー始点を目線から下へずらす量(負で下)。
 	const float	kAnimInterpolateTime = 0.2f;	//! アニメーション補間時間(秒)。
 
 	const float	kEyeHeight = 160.0f;			//! 目(カメラ)の高さ。DebugPlayerScene側の kEyeHeight_ と合わせる。
@@ -33,6 +38,12 @@ namespace
 	const float	kShovePush = 120.0f;			//! 突き飛ばしで敵を押し返す距離。
 	const float	kShoveFrontDot = 0.5f;			//! 正面判定のしきい値(0.5=正面±60度)。
 	const float	kShoveCooldownTime = 0.7f;		//! 突き飛ばしのクールダウン(秒)。
+	const float	kMaxPitch = 1.4f;				//! カメラピッチの上下限(rad, ≈±80度)。真上/真下での破綻防止。
+	const float	kSprintMul = 1.6f;			//! スプリント時の移動速度倍率。
+	const float	kBobWalkSpeed = 9.0f;		//! 歩行ボブの速さ(歩き)。
+	const float	kBobWalkAmp = 2.0f;			//! 歩行ボブの振れ幅(歩き)。
+	const float	kBobSprintSpeed = 13.0f;	//! 歩行ボブの速さ(走り)。
+	const float	kBobSprintAmp = 4.0f;		//! 歩行ボブの振れ幅(走り)。
 }
 
 namespace nsApp
@@ -84,6 +95,17 @@ namespace nsApp
 			/* 1.操作意図を取得する(ローカル入力 or ネット受信をコントローラが吸収する)。*/
 			pController_->PollIntent(stIntent_);
 
+			/* ポーズのトグル(生死・ポーズ状態に関わらず常に効く)。*/
+			if (stIntent_.bPauseTrigger_)
+				nsSystem::ToggleGamePaused();
+
+			/* ポーズ中は更新を止める(モデル位置だけ維持)。*/
+			if (nsSystem::IsGamePaused())
+			{
+				UpdateModel();
+				return;
+			}
+
 			/* 2.生命状態を更新する(HP0でダウン→出血タイマー切れで死亡)。*/
 			UpdateLifeState(fDeltaTime);
 
@@ -93,6 +115,7 @@ namespace nsApp
 				UpdateMove(fDeltaTime);
 				UpdateWeapon(fDeltaTime);
 				UpdateShove(fDeltaTime);
+				UpdateItems();
 				UpdateAction();
 			}
 			else
@@ -154,6 +177,13 @@ namespace nsApp
 			 */
 			fCameraYaw_ += stIntent_.fLookYawDelta_;
 
+			/* マウスの縦移動量でカメラのピッチ(上下)を更新し、真上/真下付近で止める。*/
+			fCameraPitch_ += stIntent_.fLookPitchDelta_;
+			if (fCameraPitch_ > kMaxPitch)
+				fCameraPitch_ = kMaxPitch;
+			else if (fCameraPitch_ < -kMaxPitch)
+				fCameraPitch_ = -kMaxPitch;
+
 			/* カメラの旋回角から、地面基準の前方・右方向ベクトルを作る。*/
 			const Vector3 vCameraForward = { sinf(fCameraYaw_), 0.0f, cosf(fCameraYaw_) };
 			const Vector3 vCameraRight = { vCameraForward.z, 0.0f, -vCameraForward.x };
@@ -164,6 +194,7 @@ namespace nsApp
 			if (vMoveAxis.x == 0.0f && vMoveAxis.z == 0.0f)
 			{
 				bIsMoving_ = false;
+				bIsSprinting_ = false;
 				return;
 			}
 
@@ -172,8 +203,10 @@ namespace nsApp
 			vMoveDir.y = 0.0f;
 			vMoveDir.Normalize();
 
-			/* 移動方向へ進む。*/
-			vPosition_ += vMoveDir * fMoveSpeed_ * fDeltaTime;
+			/* スプリント(Shift)中は移動速度を上げて進む。*/
+			bIsSprinting_ = stIntent_.bSprintPress_;
+			const float fSpeed = bIsSprinting_ ? (fMoveSpeed_ * kSprintMul) : fMoveSpeed_;
+			vPosition_ += vMoveDir * fSpeed * fDeltaTime;
 
 			/*
 			 * 原神風:常に進行方向を向いて前歩きする(Sで下がっても振り向くので後ろ歩きにならない)。
@@ -186,6 +219,17 @@ namespace nsApp
 		}
 
 
+		Vector3 Player::GetLookDirection() const
+		{
+			/* ヨー(水平)＋ピッチ(上下)から視線の単位ベクトルを作る。カメラと照準で共通。*/
+			const float fCosPitch = cosf(fCameraPitch_);
+			return Vector3(
+				fCosPitch * sinf(fCameraYaw_),
+				sinf(fCameraPitch_),
+				fCosPitch * cosf(fCameraYaw_));
+		}
+
+
 		void Player::UpdateWeapon(float fDeltaTime)
 		{
 			/* 武器のクールタイム・リロード等を進める。*/
@@ -195,8 +239,8 @@ namespace nsApp
 			if (stIntent_.bReloadTrigger_)
 				stWeaponInventory_.Reload();
 
-			/* 照準方向はカメラの前方(一人称なので常に画面中央=クロスヘア方向)。*/
-			const Vector3 vAimDir = { sinf(fCameraYaw_), 0.0f, cosf(fCameraYaw_) };
+			/* 照準方向はカメラの視線(ヨー＋ピッチ。画面中央=クロスヘア方向)。*/
+			const Vector3 vAimDir = GetLookDirection();
 
 			/* 現在の武器に応じて、発射入力を押しっぱなし(フルオート)か押した瞬間(単発)で判定する。*/
 			nsWeapon::Weapon* pWeapon = stWeaponInventory_.GetCurrentWeapon();
@@ -208,23 +252,35 @@ namespace nsApp
 
 				if (bWantFire)
 				{
-					/* 銃口位置はプレイヤーの少し前・胸の高さを仮に使う。*/
-					Vector3 vMuzzlePos = vPosition_;
+					/* 命中判定はカメラ(目)=クロスヘアから飛ばす。銃口はトレーサーの見た目始点にだけ使う。*/
+						Vector3 vEyePos = vPosition_;
+						vEyePos.y += kEyeHeight;
+
+						/* トレーサーの始点=画面の銃口あたり(目線から右・下・前へずらす)。
+					   目線=射線と横にずらすことで、線が点に潰れず斜めの線として見える。*/
+					const Vector3 vMuzzleRight = { cosf(fCameraYaw_), 0.0f, -sinf(fCameraYaw_) };
+					Vector3 vMuzzlePos = vEyePos;
+					vMuzzlePos += vMuzzleRight * kMuzzleRight;
 					vMuzzlePos += vAimDir * kMuzzleForward;
-					vMuzzlePos.y += kMuzzleHeight;
+					vMuzzlePos.y += kMuzzleDown;
 
 					/* 発射に成功したら、ヒットスキャン判定＋トレーサー表示を行う。*/
 					if (stWeaponInventory_.Fire(vMuzzlePos, vAimDir))
 					{
 						/* レイの終点(最大射程)。命中したらここを命中点に置き換える。*/
-						Vector3 vRayEnd = vMuzzlePos + vAimDir * kWeaponRange;
+						/* マズルフラッシュ(銃口の閃光を一瞬)。*/
+							nsEffect::HitEffect* pFlash = NewGO<nsEffect::HitEffect>(0, "hitEffect");
+							pFlash->Setup(vMuzzlePos, 8.0f, 22.0f, 0.04f);
+
+							Vector3 vHitPoint = vEyePos + vAimDir * kWeaponRange;
 
 						/*
 						 * ヒットスキャン命中判定: レイ(銃口→射程)に対し、敵を球とみなして
 						 * 最も手前で交差する1体を探す。コライダー未整備のため自前の レイvs球。
 						 * (将来コライダーが付いたら PhysicsWorld::RayTest へ置換してよい)
 						 */
-						const float kEnemyHitRadius = 40.0f;	// 敵の被弾半径(暫定)。
+						const float kEnemyRadius = 45.0f;		// 敵の水平被弾半径(人型を縦シリンダー近似)。
+							const float kEnemyHeight = 175.0f;	// 足元(y=0)から頭までのおおよその高さ。
 						nsActor::CommonEnemy* pHitEnemy = nullptr;
 						float fNearest = kWeaponRange;			// 命中点までの前方距離(近いほど手前)。
 						for (nsActor::CommonEnemy* pEnemy : FindGOs<nsActor::CommonEnemy>("commonEnemy"))
@@ -232,39 +288,52 @@ namespace nsApp
 							if (pEnemy == nullptr)
 								continue;
 
-							/* 狙点は敵の胴(足元＋銃口高さ)あたりに寄せる。*/
-							Vector3 vCenter = pEnemy->GetPosition();
-							vCenter.y += kMuzzleHeight;
+							/* 敵を「足元(y=0)〜頭」の縦シリンダーとみなし、まず体の中心で前方距離を測る。*/
+								const Vector3 vFeet = pEnemy->GetPosition();
+								Vector3 vBodyMid = vFeet;
+								vBodyMid.y += kEnemyHeight * 0.5f;
 
-							/* レイ方向への射影(=前方距離)。後方や、既存の命中より奥なら除外。*/
-							const Vector3 vToCenter = vCenter - vMuzzlePos;
-							const float fForward = vToCenter.Dot(vAimDir);
-							if (fForward < 0.0f || fForward > fNearest)
-								continue;
+								const Vector3 vToMid = vBodyMid - vEyePos;
+								const float fForward = vToMid.Dot(vAimDir);
+								if (fForward < 0.0f || fForward > fNearest)
+									continue;
 
-							/* レイ上の最近点との距離が被弾半径以内なら命中とみなす。*/
-							const Vector3 vClosest = vMuzzlePos + vAimDir * fForward;
-							if ((vCenter - vClosest).Length() <= kEnemyHitRadius)
-							{
-								fNearest = fForward;
-								pHitEnemy = pEnemy;
-							}
+								/* レイ上の最近点で、水平距離が半径以内 かつ 当たった高さが体の範囲内なら命中。*/
+								const Vector3 vClosest = vEyePos + vAimDir * fForward;
+								const float fDx = vClosest.x - vFeet.x;
+								const float fDz = vClosest.z - vFeet.z;
+								const float fHorizDist = sqrtf(fDx * fDx + fDz * fDz);
+								if (fHorizDist <= kEnemyRadius &&
+									vClosest.y >= vFeet.y - 20.0f &&
+									vClosest.y <= vFeet.y + kEnemyHeight + 20.0f)
+								{
+									fNearest = fForward;
+									pHitEnemy = pEnemy;
+								}
 						}
 
 						/* 命中していたら、トレーサーを命中点で止めてダメージを与える。*/
 						if (pHitEnemy != nullptr)
 						{
-							vRayEnd = vMuzzlePos + vAimDir * fNearest;
+							vHitPoint = vEyePos + vAimDir * fNearest;
 							pHitEnemy->ApplyDamage(pWeapon->GetAttackPower());
 
-							/* 倒したら退場させる(暫定。将来はDirector管理＋撃破エフェクト)。*/
-							if (pHitEnemy->IsDead())
-								DeleteGO(pHitEnemy);
+							/* 倒したら撃破エフェクト＋撃破イベントを出して退場させる。*/
+								if (pHitEnemy->IsDead())
+								{
+									Vector3 vKillPos = pHitEnemy->GetPosition();
+									vKillPos.y += 85.0f;
+									nsEffect::HitEffect* pKill = NewGO<nsEffect::HitEffect>(0, "hitEffect");
+									pKill->Setup(vKillPos, 30.0f, 110.0f, 0.25f);
+									PublishGameEvent(nsEvent::EnGameEvent::EnemyKilled);
+
+									DeleteGO(pHitEnemy);
+								}
 						}
 
 						/* 見せるためのトレーサー(曳光弾)を一瞬だけ表示する。*/
 						nsWeapon::Tracer* pTracer = NewGO<nsWeapon::Tracer>(0, "tracer");
-						pTracer->Setup(vMuzzlePos, vRayEnd);
+						pTracer->Setup(vMuzzlePos, vHitPoint);
 					}
 				}
 			}
@@ -346,6 +415,35 @@ namespace nsApp
 		}
 
 
+		void Player::UpdateItems()
+		{
+			/* 回復(メディキット): HPが減っていれば1個消費して全回復。*/
+			if (stIntent_.bHealTrigger_ && iMedkitCount_ > 0 && GetCurrentHP() < GetMaxHP())
+			{
+				iMedkitCount_--;
+				stCharacterStatus_.stHp_.iCurrentHP_ = GetMaxHP();
+
+				Vector3 vHealPos = vPosition_;
+				vHealPos.y += 80.0f;
+				nsEffect::HitEffect* pHeal = NewGO<nsEffect::HitEffect>(0, "hitEffect");
+				pHeal->Setup(vHealPos, 40.0f, 130.0f, 0.3f);
+			}
+
+			/* 投擲(グレネード): 1個消費して視線方向へ投げる。*/
+			if (stIntent_.bThrowTrigger_ && iGrenadeCount_ > 0)
+			{
+				iGrenadeCount_--;
+
+				const Vector3 vLook = GetLookDirection();
+				Vector3 vThrowPos = vPosition_;
+				vThrowPos.y += kEyeHeight;
+				vThrowPos += vLook * kMuzzleForward;
+				nsItem::Grenade* pGrenade = NewGO<nsItem::Grenade>(0, "grenade");
+				pGrenade->Setup(vThrowPos, vLook);
+			}
+		}
+
+
 		void Player::UpdateModel()
 		{
 			/* 移動状態に応じてアニメーションを切り替える。*/
@@ -383,8 +481,8 @@ namespace nsApp
 
 			/* FPSのビューモデルとして、カメラ(目)基準で画面手前(前・右・下)に銃を置く。*/
 			ModelRender& weaponModel = aWeaponModels_[iType];
-			const Vector3 vLook = { sinf(fCameraYaw_), 0.0f, cosf(fCameraYaw_) };
-			const Vector3 vRight = { vLook.z, 0.0f, -vLook.x };
+			const Vector3 vLook = GetLookDirection();								// 前(ヨー＋ピッチ。上下を向くと銃も追従)
+			const Vector3 vRight = { cosf(fCameraYaw_), 0.0f, -sinf(fCameraYaw_) };	// 右(水平・単位)
 
 			/* 最終スケール = 自動サイズ合わせ × 武器データの微調整倍率(1.0基準)。*/
 			const float fScale = aWeaponModelAutoScale_[iType] * pWeapon->GetModelScale();
@@ -396,9 +494,28 @@ namespace nsApp
 			vGunPos += vRight * kViewModelRight;			// 右
 			vGunPos.y += kViewModelDown;					// 下(負)
 
+			/* 歩行ボブ: 移動中は銃を軽く揺らす(スプリントで大きく速く)。*/
+			{
+				const float fBobDelta = g_gameTime->GetFrameDeltaTime();
+				const float fBobSpeed = bIsSprinting_ ? kBobSprintSpeed : kBobWalkSpeed;
+				const float fBobAmp = bIsSprinting_ ? kBobSprintAmp : kBobWalkAmp;
+
+				/* 停止時にピタッと消えないよう重みを補間する。*/
+				const float fBobTarget = bIsMoving_ ? 1.0f : 0.0f;
+				float fBobLerp = fBobDelta * 8.0f;
+				if (fBobLerp > 1.0f) fBobLerp = 1.0f;
+				fBobWeight_ += (fBobTarget - fBobWeight_) * fBobLerp;
+
+				if (bIsMoving_)
+					fBobTimer_ += fBobDelta * fBobSpeed;
+
+				vGunPos += vRight * (sinf(fBobTimer_) * fBobAmp * fBobWeight_);
+				vGunPos.y += sinf(fBobTimer_ * 2.0f) * fBobAmp * fBobWeight_;
+			}
+
 			/*
-			 * モデル原点のズレを打ち消す。モデルはヨー回転のみなので、ローカル中心を
-			 * 世界の基底(右=X, 上=Y, 前=Z)に写して vGunPos から引けば、中心がぴったり vGunPos に来る。
+			 * モデル原点のズレを打ち消す。ローカル中心を世界の基底(右=vRight, 上=Y, 前=vLook)に
+			 * 写して vGunPos から引けば、中心がぴったり vGunPos に来る(上下の微差は無視できる範囲)。
 			 * これで原点がズレたモデルでもカメラにめり込まなくなる。
 			 */
 			const Vector3& vCenter = aWeaponModelCenter_[iType];
@@ -409,7 +526,8 @@ namespace nsApp
 
 			weaponModel.SetPosition(vGunPos - vCenterOffset);
 			Quaternion qGun;
-			qGun.SetRotationY(atan2f(vLook.x, vLook.z));
+			qGun.SetRotationY(fCameraYaw_);		// ヨー(横向き)を先に設定。
+			qGun.AddRotationX(-fCameraPitch_);	// ピッチをローカル軸で後乗せ→横向きでもロールしない。上下が逆なら符号反転。
 			weaponModel.SetRotation(qGun);
 			weaponModel.SetScale(Vector3(fScale, fScale, fScale));
 			weaponModel.Update();
