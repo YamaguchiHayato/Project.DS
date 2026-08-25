@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Src/Actor/Character/ICharacter.h"
+#include "Src/System/RayTest/SightCheck.h"
 
 namespace nsApp
 {
@@ -120,6 +121,12 @@ namespace nsApp
 			bool IsTargetInAttackRange();
 
 			/**
+			 * @brief 対象が視線上にいるか。
+			 * @return 視線が通っていれば true。
+			 */
+			bool IsTargetVisible() const;
+
+			/**
 			 * @brief 追跡対象へ移動する。
 			 */
 			void MoveToTarget();
@@ -158,13 +165,22 @@ namespace nsApp
 			 */
 			bool IsDeathState() const;
 
+			/**
+			 * @brief 目の高さの座標を作る。
+			 * @param vPos 基準位置。
+			 * @return 目の高さの座標。
+			 */
+			Vector3 MakeEyePosition(const Vector3& vPos) const;
+
 			
 		private:
+			CharacterController stCharaCon_;		    //! 壁との押し戻し用。
 			ModelRender stModelRender_;					//! 仮モデル。
 			ICharacter* pTarget_ = nullptr;				//! 追跡対象。
 			Vector3 vPosition_ = { 0.0f, 0.0f, 500.0f };	//! 現在位置。
-			Vector3 vToTarget_;							//! 対象への水平ベクトル。
-			Quaternion qLook_;							//! 対象方向の回転。
+			Vector3 vToTarget_ = Vector3::Zero; //! 対象への水平ベクトル。
+			Quaternion qLook_ = Quaternion::Identity; //! 対象方向の回転。
+			Vector3 vSpeed_ = Vector3::Zero; //! 移動速度。
 			float fDetectRange_ = 250.0f;				//! 発見距離。
 			float fChaseSpeed_ = 120.0f;				//! 追跡速度。
 			float fAttackRange_ = 120.0f;				//! 攻撃距離。
@@ -172,6 +188,7 @@ namespace nsApp
 			float fAttackTimer_ = 0.0f;					//! 攻撃タイマー。
 			int iAttackPower_ = 10;						//! 攻撃力。
 			int iPlayingAnimation_ = -1;				//! 再生中のアニメーション番号。
+			nsSystem::SightCheck stSightCheck_;			//! 視線判定。
 		};
 	}
 }

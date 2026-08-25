@@ -16,13 +16,23 @@ namespace nsApp
 
 		void EnemyIdleState::Update()
 		{
+			/* オーナーをキャストする。*/
+			CommonEnemy* pEnemy = static_cast<CommonEnemy*>(pOwner_);
+
 			/* 対象が死亡していれば待機のまま。*/
-			if (static_cast<CommonEnemy*>(pOwner_)->IsTargetDead())
+			if (pEnemy->IsTargetDead())
 				return;
 
-			/* 発見距離に入ったら追跡へ切り替える。*/
-			if (static_cast<CommonEnemy*>(pOwner_)->IsTargetInDetectRange())
-				pStateMachine_->ChangeState(new EnemyChaseState());
+			/* 発見距離の外なら待機のまま。*/
+			if (!pEnemy->IsTargetInDetectRange())
+				return;
+
+			/* 視線が通っていなければ待機のまま。*/
+			if (!pEnemy->IsTargetVisible())
+				return;
+
+			/* 距離内かつ視線ありなら追跡へ。*/
+			pStateMachine_->ChangeState(new EnemyChaseState());
 		}
 
 

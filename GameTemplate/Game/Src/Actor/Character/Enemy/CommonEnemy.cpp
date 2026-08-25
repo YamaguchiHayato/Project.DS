@@ -16,6 +16,11 @@ namespace nsApp
 	{
 		bool CommonEnemy::Start()
 		{
+			/* カプセルで壁（PhysicsStaticObject）と当たる。*/
+			stCharaCon_.Init(20.0f, 70.0f, vPosition_);
+
+			stSightCheck_.SetEyeHeight(120.0f);
+
 			/* 体力を初期化する。*/
 			/* @todo: 外部Parameter化。*/
 			stCharacterStatus_.stHp_.iMaxHP_ = 30;
@@ -108,6 +113,30 @@ namespace nsApp
 		}
 
 
+		Vector3 CommonEnemy::MakeEyePosition(const Vector3& vPos) const
+		{
+			/* 目の高さの座標を作る。*/
+			Vector3 vEye = vPos;
+
+			/* 目の高さを加算する。*/
+			vEye.y += stSightCheck_.GetEyeHeight();
+
+			/* 目の高さの座標を返す。*/
+			return vEye;
+		}
+
+
+		bool CommonEnemy::IsTargetVisible() const
+		{
+			/* 対象が無ければ視線は通らない。*/
+			if (pTarget_ == nullptr)
+				return false;
+
+			/* 対象の目の高さまでの視線が通っていればtrue。*/
+			return stSightCheck_.HasClearSight( MakeEyePosition(vPosition_), MakeEyePosition(pTarget_->GetPosition()));
+		}
+
+
 		void CommonEnemy::LookAtTarget()
 		{
 			/* 対象が無ければ向きを変えない。*/
@@ -133,20 +162,21 @@ namespace nsApp
 			if (pTarget_ == nullptr)
 				return;
 
-			/* 攻撃距離なら止まる。*/
-			if (IsTargetInAttackRange())
+			
+
+			/* 攻撃距離外なら対象方向へ進む。*/
+			if (!IsTargetInAttackRange())
 			{
-				LookAtTarget();
-				return;
+				UpdateToTargetVector();
+				vToTarget_.Normalize();
+				vSpeed_ = vToTarget_ * fChaseSpeed_;
 			}
 
-			/* 対象方向へ移動する。*/
-			UpdateToTargetVector();
-			vToTarget_.Normalize();
-			vPosition_ += vToTarget_ * fChaseSpeed_ * g_gameTime->GetFrameDeltaTime();
-
-			/* 移動方向を向く。*/
+			/* 対象方向を向く。*/
 			LookAtTarget();
+
+			/* キャラコンで動かして、モデル座標も合わせる。*/
+			vPosition_ = stCharaCon_.Execute(vSpeed_, g_gameTime->GetFrameDeltaTime());
 		}
 
 

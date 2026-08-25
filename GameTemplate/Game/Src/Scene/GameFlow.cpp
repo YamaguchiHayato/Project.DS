@@ -2,7 +2,7 @@
 #include "GameFlow.h"
 #include "InGameScene.h"
 #include "Src/Scene/TitleScene.h"
-#include "DebugPlayerScene.h"
+#include "Src/Scene/Debug/DebugPlayer.h"
 #include "Src/Scene/ResultScene.h"
 #include "Src/Scene/Debug/DebugEnemyScene.h"
 #include "Src/Scene/Debug/DebugSelectScene.h"

@@ -33,13 +33,20 @@ namespace nsApp
 				pStateMachine_->ChangeState(new EnemyAttackState());
 				return;
 			}
-
-			/* 追跡対象が発見距離から外れている場合は待機ステートに遷移する。*/
-			pEnemy->MoveToTarget();
+			
+			/* 追跡対象が視線上にいない場合は待機ステートに遷移する。*/
+			if (!pEnemy->IsTargetVisible())
+			{
+				pStateMachine_->ChangeState(new EnemyIdleState());
+				return;
+			}
 
 			/* 追跡対象が攻撃距離に入っている場合は攻撃ステートに遷移する。*/
 			if(pEnemy->IsTargetInAttackRange())
 				pStateMachine_->ChangeState(new EnemyAttackState());
+
+			/* 追跡対象が発見距離から外れている場合は待機ステートに遷移する。*/
+			pEnemy->MoveToTarget();
 		}
 
 
