@@ -7,6 +7,7 @@
 #include "Src/Rule/ResolveGameWinner.h"
 #include "Src/UI/InGameHud.h"
 #include "Src/Director/EnemyDirector.h"
+#include "Src/System/GamePause.h"
 
 namespace
 {
@@ -70,6 +71,9 @@ namespace nsApp
 
 		bool InGameScene::Start()
 		{
+			/* シーン開始時はポーズを解除しておく(前回のポーズが残らないように)。*/
+			nsSystem::SetGamePaused(false);
+
 			/* カメラを初期化する。*/
 			InitCamera();
 
@@ -110,6 +114,21 @@ namespace nsApp
 
 		void InGameScene::Update()
 		{
+			/* ポーズメニューの入力: Enterでタイトルへ戻る(エッジ検出)。*/
+			const bool bEnter = (GetAsyncKeyState(VK_RETURN) & 0x8000) != 0;
+			const bool bEnterTrigger = bEnter && !bPrevEnter_;
+			bPrevEnter_ = bEnter;
+
+			if (nsSystem::IsGamePaused())
+			{
+				if (bEnterTrigger && pGameFlow_ != nullptr)
+				{
+					nsSystem::SetGamePaused(false);
+					pGameFlow_->ChangeScene(EnSceneID::Title);
+				}
+				return;
+			}
+
 			/* 一人称カメラをプレイヤーへ追従させる。*/
 			UpdateCamera();
 
@@ -143,7 +162,6 @@ namespace nsApp
 				return;
 
 			/* プレイヤーの旋回角と位置から、目の位置と視線方向を決める(一人称)。*/
-			const float fYaw = pPlayer_->GetCameraYaw();
 			const Vector3& vPlayerPos = pPlayer_->GetPosition();
 
 			/* 目の位置(プレイヤー座標＋目線の高さ)。*/
@@ -151,7 +169,7 @@ namespace nsApp
 			vEyePos.y += fEyeHeight_;
 
 			/* 視線方向(旋回角の水平前方)。*/
-			const Vector3 vLook = { sinf(fYaw), 0.0f, cosf(fYaw) };
+			const Vector3 vLook = pPlayer_->GetLookDirection();
 
 			g_camera3D->SetPosition(vEyePos);
 			g_camera3D->SetTarget(vEyePos + vLook * 100.0f);

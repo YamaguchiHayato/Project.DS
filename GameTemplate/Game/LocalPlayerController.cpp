@@ -15,7 +15,7 @@ namespace nsApp
 
 			/* 視点旋回: デバイスの横移動量(px)に感度を掛けてラジアン化し、Playerには角度で渡す。*/
 			stOut.fLookYawDelta_ = stInput_.GetMouseDeltaX() * fLookSensitivity_;
-			stOut.fLookPitchDelta_ = 0.0f;	/* TODO(Phase2): 縦のマウス移動量からピッチを作る。*/
+			stOut.fLookPitchDelta_ = -stInput_.GetMouseDeltaY() * fLookPitchSensitivity_;	/* 上下反転なし: マウス上=視点上。縦は専用感度。*/
 
 			/* 射撃。*/
 			stOut.bFirePress_ = stInput_.IsFirePress();
@@ -34,6 +34,13 @@ namespace nsApp
 			/* ライト・ポーズ。*/
 			stOut.bLightTrigger_ = stInput_.IsLightTrigger();
 			stOut.bPauseTrigger_ = stInput_.IsPauseTrigger();
+
+			/* アイテム(回復/投擲)。*/
+			stOut.bHealTrigger_ = stInput_.IsHealTrigger();
+			stOut.bThrowTrigger_ = stInput_.IsThrowTrigger();
+
+			/* スプリント(Shift)。*/
+			stOut.bSprintPress_ = stInput_.IsSprintPress();
 
 			/* 突き飛ばし(右クリック)。*/
 			stOut.bShoveTrigger_ = stInput_.IsShoveTrigger();

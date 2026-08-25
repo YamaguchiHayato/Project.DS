@@ -45,6 +45,9 @@ namespace nsApp
 			//! このフレームのマウス横移動量(カーソルロック済み。カメラ旋回に使う)。
 			inline float GetMouseDeltaX() const { return fMouseDeltaX_; }
 
+			//! このフレームのマウス縦移動量(カーソルロック済み。カメラの上下に使う)。
+			inline float GetMouseDeltaY() const { return fMouseDeltaY_; }
+
 			//! 左クリックが押されているか(フルオート武器の連射判定、押しっぱなし)。
 			inline bool IsFirePress() const { return bFirePress_; }
 
@@ -72,6 +75,15 @@ namespace nsApp
 			//! Escキーが押された瞬間か(メニュー・ポーズ画面)。
 			inline bool IsPauseTrigger() const { return bPauseTrigger_; }
 
+			//! Hキーが押された瞬間か(回復アイテム使用)。
+			inline bool IsHealTrigger() const { return bHealTrigger_; }
+
+			//! Gキーが押された瞬間か(投擲アイテム)。
+			inline bool IsThrowTrigger() const { return bThrowTrigger_; }
+
+			//! Shiftキーを押しているか(スプリント。押しっぱなし判定)。
+			inline bool IsSprintPress() const { return bSprintPress_; }
+
 
 		private:
 			/**
@@ -93,6 +105,7 @@ namespace nsApp
 			Vector3	vMoveAxis_ = { 0.0f, 0.0f, 0.0f };			//! 移動方向。
 			Vector2	vAimScreenPos_ = { 0.0f, 0.0f };			//! マウスカーソル位置(スプライト空間)。
 			float	fMouseDeltaX_ = 0.0f;						//! このフレームのマウス横移動量。
+			float	fMouseDeltaY_ = 0.0f;						//! このフレームのマウス縦移動量。
 			bool	bCursorLocked_ = false;						//! カーソルを非表示・固定中か。
 
 			bool	bFirePress_ = false;					//! 左クリック押下中か。
@@ -104,11 +117,16 @@ namespace nsApp
 			bool	bInteractTrigger_ = false;				//! Eキートリガー。
 			bool	bLightTrigger_ = false;					//! Fキートリガー。
 			bool	bPauseTrigger_ = false;					//! Escキートリガー。
+			bool	bHealTrigger_ = false;					//! Hキートリガー(回復)。
+			bool	bThrowTrigger_ = false;					//! Gキートリガー(投擲)。
+			bool	bSprintPress_ = false;					//! Shift押下中か(スプリント)。
 
 			bool	bPrevReloadPress_ = false;		//! 前回フレームのRキー押下状態。
 			bool	bPrevInteractPress_ = false;	//! 前回フレームのEキー押下状態。
 			bool	bPrevLightPress_ = false;		//! 前回フレームのFキー押下状態。
 			bool	bPrevPausePress_ = false;		//! 前回フレームのEscキー押下状態。
+			bool	bPrevHealPress_ = false;		//! 前回フレームのHキー押下状態。
+			bool	bPrevThrowPress_ = false;		//! 前回フレームのGキー押下状態。
 		};
 	}
 }

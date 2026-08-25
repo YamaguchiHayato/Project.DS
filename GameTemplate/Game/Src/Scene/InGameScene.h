@@ -73,6 +73,7 @@ namespace nsApp
 			bool						bReachPublished_ = false;	//! セーフルーム到達を発行済みか。
 
 			nsUI::InGameHud*			pHud_ = nullptr;			//! HUD(HP/弾/目標/クロスヘア/ダウン表示)。
+			bool						bPrevEnter_ = false;		//! 前フレームのEnter押下(ポーズ中のタイトル復帰用)。
 		};
 	}
 }

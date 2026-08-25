@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="system">
@@ -55,6 +55,15 @@
     <Filter Include="Src\Director">
       <UniqueIdentifier>{c3a9e5f4-6d81-4e33-bf4c-9071b3d4c256}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Src\Effect">
+      <UniqueIdentifier>{d4b0f6a5-7e92-4f44-a05d-1182c4e5d367}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\System">
+      <UniqueIdentifier>{e5c1a7b6-8f03-4a55-b16e-2293d5f6e478}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Item">
+      <UniqueIdentifier>{f6d2b8c7-9014-4b66-c27f-33a4e6070589}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Src\System">
       <UniqueIdentifier>{cbfd1769-0364-42aa-adfc-d7959432187f}</UniqueIdentifier>
     </Filter>
@@ -108,6 +117,15 @@
     </ClCompile>
     <ClCompile Include="Src\Director\EnemyDirector.cpp">
       <Filter>Src\Director</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Effect\HitEffect.cpp">
+      <Filter>Src\Effect</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\System\GamePause.cpp">
+      <Filter>Src\System</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Item\Grenade.cpp">
+      <Filter>Src\Item</Filter>
     </ClCompile>
     <ClCompile Include="Src\Scene\InGameScene.cpp">
       <Filter>Src\Scene</Filter>
@@ -216,6 +234,15 @@
     </ClInclude>
     <ClInclude Include="Src\Director\EnemyDirector.h">
       <Filter>Src\Director</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Effect\HitEffect.h">
+      <Filter>Src\Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\System\GamePause.h">
+      <Filter>Src\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Item\Grenade.h">
+      <Filter>Src\Item</Filter>
     </ClInclude>
     <ClInclude Include="Src\Scene\InGameScene.h">
       <Filter>Src\Scene</Filter>
