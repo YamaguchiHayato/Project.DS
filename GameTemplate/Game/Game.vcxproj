@@ -238,6 +238,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Actor\Character\Common\CharacterMovement.cpp" />
     <ClCompile Include="Src\Scene\Debug\DebugEnemyScene.cpp" />
     <ClCompile Include="Src\Scene\Debug\DebugObstacle.cpp" />
     <ClCompile Include="Src\Scene\Debug\DebugPlayer.cpp" />
@@ -285,6 +286,7 @@
     <ClCompile Include="Tracer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Actor\Character\Common\CharacterMovement.h" />
     <ClInclude Include="Src\Scene\Debug\DebugEnemyScene.h" />
     <ClInclude Include="Src\Scene\Debug\DebugObstacle.h" />
     <ClInclude Include="Src\Scene\Debug\DebugPlayer.h" />
