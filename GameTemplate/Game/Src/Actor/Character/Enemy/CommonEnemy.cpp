@@ -18,7 +18,7 @@ namespace nsApp
 		bool CommonEnemy::Start()
 		{
 			/* カプセルで壁（PhysicsStaticObject）と当たる。*/
-			stCharaCon_.Init(20.0f, 70.0f, vPosition_);
+			stMovement_.Init(20.0f, 70.0f, vPosition_);
 
 			stSightCheck_.SetEyeHeight(120.0f);
 
@@ -169,21 +169,18 @@ namespace nsApp
 			if (pTarget_ == nullptr)
 				return;
 
-			
-
-			/* 攻撃距離外なら対象方向へ進む。*/
-			if (!IsTargetInAttackRange())
-			{
-				UpdateToTargetVector();
-				vToTarget_.Normalize();
-				vSpeed_ = vToTarget_ * fChaseSpeed_;
-			}
-
-			/* 対象方向を向く。*/
+			/* 対象の方向を向く。*/
 			LookAtTarget();
 
-			/* キャラコンで動かして、モデル座標も合わせる。*/
-			vPosition_ = stCharaCon_.Execute(vSpeed_, g_gameTime->GetFrameDeltaTime());
+			/* 攻撃距離内ならその場にとどめる。*/
+			if (IsTargetInAttackRange())
+			{
+				vPosition_ = stMovement_.Execute(Vector3::Zero, g_gameTime->GetFrameDeltaTime());
+				return;
+			}
+			
+			/* 目標へ向かう移動計算はCharacterMovementクラスに一任する。*/
+			vPosition_ = stMovement_.MoveToward(pTarget_->GetPosition(), fChaseSpeed_, g_gameTime->GetFrameDeltaTime());
 		}
 
 

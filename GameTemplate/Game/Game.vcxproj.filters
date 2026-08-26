@@ -160,7 +160,6 @@
     <ClCompile Include="InGameBuildHelper.cpp">
       <Filter>Src\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyDeadState.cpp" />
     <ClCompile Include="Src\Scene\Debug\DebugEnemyScene.cpp">
       <Filter>Src\Scene\Debug</Filter>
     </ClCompile>
@@ -181,6 +180,12 @@
     </ClCompile>
     <ClCompile Include="Src\System\RayTest\SightCheck.cpp">
       <Filter>Src\System</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyDeadState.cpp">
+      <Filter>Src\Actor\Character\Enemy\State</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Common\CharacterMovement.cpp">
+      <Filter>Src\Actor\Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -293,7 +298,6 @@
     <ClInclude Include="InGameBuildHelper.h">
       <Filter>Src\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyDeadState.h" />
     <ClInclude Include="Src\Scene\Debug\DebugEnemyScene.h">
       <Filter>Src\Scene\Debug</Filter>
     </ClInclude>
@@ -314,6 +318,12 @@
     </ClInclude>
     <ClInclude Include="Src\System\RayTest\SightCheck.h">
       <Filter>Src\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyDeadState.h">
+      <Filter>Src\Actor\Character\Enemy\State</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Common\CharacterMovement.h">
+      <Filter>Src\Actor\Common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
