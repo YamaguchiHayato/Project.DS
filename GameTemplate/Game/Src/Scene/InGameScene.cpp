@@ -11,12 +11,12 @@
 
 namespace
 {
-	const float	fEyeHeight_ = 160.0f;								//! 目(カメラ)の高さ。Player側の kEyeHeight と合わせる。
+	const float fEyeHeight_ = 160.0f;								//! 目(カメラ)の高さ。Player側の kEyeHeight と合わせる。
 	const char* sGroundModelPath_ = "Assets/modelData/ground.tkm";	//! 地面モデル。
-	const float	fGroundScale_ = 200.0f;								//! 地面の拡大率。
+	const float fGroundScale_ = 200.0f;								//! 地面の拡大率。
 	const char* sGoalBeaconModelPath_ = "Assets/modelData/preset/VolumePointLight.tkm";	//! ゴール目印(発光球)。
-	const float	fSafeRoomMarkerScale_ = 80.0f;						//! ゴール目印の拡大率(遠くからでも見える大きさ)。
-	const float	fSafeRoomMarkerHeight_ = 120.0f;					//! ゴール目印を目線あたりに浮かせる高さ。
+	const float fSafeRoomMarkerScale_ = 80.0f;						//! ゴール目印の拡大率(遠くからでも見える大きさ)。
+	const float fSafeRoomMarkerHeight_ = 120.0f;					//! ゴール目印を目線あたりに浮かせる高さ。
 }
 
 namespace nsApp
@@ -104,9 +104,7 @@ namespace nsApp
 			stGroundModel_.Update();
 
 			/* 地面の静的コライダを作る。これが無いとキャラクターが接地できない。*/
-			stGroundCollider_.CreateFromModel(
-				stGroundModel_.GetModel(),
-				stGroundModel_.GetModel().GetWorldMatrix());
+			stGroundCollider_.CreateFromModel(stGroundModel_.GetModel(), stGroundModel_.GetModel().GetWorldMatrix());
 
 			/* ゴール(セーフルーム)の目印を置く。ここへ到達で勝利。発光球を目線高さに浮かせて視認性を確保する。*/
 			stSafeRoomModel_.Init(sGoalBeaconModelPath_, nullptr, 0, enModelUpAxisY);

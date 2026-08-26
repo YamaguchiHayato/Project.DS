@@ -6,14 +6,14 @@
 
 namespace
 {
-	const char*	sGrenadeModelPath_ = "Assets/modelData/preset/VolumePointLight.tkm";	//! 仮モデル(発光球)。
-	const float	kThrowSpeed = 900.0f;		//! 前方への初速。
-	const float	kThrowUp = 300.0f;			//! 上方向への初速(山なりに投げる)。
-	const float	kGravity = 980.0f;			//! 重力加速度。
-	const float	kGrenadeScale = 12.0f;		//! 表示サイズ。
-	const float	kExplodeRadius = 300.0f;	//! 爆発の有効半径。
-	const int	kExplodeDamage = 100;		//! 爆発の威力(範囲内の敵へ)。
-	const float	kEnemyCenterHeight = 85.0f;	//! 敵の体の中心高さ(エフェクト用)。
+	const char* sGrenadeModelPath_ = "Assets/modelData/preset/VolumePointLight.tkm";	//! 仮モデル(発光球)。
+	const float kThrowSpeed = 900.0f;		//! 前方への初速。
+	const float kThrowUp = 300.0f;			//! 上方向への初速(山なりに投げる)。
+	const float kGravity = 980.0f;			//! 重力加速度。
+	const float kGrenadeScale = 12.0f;		//! 表示サイズ。
+	const float kExplodeRadius = 300.0f;	//! 爆発の有効半径。
+	const int kExplodeDamage = 100;		//! 爆発の威力(範囲内の敵へ)。
+	const float kEnemyCenterHeight = 85.0f;	//! 敵の体の中心高さ(エフェクト用)。
 }
 
 namespace nsApp

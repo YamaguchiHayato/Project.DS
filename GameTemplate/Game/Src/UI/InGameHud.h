@@ -33,18 +33,18 @@ namespace nsApp
 
 
 		private:
-			FontRender	stCrosshair_;	//! 画面中央のクロスヘア。
-			FontRender	stHpText_;		//! HP表示。
-			FontRender	stAmmoText_;	//! 弾数表示。
-			FontRender	stObjective_;	//! 目標表示。
-			FontRender	stItemText_;	//! アイテム所持数(回復/投擲)。
-			FontRender	stStatusText_;	//! ダウン等の状態表示(中央・大)。
-			FontRender	stPauseText_;	//! ポーズ中の中央表示。
+			FontRender stCrosshair_;	//! 画面中央のクロスヘア。
+			FontRender stHpText_;		//! HP表示。
+			FontRender stAmmoText_;	//! 弾数表示。
+			FontRender stObjective_;	//! 目標表示。
+			FontRender stItemText_;	//! アイテム所持数(回復/投擲)。
+			FontRender stStatusText_;	//! ダウン等の状態表示(中央・大)。
+			FontRender stPauseText_;	//! ポーズ中の中央表示。
 
-			wchar_t		wcHp_[32] = L"";		//! HP文字列バッファ(描画まで保持)。
-			wchar_t		wcAmmo_[48] = L"";		//! 弾数文字列バッファ。
-			wchar_t		wcStatus_[64] = L"";	//! 状態文字列バッファ。
-			wchar_t		wcItem_[48] = L"";		//! アイテム所持数バッファ。
+			wchar_t wcHp_[32] = L"";		//! HP文字列バッファ(描画まで保持)。
+			wchar_t wcAmmo_[48] = L"";		//! 弾数文字列バッファ。
+			wchar_t wcStatus_[64] = L"";	//! 状態文字列バッファ。
+			wchar_t wcItem_[48] = L"";		//! アイテム所持数バッファ。
 		};
 	}
 }

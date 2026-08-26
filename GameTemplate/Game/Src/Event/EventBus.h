@@ -48,7 +48,7 @@ namespace nsApp
 
 
 		private:
-			std::vector<IGameEventListener*>	vecListeners_;	//! 購読者一覧。
+			std::vector<IGameEventListener*> vecListeners_;	//! 購読者一覧。
 		};
 	}
 }

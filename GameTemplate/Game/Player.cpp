@@ -20,31 +20,31 @@ namespace
 		"Assets/animData/run.tka",	//! Run。
 	};
 
-	const float	kMuzzleForward = 50.0f;		//! 銃口の前方オフセット(照準方向)。
-	const float	kMuzzleHeight = 150.0f;		//! 銃口の高さ(目線付近から撃つ)。
-	const float	kMuzzleRight = 40.0f;		//! トレーサー始点を目線から右へずらす量(線を斜めに見せる)。
-	const float	kMuzzleDown = -32.0f;		//! トレーサー始点を目線から下へずらす量(負で下)。
-	const float	kAnimInterpolateTime = 0.2f;	//! アニメーション補間時間(秒)。
+	const float kMuzzleForward = 50.0f;		//! 銃口の前方オフセット(照準方向)。
+	const float kMuzzleHeight = 150.0f;		//! 銃口の高さ(目線付近から撃つ)。
+	const float kMuzzleRight = 40.0f;		//! トレーサー始点を目線から右へずらす量(線を斜めに見せる)。
+	const float kMuzzleDown = -32.0f;		//! トレーサー始点を目線から下へずらす量(負で下)。
+	const float kAnimInterpolateTime = 0.2f;	//! アニメーション補間時間(秒)。
 
-	const float	kEyeHeight = 160.0f;			//! 目(カメラ)の高さ。DebugPlayerScene側の kEyeHeight_ と合わせる。
-	const float	kViewModelRight = 22.0f;		//! ビューモデル銃の右オフセット。
-	const float	kViewModelDown = -26.0f;		//! ビューモデル銃の下オフセット(負で下)。
-	const float	kTargetGunSize = 45.0f;			//! ビューモデル銃の目標サイズ(一番長い辺をこの長さに自動スケール)。
-	const float	kWeaponRange = 3000.0f;			//! 射程(ヒットスキャンのレイ・トレーサーの長さ)。
-	const float	kBleedOutTime = 15.0f;			//! ダウンしてから死亡するまでの出血時間(秒)。
-	const int	kReviveHP = 30;					//! 救助で復帰したときのHP。
-	const float	kShoveRange = 180.0f;			//! 突き飛ばしが届く距離。
-	const float	kShovePush = 120.0f;			//! 突き飛ばしで敵を押し返す距離。
-	const float	kShoveFrontDot = 0.5f;			//! 正面判定のしきい値(0.5=正面±60度)。
-	const float	kShoveCooldownTime = 0.7f;		//! 突き飛ばしのクールダウン(秒)。
-	const float	kMaxPitch = 1.4f;				//! カメラピッチの上下限(rad, ≈±80度)。真上/真下での破綻防止。
-	const float	kCapsuleRadius = 25.0f;		//! 移動用カプセルの半径(壁との押し戻しに使う)。
-	const float	kCapsuleHeight = 120.0f;	//! 移動用カプセルの高さ。
-	const float	kSprintMul = 1.6f;			//! スプリント時の移動速度倍率。
-	const float	kBobWalkSpeed = 9.0f;		//! 歩行ボブの速さ(歩き)。
-	const float	kBobWalkAmp = 2.0f;			//! 歩行ボブの振れ幅(歩き)。
-	const float	kBobSprintSpeed = 13.0f;	//! 歩行ボブの速さ(走り)。
-	const float	kBobSprintAmp = 4.0f;		//! 歩行ボブの振れ幅(走り)。
+	const float kEyeHeight = 160.0f;			//! 目(カメラ)の高さ。DebugPlayerScene側の kEyeHeight_ と合わせる。
+	const float kViewModelRight = 22.0f;		//! ビューモデル銃の右オフセット。
+	const float kViewModelDown = -26.0f;		//! ビューモデル銃の下オフセット(負で下)。
+	const float kTargetGunSize = 45.0f;			//! ビューモデル銃の目標サイズ(一番長い辺をこの長さに自動スケール)。
+	const float kWeaponRange = 3000.0f;			//! 射程(ヒットスキャンのレイ・トレーサーの長さ)。
+	const float kBleedOutTime = 15.0f;			//! ダウンしてから死亡するまでの出血時間(秒)。
+	const int kReviveHP = 30;					//! 救助で復帰したときのHP。
+	const float kShoveRange = 180.0f;			//! 突き飛ばしが届く距離。
+	const float kShovePush = 120.0f;			//! 突き飛ばしで敵を押し返す距離。
+	const float kShoveFrontDot = 0.5f;			//! 正面判定のしきい値(0.5=正面±60度)。
+	const float kShoveCooldownTime = 0.7f;		//! 突き飛ばしのクールダウン(秒)。
+	const float kMaxPitch = 1.4f;				//! カメラピッチの上下限(rad, ≈±80度)。真上/真下での破綻防止。
+	const float kCapsuleRadius = 25.0f;		//! 移動用カプセルの半径(壁との押し戻しに使う)。
+	const float kCapsuleHeight = 120.0f;	//! 移動用カプセルの高さ。
+	const float kSprintMul = 1.6f;			//! スプリント時の移動速度倍率。
+	const float kBobWalkSpeed = 9.0f;		//! 歩行ボブの速さ(歩き)。
+	const float kBobWalkAmp = 2.0f;			//! 歩行ボブの振れ幅(歩き)。
+	const float kBobSprintSpeed = 13.0f;	//! 歩行ボブの速さ(走り)。
+	const float kBobSprintAmp = 4.0f;		//! 歩行ボブの振れ幅(走り)。
 }
 
 namespace nsApp

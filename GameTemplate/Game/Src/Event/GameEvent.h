@@ -41,10 +41,10 @@ namespace nsApp
 		 */
 		struct GameEvent
 		{
-			EnGameEvent	enType_;								//! 出来事の種別。
-			Vector3		vPosition_ = { 0.0f, 0.0f, 0.0f };		//! 出来事が起きた位置。
-			Vector3		vDirection_ = { 0.0f, 0.0f, 0.0f };		//! 出来事の向き(発射方向・命中方向など)。
-			int			iParam_ = 0;							//! 付随する数値(用途は種別依存)。
+			EnGameEvent enType_;						//! 出来事の種別。
+			Vector3 vPosition_ = Vector3::Zero;			//! 出来事が起きた位置。
+			Vector3 vDirection_ = Vector3::Zero;		//! 出来事の向き(発射方向・命中方向など)。
+			int iParam_ = 0;							//! 付随する数値(用途は種別依存)。
 		};
 
 		/**

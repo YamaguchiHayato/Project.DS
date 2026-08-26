@@ -34,9 +34,9 @@ namespace nsApp
 		 */
 		struct EffectInfo
 		{
-			EffectEmitter*	pEmitter_ = nullptr;	//! エフェクトのエミッタ。
-			float			fLifeTime_ = 0.0f;		//! 寿命(秒)。
-			float			fCurrentTime_ = 0.0f;	//! 経過時間(秒)。
+			EffectEmitter* pEmitter_ = nullptr;	//! エフェクトのエミッタ。
+			float fLifeTime_ = 0.0f;			//! 寿命(秒)。
+			float fCurrentTime_ = 0.0f;			//! 経過時間(秒)。
 		};
 
 		class EffectList
@@ -72,29 +72,14 @@ namespace nsApp
 
 			/**
 			 * @brief エフェクトを再生する。
-			 * @param enID      エフェクトの識別子。
+			 * @param enID エフェクトの識別子。
 			 * @param vPosition 出現位置。
 			 * @param qRotation 回転。
-			 * @param vScale    拡大率。
+			 * @param vScale 拡大率。
 			 * @param fLifeTime 維持する時間(秒)。
 			 * @return 再生したエミッタ。失敗時は nullptr。
 			 */
-			EffectEmitter* PlayEffect(
-				EnEffectID enID,
-				const Vector3& vPosition,
-				const Quaternion& qRotation = Quaternion::Identity,
-				const Vector3& vScale = Vector3::One,
-				float fLifeTime = 2.0f);
-
-
-		private:
-			/**
-			 * @brief エフェクトファイルのパスを組み立てて登録する。
-			 *        素材が見つからない識別子は登録せず、再生要求を無視する。
-			 * @param enID      エフェクトの識別子。
-			 * @param sFileName 拡張子を含むファイル名(例: "hit.efk")。
-			 */
-			void RegisterEffect(EnEffectID enID, const std::u16string& sFileName);
+			EffectEmitter* PlayEffect(EnEffectID enID, const Vector3& vPosition, const Quaternion& qRotation = Quaternion::Identity, const Vector3& vScale = Vector3::One, float fLifeTime = 2.0f);
 
 
 		public:
@@ -102,36 +87,54 @@ namespace nsApp
 			 * @brief 現在有効なエフェクトリストを設定する(所有者であるシーンが自身を登録する)。
 			 * @param pList 有効にするリスト。破棄時は nullptr を渡す。
 			 */
-			static void SetActiveList(EffectList* pList);
+			static void SetActiveList(EffectList* pList)
+			{
+				/* どこからでも再生できるよう、有効なリストを覚えておく。*/
+				pActiveList_ = pList;
+			}
 
 			/**
 			 * @brief 現在有効なエフェクトリストを取得する。
 			 * @return 有効なリスト。無ければ nullptr。
 			 */
-			static EffectList* GetActiveList();
+			static EffectList* GetActiveList()
+			{
+				return pActiveList_;
+			}
 
 
 		private:
-			std::unordered_map<uint8_t, std::u16string>	mapEffectPathList_;	//! 識別子とファイルパスの対応表。
-			std::vector<EffectInfo>						vecPlayingEffects_;	//! 再生中のエフェクト一覧。
-			bool										bInitialized_ = false;	//! 登録済みか。
+			/**
+			 * @brief 再生中の一覧から1件ぶんのエミッタを破棄する。
+			 * @param stInfo 破棄する情報。
+			 */
+			void DestroyEmitter(EffectInfo& stInfo);
 
-			static EffectList*							pActiveList_;		//! 現在有効なリスト(どこからでも再生できるようにするための窓口)。
+			/**
+			 * @brief エフェクトファイルのパスを組み立てて登録する。
+			 *        素材が見つからない識別子は登録せず、再生要求を無視する。
+			 * @param enID エフェクトの識別子。
+			 * @param sFileName 拡張子を含むファイル名(例: "hit.efk")。
+			 */
+			void RegisterEffect(EnEffectID enID, const std::u16string& sFileName);
+
+
+		private:
+			std::unordered_map<uint8_t, std::u16string> mapEffectPathList_;	//! 識別子とファイルパスの対応表。
+			std::vector<EffectInfo> vecPlayingEffects_;						//! 再生中のエフェクト一覧。
+			bool bInitialized_ = false;										//! 登録済みか。
+
+			static EffectList* pActiveList_;								//! 現在有効なリスト(どこからでも再生するための窓口)。
 		};
 
 		/**
 		 * @brief エフェクトを再生する簡易窓口。有効なリストが無ければ何もしない。
-		 * @param enID      エフェクトの識別子。
+		 * @param enID エフェクトの識別子。
 		 * @param vPosition 出現位置。
 		 * @param qRotation 回転。
-		 * @param vScale    拡大率。
+		 * @param vScale 拡大率。
 		 * @param fLifeTime 維持する時間(秒)。
 		 */
-		void PlayEffect(
-			EnEffectID enID,
-			const Vector3& vPosition,
-			const Quaternion& qRotation = Quaternion::Identity,
-			const Vector3& vScale = Vector3::One,
-			float fLifeTime = 2.0f);
+		void PlayEffect(EnEffectID enID, const Vector3& vPosition, const Quaternion& qRotation = Quaternion::Identity, const Vector3& vScale = Vector3::One, float fLifeTime = 2.0f);
 	}
 }

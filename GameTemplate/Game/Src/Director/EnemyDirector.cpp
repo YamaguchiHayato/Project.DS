@@ -7,8 +7,8 @@
 
 namespace
 {
-	const float	fSpawnInterval_ = 2.0f;		//! 敵を湧かせる間隔(秒)。
-	const int	iMaxAliveEnemies_ = 6;		//! 同時に存在できる敵の最大数。
+	const float fSpawnInterval_ = 2.0f;		//! 敵を湧かせる間隔(秒)。
+	const int iMaxAliveEnemies_ = 6;		//! 同時に存在できる敵の最大数。
 	/*
 	 * プレイヤーからどれだけ離して湧かせるか。
 	 * CommonEnemy の発見距離(fDetectRange_=250)より内側に湧かせないと、
@@ -17,8 +17,8 @@ namespace
 	 * ※プレイヤーの移動速度(200)が敵の追跡速度(120)より速いため、
 	 *   離れられると追いつけない。敵側のパラメータは要調整(山口担当領域)。
 	 */
-	const float	fSpawnRadius_ = 200.0f;
-	const float	fPi_ = 3.14159265f;			//! 円周率。
+	const float fSpawnRadius_ = 200.0f;
+	const float fPi_ = 3.14159265f;			//! 円周率。
 }
 
 namespace nsApp

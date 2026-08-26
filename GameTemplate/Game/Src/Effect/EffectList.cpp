@@ -4,8 +4,8 @@
 
 namespace
 {
-	const int			kMaxEffectCount = 64;				//! 同時に再生できるエフェクト数。
-	const std::u16string	sEffectFolder_ = u"Assets/effect/";	//! エフェクト素材を置くフォルダ。
+	const int kMaxEffectCount = 64;						//! 同時に再生できるエフェクト数。
+	const std::u16string sEffectFolder_ = u"Assets/effect/";	//! エフェクト素材を置くフォルダ。
 
 	/**
 	 * @brief 存在確認のために、パスをナロー文字列へ変換する(ASCIIのパスのみ対応)。
@@ -14,9 +14,14 @@ namespace
 	 */
 	std::string ToNarrowPath(const std::u16string& sPath)
 	{
+		/* 変換結果を組み立てる文字列。*/
 		std::string sResult;
+
+		/* 1文字ずつナロー文字へ落とし込む。*/
 		for (char16_t c : sPath)
 			sResult += static_cast<char>(c);
+
+		/* 組み立てた文字列を返す。*/
 		return sResult;
 	}
 }
@@ -35,29 +40,12 @@ namespace nsApp
 			if (pActiveList_ == this)
 				pActiveList_ = nullptr;
 
-			/* 再生中のエフェクトを片付ける。*/
-			vecPlayingEffects_.clear();
+			/* 再生中のエフェクトを破棄する。*/
+			Clear();
 		}
 
 
-		void EffectList::SetActiveList(EffectList* pList)
-		{
-			pActiveList_ = pList;
-		}
-
-
-		EffectList* EffectList::GetActiveList()
-		{
-			return pActiveList_;
-		}
-
-
-		void PlayEffect(
-			EnEffectID enID,
-			const Vector3& vPosition,
-			const Quaternion& qRotation,
-			const Vector3& vScale,
-			float fLifeTime)
+		void PlayEffect(EnEffectID enID, const Vector3& vPosition, const Quaternion& qRotation, const Vector3& vScale, float fLifeTime)
 		{
 			/* 有効なリストがあるときだけ再生する。*/
 			EffectList* pList = EffectList::GetActiveList();
@@ -73,21 +61,23 @@ namespace nsApp
 			/* 二重登録を防ぐ。*/
 			if (bInitialized_)
 				return;
+
 			bInitialized_ = true;
 
 			/*
 			 * エフェクト素材を登録する。ファイル名は拡張子込みで指定するので、
 			 * .efk と .efkefc のどちらでも扱える。素材を差し替えるときはここを直す。
 			 */
-			RegisterEffect(EnEffectID::MuzzleFlash, u"gun/shoot.efkefc");				//! 発射の閃光。
-			RegisterEffect(EnEffectID::Hit, u"gun/Blood.efkefc");						//! 着弾の血しぶき。
-			RegisterEffect(EnEffectID::Explosion, u"gun/Blast.efkefc");					//! グレネードの爆発。
-			RegisterEffect(EnEffectID::Heal, u"gun/Heal.efkefc");						//! 回復の輝き。
+			RegisterEffect(EnEffectID::MuzzleFlash, u"gun/shoot.efkefc");	//! 発射の閃光。
+			RegisterEffect(EnEffectID::Hit, u"gun/Blood.efkefc");			//! 着弾の血しぶき。
+			RegisterEffect(EnEffectID::Explosion, u"gun/Blast.efkefc");		//! グレネードの爆発。
+			RegisterEffect(EnEffectID::Heal, u"gun/Heal.efkefc");			//! 回復の輝き。
 		}
 
 
 		void EffectList::RegisterEffect(EnEffectID enID, const std::u16string& sFileName)
 		{
+			/* フォルダ名と繋いでファイルパスを組み立てる。*/
 			const std::u16string sPath = sEffectFolder_ + sFileName;
 
 			/*
@@ -102,9 +92,11 @@ namespace nsApp
 				return;
 			}
 
-			/* エンジンへ登録し、パス表にも控える(登録済みかの判定に使う)。*/
+			/* エンジンへ登録する。*/
 			const uint8_t iKey = static_cast<uint8_t>(enID);
 			EffectEngine::GetInstance()->ResistEffect(iKey, sPath.c_str());
+
+			/* 登録済みかの判定に使うため、パス表にも控える。*/
 			mapEffectPathList_[iKey] = sPath;
 		}
 
@@ -114,6 +106,7 @@ namespace nsApp
 			/* 再生中の一覧を巡回し、寿命が切れたエフェクトを破棄する。*/
 			for (auto iterator = vecPlayingEffects_.begin(); iterator != vecPlayingEffects_.end();)
 			{
+				/* 経過時間を進める。*/
 				iterator->fCurrentTime_ += fDeltaTime;
 
 				/* まだ寿命内なら次へ。*/
@@ -124,11 +117,7 @@ namespace nsApp
 				}
 
 				/* 寿命が尽きたのでエミッタを破棄し、一覧から取り除く。*/
-				if (iterator->pEmitter_ != nullptr)
-				{
-					DeleteGO(iterator->pEmitter_);
-					iterator->pEmitter_ = nullptr;
-				}
+				DestroyEmitter(*iterator);
 				iterator = vecPlayingEffects_.erase(iterator);
 			}
 		}
@@ -136,29 +125,33 @@ namespace nsApp
 
 		void EffectList::Clear()
 		{
-			/* ゲームオブジェクトマネージャが生きている間だけ破棄できる。*/
-			const bool bManagerAvailable = (GameObjectManager::GetInstance() != nullptr);
-
+			/* 再生中のエフェクトを全て破棄する。*/
 			for (EffectInfo& stInfo : vecPlayingEffects_)
-			{
-				if (stInfo.pEmitter_ == nullptr)
-					continue;
+				DestroyEmitter(stInfo);
 
-				if (bManagerAvailable)
-					DeleteGO(stInfo.pEmitter_);
-
-				stInfo.pEmitter_ = nullptr;
-			}
+			/* 一覧を空にする。*/
 			vecPlayingEffects_.clear();
 		}
 
 
-		EffectEmitter* EffectList::PlayEffect(
-			EnEffectID enID,
-			const Vector3& vPosition,
-			const Quaternion& qRotation,
-			const Vector3& vScale,
-			float fLifeTime)
+		void EffectList::DestroyEmitter(EffectInfo& stInfo)
+		{
+			/* 既に破棄されていれば何もしない。*/
+			if (stInfo.pEmitter_ == nullptr)
+				return;
+
+			/*
+			 * ゲームオブジェクトマネージャが生きている間だけ破棄できる。
+			 * 終了処理の順番によっては先に解放されているため、その場合は参照だけ捨てる。
+			 */
+			if (GameObjectManager::GetInstance() != nullptr)
+				DeleteGO(stInfo.pEmitter_);
+
+			stInfo.pEmitter_ = nullptr;
+		}
+
+
+		EffectEmitter* EffectList::PlayEffect(EnEffectID enID, const Vector3& vPosition, const Quaternion& qRotation, const Vector3& vScale, float fLifeTime)
 		{
 			/* 登録されていない(素材が無い)識別子は再生しない。*/
 			const uint8_t iKey = static_cast<uint8_t>(enID);
@@ -197,11 +190,12 @@ namespace nsApp
 			/* 一覧から探して破棄する。*/
 			for (auto iterator = vecPlayingEffects_.begin(); iterator != vecPlayingEffects_.end(); ++iterator)
 			{
+				/* 目的のエミッタでなければ次へ。*/
 				if (iterator->pEmitter_ != pEffect)
 					continue;
 
-				DeleteGO(iterator->pEmitter_);
-				iterator->pEmitter_ = nullptr;
+				/* 見つかったので破棄して一覧から取り除く。*/
+				DestroyEmitter(*iterator);
 				vecPlayingEffects_.erase(iterator);
 				return;
 			}

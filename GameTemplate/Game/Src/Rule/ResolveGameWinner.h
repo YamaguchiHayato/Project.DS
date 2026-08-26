@@ -71,8 +71,8 @@ namespace nsApp
 
 
 		private:
-			EnGamePhase			enPhase_ = EnGamePhase::Playing;	//! 現在の進行状態。
-			nsEvent::EventBus*	pEventBus_ = nullptr;			//! 購読先のイベントバス。
+			EnGamePhase enPhase_ = EnGamePhase::Playing;	//! 現在の進行状態。
+			nsEvent::EventBus* pEventBus_ = nullptr;			//! 購読先のイベントバス。
 		};
 	}
 }
