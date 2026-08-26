@@ -118,7 +118,10 @@
     <ClCompile Include="Src\Director\EnemyDirector.cpp">
       <Filter>Src\Director</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Effect\HitEffect.cpp">
+    <ClCompile Include="Src\Effect\EffectList.cpp">
+      <Filter>Src\Effect</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Effect\EffectListener.cpp">
       <Filter>Src\Effect</Filter>
     </ClCompile>
     <ClCompile Include="Src\System\GamePause.cpp">
@@ -240,7 +243,10 @@
     <ClInclude Include="Src\Director\EnemyDirector.h">
       <Filter>Src\Director</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Effect\HitEffect.h">
+    <ClInclude Include="Src\Effect\EffectList.h">
+      <Filter>Src\Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Effect\EffectListener.h">
       <Filter>Src\Effect</Filter>
     </ClInclude>
     <ClInclude Include="Src\System\GamePause.h">

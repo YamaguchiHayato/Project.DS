@@ -1,4 +1,6 @@
 #pragma once
+#include "Src/Effect/EffectList.h"
+#include "Src/Effect/EffectListener.h"
 #include "Src/Scene/IScene.h"
 
 namespace nsApp
@@ -61,6 +63,7 @@ namespace nsApp
 		private:
 			nsActor::Player*		pPlayer_ = nullptr;			//! プレイヤー。
 			ModelRender				stGroundModel_;				//! 地面。
+			PhysicsStaticObject		stGroundCollider_;		//! 地面の静的コライダ(キャラクターが接地・衝突するために必要)。
 			nsDirector::EnemyDirector*	pEnemyDirector_ = nullptr;	//! 敵の湧き係。CommonEnemy を時間・上限で湧かせる。
 
 			Vector3					vSafeRoomPos_ = { 0.0f, 0.0f, 1500.0f };	//! セーフルーム(ゴール)の中心位置。
@@ -74,6 +77,8 @@ namespace nsApp
 
 			nsUI::InGameHud*			pHud_ = nullptr;			//! HUD(HP/弾/目標/クロスヘア/ダウン表示)。
 			bool						bPrevEnter_ = false;		//! 前フレームのEnter押下(ポーズ中のタイトル復帰用)。
+			nsEffect::EffectList		stEffectList_;			//! エフェクトの登録・再生・寿命管理。
+			nsEffect::EffectListener	stEffectListener_;		//! 通知を購読してエフェクトを再生する係。
 		};
 	}
 }

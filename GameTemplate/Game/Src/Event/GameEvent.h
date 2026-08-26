@@ -7,38 +7,49 @@ namespace nsApp
 	{
 		/**
 		 * @file   GameEvent.h
-		 * @brief  ゲーム内イベントの定義と、購読者インターフェース(Observer)。
-		 *         発行者(武器・敵・トリガ等)と購読者(ルール・HUD等)を疎結合にするための土台。
+		 * @brief  ゲーム内で「何が起きたか」を伝える通知の型・種別の定義。
+		 *         ここで定義するのは出来事そのものだけで、演出(エフェクト/SE/BGM)の指示は含めない。
+		 *         演出は購読側(リスナー)が通知を見て自分で再生する。
 		 * @author Izumida Kiryu
 		 * @date   2026/08/21
 		 */
 
 		/**
 		 * @enum  EnGameEvent
-		 * @brief ゲーム進行に関わる出来事の種類。
+		 * @brief ゲーム内で起きた出来事の種類。
 		 */
 		enum class EnGameEvent : uint8_t
 		{
+			/* 進行・ルールに関わる出来事。*/
 			PlayerReachedSafeRoom,	//! プレイヤーがセーフルームへ到達した。
 			PlayerDead,				//! プレイヤーが死亡した。
-			PlayerDowned,			//! プレイヤーがダウンした(予約)。
-			PlayerRevived,			//! プレイヤーが救助された(予約)。
-			EnemyKilled,			//! 敵を撃破した(予約)。
+			PlayerDowned,			//! プレイヤーがダウンした。
+			PlayerRevived,			//! プレイヤーが救助された。
+			EnemyKilled,			//! 敵を撃破した。
+
+			/* 戦闘中の出来事。*/
+			WeaponFired,			//! 武器を発射した。
+			BulletHit,				//! 弾が命中した。
+			GrenadeExploded,		//! グレネードが爆発した。
+			PlayerHealed,			//! プレイヤーが回復した。
 		};
 
 		/**
 		 * @struct GameEvent
-		 * @brief  発行される1件のイベント。必要に応じてパラメータを増やす。
+		 * @brief  発行される1件の通知。出来事の種別と、それに付随するデータを持つ。
+		 *         付随データは種別によって使う項目が異なる(使わない項目は初期値のまま)。
 		 */
 		struct GameEvent
 		{
-			EnGameEvent	enType_;		//! イベント種別。
-			int			iParam_ = 0;	//! 付随パラメータ(用途は種別依存。予約)。
+			EnGameEvent	enType_;								//! 出来事の種別。
+			Vector3		vPosition_ = { 0.0f, 0.0f, 0.0f };		//! 出来事が起きた位置。
+			Vector3		vDirection_ = { 0.0f, 0.0f, 0.0f };		//! 出来事の向き(発射方向・命中方向など)。
+			int			iParam_ = 0;							//! 付随する数値(用途は種別依存)。
 		};
 
 		/**
 		 * @class IGameEventListener
-		 * @brief イベント購読者のインターフェース(Observer)。
+		 * @brief 通知を購読する側のインターフェース(Observer)。
 		 */
 		class IGameEventListener
 		{
@@ -47,8 +58,8 @@ namespace nsApp
 			virtual ~IGameEventListener() = default;
 
 			/**
-			 * @brief イベントを受け取る。
-			 * @param stEvent 受け取ったイベント。
+			 * @brief 通知を受け取る。
+			 * @param stEvent 受け取った通知。
 			 */
 			virtual void OnGameEvent(const GameEvent& stEvent) = 0;
 		};

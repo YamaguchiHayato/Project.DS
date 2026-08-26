@@ -1,5 +1,6 @@
 #pragma once
 #include "Src/Actor/Character/ICharacter.h"
+#include "Src/Actor/Character/Common/CharacterMovement.h"
 #include "IPlayerController.h"
 #include "WeaponInventory.h"
 #include "Src/Event/GameEvent.h"
@@ -203,9 +204,14 @@ namespace nsApp
 
 			/**
 			 * @brief イベントバスへゲームイベントを発行する(バスが無ければ何もしない)。
-			 * @param enType 発行するイベント種別。
+			 * @param enType    発行する通知の種別。
+			 * @param vPosition 出来事が起きた位置。
+			 * @param vDirection 出来事の向き。
 			 */
-			void PublishGameEvent(nsEvent::EnGameEvent enType);
+			void PublishGameEvent(
+				nsEvent::EnGameEvent enType,
+				const Vector3& vPosition = Vector3::Zero,
+				const Vector3& vDirection = Vector3::Zero);
 
 			/**
 			 * @brief 移動状態に応じてモデルの位置・回転・アニメーションを更新する。
@@ -233,6 +239,7 @@ namespace nsApp
 
 
 		private:
+			CharacterMovement			stMovement_;			//! 移動計算と壁との押し戻し。
 			IPlayerController*			pController_ = nullptr;	//! 操作意図の供給源(ローカル/ネットで差し替え可能)。
 			PlayerIntent				stIntent_;				//! このフレームの操作意図。
 			nsWeapon::WeaponInventory		stWeaponInventory_;	//! 武器の所持・切り替え担当。
