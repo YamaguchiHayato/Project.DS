@@ -7,16 +7,16 @@
 
 namespace
 {
-	const Vector3	vCrosshairPos_ = { -8.0f, 12.0f, 0.0f };	//! 中央クロスヘア。
-	const Vector3	vHpPos_ = { -900.0f, -470.0f, 0.0f };		//! HP(左下)。
-	const Vector3	vAmmoPos_ = { 700.0f, -470.0f, 0.0f };		//! 弾数(右下)。
-	const Vector3	vObjectivePos_ = { -420.0f, 500.0f, 0.0f };	//! 目標(上)。
-	const Vector3	vItemPos_ = { -160.0f, -440.0f, 0.0f };		//! アイテム所持数(下・中央)。
-	const Vector3	vStatusPos_ = { -230.0f, 140.0f, 0.0f };	//! 状態(中央やや上)。
-	const float		fHudFontScale_ = 0.8f;						//! 通常表示の大きさ。
-	const float		fStatusFontScale_ = 2.0f;					//! 状態表示の大きさ。
-	const Vector3	vPausePos_ = { -340.0f, 40.0f, 0.0f };		//! ポーズ表示(中央やや上)。
-	const float		fPauseFontScale_ = 1.3f;					//! ポーズ表示の大きさ。
+	const Vector3 vCrosshairPos_ = { -8.0f, 12.0f, 0.0f };	//! 中央クロスヘア。
+	const Vector3 vHpPos_ = { -900.0f, -470.0f, 0.0f };		//! HP(左下)。
+	const Vector3 vAmmoPos_ = { 700.0f, -470.0f, 0.0f };		//! 弾数(右下)。
+	const Vector3 vObjectivePos_ = { -420.0f, 500.0f, 0.0f };	//! 目標(上)。
+	const Vector3 vItemPos_ = { -160.0f, -440.0f, 0.0f };		//! アイテム所持数(下・中央)。
+	const Vector3 vStatusPos_ = { -230.0f, 140.0f, 0.0f };	//! 状態(中央やや上)。
+	const float fHudFontScale_ = 0.8f;						//! 通常表示の大きさ。
+	const float fStatusFontScale_ = 2.0f;					//! 状態表示の大きさ。
+	const Vector3 vPausePos_ = { -340.0f, 40.0f, 0.0f };		//! ポーズ表示(中央やや上)。
+	const float fPauseFontScale_ = 1.3f;					//! ポーズ表示の大きさ。
 }
 
 namespace nsApp

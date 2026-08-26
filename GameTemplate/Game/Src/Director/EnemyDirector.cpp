@@ -7,15 +7,18 @@
 
 namespace
 {
-	const float	fSpawnInterval_ = 2.0f;		//! 敵を湧かせる間隔(秒)。
-	const int	iMaxAliveEnemies_ = 6;		//! 同時に存在できる敵の最大数。
+	const float fSpawnInterval_ = 2.0f;		//! 敵を湧かせる間隔(秒)。
+	const int iMaxAliveEnemies_ = 6;		//! 同時に存在できる敵の最大数。
 	/*
-	 * プレイヤーからどれだけ離して湧かせるか。CommonEnemy の発見距離(fDetectRange_≒250)より
-	 * 内側に湧かせないと、湧いた敵が待機のまま追ってこない。将来、敵側に遠距離パスが入ったら
-	 * もっと遠くから湧かせられる(要・山口と調整)。
+	 * プレイヤーからどれだけ離して湧かせるか。
+	 * CommonEnemy の発見距離(fDetectRange_=250)より内側に湧かせないと、
+	 * 湧いた敵が待機のまま追ってこない。攻撃距離(fAttackRange_=120)よりは
+	 * 外にして、湧いた瞬間に殴られないようにする。
+	 * ※プレイヤーの移動速度(200)が敵の追跡速度(120)より速いため、
+	 *   離れられると追いつけない。敵側のパラメータは要調整(山口担当領域)。
 	 */
-	const float	fSpawnRadius_ = 240.0f;
-	const float	fPi_ = 3.14159265f;			//! 円周率。
+	const float fSpawnRadius_ = 200.0f;
+	const float fPi_ = 3.14159265f;			//! 円周率。
 }
 
 namespace nsApp
@@ -65,9 +68,13 @@ namespace nsApp
 			vSpawnPos.z += cosf(fAngle) * fSpawnRadius_;
 			vSpawnPos.y = 0.0f;
 
-			/* 敵を生成し、湧き位置へ置いてプレイヤーを標的にする。*/
+			/*
+			 * 敵を生成し、湧き位置へ置いてプレイヤーを標的にする。
+			 * 座標を直接書き換えるだけだと敵の移動処理に上書きされてしまうため、
+			 * 移動処理へも反映される SetPosition を使う。
+			 */
 			nsActor::CommonEnemy* pEnemy = NewGO<nsActor::CommonEnemy>(0, "commonEnemy");
-			pEnemy->GetPosition() = vSpawnPos;
+			pEnemy->SetPosition(vSpawnPos);
 			pEnemy->SetTarget(pPlayer);
 		}
 	}

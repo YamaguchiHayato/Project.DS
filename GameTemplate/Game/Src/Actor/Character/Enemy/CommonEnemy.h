@@ -71,6 +71,17 @@ namespace nsApp
 			}
 
 			/**
+			 * @brief 現在位置を設定する(突き飛ばしなど外部から動かす場合に使う)。
+			 *        移動処理側の座標にも反映しないと、次のフレームで元に戻ってしまう。
+			 * @param vPosition 設定する位置。
+			 */
+			void SetPosition(const Vector3& vPosition)
+			{
+				vPosition_ = vPosition;
+				stMovement_.SetPosition(vPosition_);
+			}
+
+			/**
 			 * @brief 追跡対象を設定する。
 			 * @param pTarget 追跡対象。
 			 */

@@ -5,7 +5,6 @@
 #include "Tracer.h"
 #include "Src/Actor/Character/Enemy/CommonEnemy.h"
 #include "Src/Event/EventBus.h"
-#include "Src/Effect/HitEffect.h"
 #include "Src/System/GamePause.h"
 #include "Src/Item/Grenade.h"
 
@@ -21,29 +20,31 @@ namespace
 		"Assets/animData/run.tka",	//! Run。
 	};
 
-	const float	kMuzzleForward = 50.0f;		//! 銃口の前方オフセット(照準方向)。
-	const float	kMuzzleHeight = 150.0f;		//! 銃口の高さ(目線付近から撃つ)。
-	const float	kMuzzleRight = 40.0f;		//! トレーサー始点を目線から右へずらす量(線を斜めに見せる)。
-	const float	kMuzzleDown = -32.0f;		//! トレーサー始点を目線から下へずらす量(負で下)。
-	const float	kAnimInterpolateTime = 0.2f;	//! アニメーション補間時間(秒)。
+	const float kMuzzleForward = 50.0f;		//! 銃口の前方オフセット(照準方向)。
+	const float kMuzzleHeight = 150.0f;		//! 銃口の高さ(目線付近から撃つ)。
+	const float kMuzzleRight = 40.0f;		//! トレーサー始点を目線から右へずらす量(線を斜めに見せる)。
+	const float kMuzzleDown = -32.0f;		//! トレーサー始点を目線から下へずらす量(負で下)。
+	const float kAnimInterpolateTime = 0.2f;	//! アニメーション補間時間(秒)。
 
-	const float	kEyeHeight = 160.0f;			//! 目(カメラ)の高さ。DebugPlayerScene側の kEyeHeight_ と合わせる。
-	const float	kViewModelRight = 22.0f;		//! ビューモデル銃の右オフセット。
-	const float	kViewModelDown = -26.0f;		//! ビューモデル銃の下オフセット(負で下)。
-	const float	kTargetGunSize = 45.0f;			//! ビューモデル銃の目標サイズ(一番長い辺をこの長さに自動スケール)。
-	const float	kWeaponRange = 3000.0f;			//! 射程(ヒットスキャンのレイ・トレーサーの長さ)。
-	const float	kBleedOutTime = 15.0f;			//! ダウンしてから死亡するまでの出血時間(秒)。
-	const int	kReviveHP = 30;					//! 救助で復帰したときのHP。
-	const float	kShoveRange = 180.0f;			//! 突き飛ばしが届く距離。
-	const float	kShovePush = 120.0f;			//! 突き飛ばしで敵を押し返す距離。
-	const float	kShoveFrontDot = 0.5f;			//! 正面判定のしきい値(0.5=正面±60度)。
-	const float	kShoveCooldownTime = 0.7f;		//! 突き飛ばしのクールダウン(秒)。
-	const float	kMaxPitch = 1.4f;				//! カメラピッチの上下限(rad, ≈±80度)。真上/真下での破綻防止。
-	const float	kSprintMul = 1.6f;			//! スプリント時の移動速度倍率。
-	const float	kBobWalkSpeed = 9.0f;		//! 歩行ボブの速さ(歩き)。
-	const float	kBobWalkAmp = 2.0f;			//! 歩行ボブの振れ幅(歩き)。
-	const float	kBobSprintSpeed = 13.0f;	//! 歩行ボブの速さ(走り)。
-	const float	kBobSprintAmp = 4.0f;		//! 歩行ボブの振れ幅(走り)。
+	const float kEyeHeight = 160.0f;			//! 目(カメラ)の高さ。DebugPlayerScene側の kEyeHeight_ と合わせる。
+	const float kViewModelRight = 22.0f;		//! ビューモデル銃の右オフセット。
+	const float kViewModelDown = -26.0f;		//! ビューモデル銃の下オフセット(負で下)。
+	const float kTargetGunSize = 45.0f;			//! ビューモデル銃の目標サイズ(一番長い辺をこの長さに自動スケール)。
+	const float kWeaponRange = 3000.0f;			//! 射程(ヒットスキャンのレイ・トレーサーの長さ)。
+	const float kBleedOutTime = 15.0f;			//! ダウンしてから死亡するまでの出血時間(秒)。
+	const int kReviveHP = 30;					//! 救助で復帰したときのHP。
+	const float kShoveRange = 180.0f;			//! 突き飛ばしが届く距離。
+	const float kShovePush = 120.0f;			//! 突き飛ばしで敵を押し返す距離。
+	const float kShoveFrontDot = 0.5f;			//! 正面判定のしきい値(0.5=正面±60度)。
+	const float kShoveCooldownTime = 0.7f;		//! 突き飛ばしのクールダウン(秒)。
+	const float kMaxPitch = 1.4f;				//! カメラピッチの上下限(rad, ≈±80度)。真上/真下での破綻防止。
+	const float kCapsuleRadius = 25.0f;		//! 移動用カプセルの半径(壁との押し戻しに使う)。
+	const float kCapsuleHeight = 120.0f;	//! 移動用カプセルの高さ。
+	const float kSprintMul = 1.6f;			//! スプリント時の移動速度倍率。
+	const float kBobWalkSpeed = 9.0f;		//! 歩行ボブの速さ(歩き)。
+	const float kBobWalkAmp = 2.0f;			//! 歩行ボブの振れ幅(歩き)。
+	const float kBobSprintSpeed = 13.0f;	//! 歩行ボブの速さ(走り)。
+	const float kBobSprintAmp = 4.0f;		//! 歩行ボブの振れ幅(走り)。
 }
 
 namespace nsApp
@@ -65,6 +66,9 @@ namespace nsApp
 		{
 			/* 操作意図の供給源を作る(ローカル実機。将来ここをネット受信用に差し替えられる)。*/
 			pController_ = new LocalPlayerController();
+
+			/* 移動処理を初期化する。カプセルで壁(PhysicsStaticObject)と当たる。*/
+			stMovement_.Init(kCapsuleRadius, kCapsuleHeight, vPosition_);
 
 			/* モデルとアニメーションを読み込む。*/
 			InitModel();
@@ -195,6 +199,9 @@ namespace nsApp
 			{
 				bIsMoving_ = false;
 				bIsSprinting_ = false;
+
+				/* 止まっていても移動処理は回す(壁との押し戻しを効かせるため)。*/
+				vPosition_ = stMovement_.Execute(Vector3::Zero, fDeltaTime);
 				return;
 			}
 
@@ -206,7 +213,9 @@ namespace nsApp
 			/* スプリント(Shift)中は移動速度を上げて進む。*/
 			bIsSprinting_ = stIntent_.bSprintPress_;
 			const float fSpeed = bIsSprinting_ ? (fMoveSpeed_ * kSprintMul) : fMoveSpeed_;
-			vPosition_ += vMoveDir * fSpeed * fDeltaTime;
+
+			/* 移動計算と壁との押し戻しは CharacterMovement クラスに一任する。*/
+			vPosition_ = stMovement_.MoveOnDirection(vMoveDir, fSpeed, fDeltaTime);
 
 			/*
 			 * 原神風:常に進行方向を向いて前歩きする(Sで下がっても振り向くので後ろ歩きにならない)。
@@ -267,11 +276,10 @@ namespace nsApp
 					/* 発射に成功したら、ヒットスキャン判定＋トレーサー表示を行う。*/
 					if (stWeaponInventory_.Fire(vMuzzlePos, vAimDir))
 					{
-						/* レイの終点(最大射程)。命中したらここを命中点に置き換える。*/
-						/* マズルフラッシュ(銃口の閃光を一瞬)。*/
-							nsEffect::HitEffect* pFlash = NewGO<nsEffect::HitEffect>(0, "hitEffect");
-							pFlash->Setup(vMuzzlePos, 8.0f, 22.0f, 0.04f);
+							/* 発射したことを通知する(演出は購読側が担当する)。*/
+							PublishGameEvent(nsEvent::EnGameEvent::WeaponFired, vMuzzlePos, vAimDir);
 
+							/* レイの終点(最大射程)。命中したらここを命中点に置き換える。*/
 							Vector3 vHitPoint = vEyePos + vAimDir * kWeaponRange;
 
 						/*
@@ -318,14 +326,15 @@ namespace nsApp
 							vHitPoint = vEyePos + vAimDir * fNearest;
 							pHitEnemy->ApplyDamage(pWeapon->GetAttackPower());
 
+								/* 命中の演出(当たった位置に出す)。*/
+								PublishGameEvent(nsEvent::EnGameEvent::BulletHit, vHitPoint, vAimDir);
+
 							/* 倒したら撃破エフェクト＋撃破イベントを出して退場させる。*/
 								if (pHitEnemy->IsDead())
 								{
 									Vector3 vKillPos = pHitEnemy->GetPosition();
 									vKillPos.y += 85.0f;
-									nsEffect::HitEffect* pKill = NewGO<nsEffect::HitEffect>(0, "hitEffect");
-									pKill->Setup(vKillPos, 30.0f, 110.0f, 0.25f);
-									PublishGameEvent(nsEvent::EnGameEvent::EnemyKilled);
+									PublishGameEvent(nsEvent::EnGameEvent::EnemyKilled, vKillPos);
 
 									DeleteGO(pHitEnemy);
 								}
@@ -406,8 +415,12 @@ namespace nsApp
 				if (vDir.Dot(vAimDir) < kShoveFrontDot)
 					continue;
 
-				/* 敵を外側へ押し返す(のけぞりの簡易版)。*/
-				pEnemy->GetPosition() += vDir * kShovePush;
+				/*
+				 * 敵を外側へ押し返す(のけぞりの簡易版)。
+				 * 座標を直接書き換えるだけだと敵の移動処理に上書きされてしまうため、
+				 * 移動処理へも反映される SetPosition を使う。
+				 */
+				pEnemy->SetPosition(pEnemy->GetPosition() + vDir * kShovePush);
 			}
 
 			/* TODO: 突き飛ばしのSE/モーション、特殊感染者への効果差など。*/
@@ -425,8 +438,7 @@ namespace nsApp
 
 				Vector3 vHealPos = vPosition_;
 				vHealPos.y += 80.0f;
-				nsEffect::HitEffect* pHeal = NewGO<nsEffect::HitEffect>(0, "hitEffect");
-				pHeal->Setup(vHealPos, 40.0f, 130.0f, 0.3f);
+				PublishGameEvent(nsEvent::EnGameEvent::PlayerHealed, vHealPos);
 			}
 
 			/* 投擲(グレネード): 1個消費して視線方向へ投げる。*/
@@ -638,11 +650,17 @@ namespace nsApp
 		}
 
 
-		void Player::PublishGameEvent(nsEvent::EnGameEvent enType)
+		void Player::PublishGameEvent(nsEvent::EnGameEvent enType, const Vector3& vPosition, const Vector3& vDirection)
 		{
 			/* バスが取得できていれば発行する。*/
-			if (pEventBus_ != nullptr)
-				pEventBus_->Publish({ enType });
+			if (pEventBus_ == nullptr)
+				return;
+
+			nsEvent::GameEvent stEvent;
+			stEvent.enType_ = enType;
+			stEvent.vPosition_ = vPosition;
+			stEvent.vDirection_ = vDirection;
+			pEventBus_->Publish(stEvent);
 		}
 	}
 }

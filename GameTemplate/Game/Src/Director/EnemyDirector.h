@@ -40,7 +40,7 @@ namespace nsApp
 
 
 		private:
-			float	fSpawnTimer_ = 0.0f;	//! 次の湧きまでの経過時間(秒)。
+			float fSpawnTimer_ = 0.0f;	//! 次の湧きまでの経過時間(秒)。
 		};
 	}
 }

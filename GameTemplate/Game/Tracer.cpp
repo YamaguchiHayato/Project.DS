@@ -3,9 +3,9 @@
 
 namespace
 {
-	const char*	sTracerModelPath_ = "Assets/modelData/preset/VolumePointLight.tkm";	//! トレーサーのモデル(仮の球を細長く伸ばして線にする)。
-	const float	fTracerThickness_ = 3.0f;	//! トレーサーの太さ。
-	const float	fTracerLifeTime_ = 0.05f;	//! 表示時間(秒)。一瞬だけ見せる。
+	const char* sTracerModelPath_ = "Assets/modelData/preset/VolumePointLight.tkm";	//! トレーサーのモデル(仮の球を細長く伸ばして線にする)。
+	const float fTracerThickness_ = 3.0f;	//! トレーサーの太さ。
+	const float fTracerLifeTime_ = 0.05f;	//! 表示時間(秒)。一瞬だけ見せる。
 }
 
 namespace nsApp

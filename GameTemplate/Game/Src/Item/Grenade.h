@@ -41,10 +41,10 @@ namespace nsApp
 
 
 		private:
-			ModelRender	stModel_;						//! 表示モデル(仮の発光球)。
-			Vector3		vPos_ = { 0.0f, 0.0f, 0.0f };	//! 現在位置。
-			Vector3		vVel_ = { 0.0f, 0.0f, 0.0f };	//! 速度。
-			float		fFuse_ = 1.5f;					//! 起爆までの残り時間(秒)。
+			ModelRender stModel_;						//! 表示モデル(仮の発光球)。
+			Vector3 vPos_ = Vector3::Zero;	//! 現在位置。
+			Vector3 vVel_ = Vector3::Zero;	//! 速度。
+			float fFuse_ = 1.5f;					//! 起爆までの残り時間(秒)。
 		};
 	}
 }

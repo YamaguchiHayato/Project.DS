@@ -55,7 +55,13 @@ namespace nsApp
 		private:
 			RaycastQuery stRaycastQuery_; //! レイ問い合わせ。
 			float fEyeHeight_ = 50.0f; //! 目の高さオフセット。
-			float fHitSlack_ = 10.0f; //! 終点判定の余裕。
+			/*
+			 * 終点判定の余裕。
+			 * 対象自身のコリジョン(キャラクターコントローラーのカプセル)にレイが当たるため、
+			 * 対象の半径より大きくしないと「自分自身に遮られている」と誤判定してしまう。
+			 * プレイヤーの半径25・敵の半径20より大きい値にしている。
+			 */
+			float fHitSlack_ = 40.0f;
 		};
 	}
 }

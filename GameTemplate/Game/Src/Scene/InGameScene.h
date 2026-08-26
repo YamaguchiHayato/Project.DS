@@ -1,4 +1,6 @@
 #pragma once
+#include "Src/Effect/EffectList.h"
+#include "Src/Effect/EffectListener.h"
 #include "Src/Scene/IScene.h"
 
 namespace nsApp
@@ -59,21 +61,24 @@ namespace nsApp
 
 
 		private:
-			nsActor::Player*		pPlayer_ = nullptr;			//! プレイヤー。
-			ModelRender				stGroundModel_;				//! 地面。
-			nsDirector::EnemyDirector*	pEnemyDirector_ = nullptr;	//! 敵の湧き係。CommonEnemy を時間・上限で湧かせる。
+			nsActor::Player* pPlayer_ = nullptr;			//! プレイヤー。
+			ModelRender stGroundModel_;				//! 地面。
+			PhysicsStaticObject stGroundCollider_;		//! 地面の静的コライダ(キャラクターが接地・衝突するために必要)。
+			nsDirector::EnemyDirector* pEnemyDirector_ = nullptr;	//! 敵の湧き係。CommonEnemy を時間・上限で湧かせる。
 
-			Vector3					vSafeRoomPos_ = { 0.0f, 0.0f, 1500.0f };	//! セーフルーム(ゴール)の中心位置。
-			float					fSafeRoomRadius_ = 150.0f;	//! セーフルーム到達判定の半径(水平)。
-			ModelRender				stSafeRoomModel_;			//! ゴールの目印。
-			bool					bResultRequested_ = false;	//! リザルト遷移を予約済みか(多重予約防止)。
+			Vector3 vSafeRoomPos_ = { 0.0f, 0.0f, 1500.0f };	//! セーフルーム(ゴール)の中心位置。
+			float fSafeRoomRadius_ = 150.0f;	//! セーフルーム到達判定の半径(水平)。
+			ModelRender stSafeRoomModel_;			//! ゴールの目印。
+			bool bResultRequested_ = false;	//! リザルト遷移を予約済みか(多重予約防止)。
 
-			nsEvent::EventBus*			pEventBus_ = nullptr;		//! イベントバス(発行/購読の仲介)。
-			nsRule::ResolveGameWinner*	pGameRule_ = nullptr;		//! 勝敗管理(バスを購読)。
-			bool						bReachPublished_ = false;	//! セーフルーム到達を発行済みか。
+			nsEvent::EventBus* pEventBus_ = nullptr;		//! イベントバス(発行/購読の仲介)。
+			nsRule::ResolveGameWinner* pGameRule_ = nullptr;		//! 勝敗管理(バスを購読)。
+			bool bReachPublished_ = false;	//! セーフルーム到達を発行済みか。
 
-			nsUI::InGameHud*			pHud_ = nullptr;			//! HUD(HP/弾/目標/クロスヘア/ダウン表示)。
-			bool						bPrevEnter_ = false;		//! 前フレームのEnter押下(ポーズ中のタイトル復帰用)。
+			nsUI::InGameHud* pHud_ = nullptr;			//! HUD(HP/弾/目標/クロスヘア/ダウン表示)。
+			bool bPrevEnter_ = false;		//! 前フレームのEnter押下(ポーズ中のタイトル復帰用)。
+			nsEffect::EffectList stEffectList_;			//! エフェクトの登録・再生・寿命管理。
+			nsEffect::EffectListener stEffectListener_;		//! 通知を購読してエフェクトを再生する係。
 		};
 	}
 }

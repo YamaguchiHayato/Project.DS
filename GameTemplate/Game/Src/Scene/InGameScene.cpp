@@ -11,12 +11,12 @@
 
 namespace
 {
-	const float	fEyeHeight_ = 160.0f;								//! 目(カメラ)の高さ。Player側の kEyeHeight と合わせる。
+	const float fEyeHeight_ = 160.0f;								//! 目(カメラ)の高さ。Player側の kEyeHeight と合わせる。
 	const char* sGroundModelPath_ = "Assets/modelData/ground.tkm";	//! 地面モデル。
-	const float	fGroundScale_ = 200.0f;								//! 地面の拡大率。
+	const float fGroundScale_ = 200.0f;								//! 地面の拡大率。
 	const char* sGoalBeaconModelPath_ = "Assets/modelData/preset/VolumePointLight.tkm";	//! ゴール目印(発光球)。
-	const float	fSafeRoomMarkerScale_ = 80.0f;						//! ゴール目印の拡大率(遠くからでも見える大きさ)。
-	const float	fSafeRoomMarkerHeight_ = 120.0f;					//! ゴール目印を目線あたりに浮かせる高さ。
+	const float fSafeRoomMarkerScale_ = 80.0f;						//! ゴール目印の拡大率(遠くからでも見える大きさ)。
+	const float fSafeRoomMarkerHeight_ = 120.0f;					//! ゴール目印を目線あたりに浮かせる高さ。
 }
 
 namespace nsApp
@@ -25,6 +25,10 @@ namespace nsApp
 	{
 		InGameScene::~InGameScene()
 		{
+			/* エフェクトを片付け、リストを無効化する。*/
+			nsEffect::EffectList::SetActiveList(nullptr);
+			stEffectList_.Clear();
+
 			/* 敵の湧き係を破棄する(以降の生成を止める)。*/
 			if (pEnemyDirector_ != nullptr)
 			{
@@ -53,6 +57,10 @@ namespace nsApp
 				pHud_ = nullptr;
 			}
 
+			/* エフェクト再生係の購読を解除する。*/
+			if (pEventBus_ != nullptr)
+				pEventBus_->Unsubscribe(&stEffectListener_);
+
 			/* ルールをバスから購読解除してから、ルール・バスを破棄する(解放後アクセス防止)。*/
 			if (pEventBus_ != nullptr && pGameRule_ != nullptr)
 				pEventBus_->Unsubscribe(pGameRule_);
@@ -74,6 +82,10 @@ namespace nsApp
 			/* シーン開始時はポーズを解除しておく(前回のポーズが残らないように)。*/
 			nsSystem::SetGamePaused(false);
 
+			/* エフェクト素材を登録し、このシーンのリストを有効にする(未配置の素材は無視される)。*/
+			stEffectList_.Init();
+			nsEffect::EffectList::SetActiveList(&stEffectList_);
+
 			/* カメラを初期化する。*/
 			InitCamera();
 
@@ -81,11 +93,18 @@ namespace nsApp
 			pEventBus_ = NewGO<nsEvent::EventBus>(0, "eventBus");
 			pGameRule_ = NewGO<nsRule::ResolveGameWinner>(0, "gameRule");
 
+			/* エフェクト再生係に通知を購読させる(発行元は演出を知らなくてよい)。*/
+			stEffectListener_.Initialize(&stEffectList_);
+			pEventBus_->Subscribe(&stEffectListener_);
+
 			/* 地面を読み込んで大きく敷く。*/
 			stGroundModel_.Init(sGroundModelPath_, nullptr, 0, enModelUpAxisY);
 			stGroundModel_.SetScale(Vector3(fGroundScale_, fGroundScale_, fGroundScale_));
 			stGroundModel_.SetPosition(Vector3(0.0f, 0.0f, 0.0f));
 			stGroundModel_.Update();
+
+			/* 地面の静的コライダを作る。これが無いとキャラクターが接地できない。*/
+			stGroundCollider_.CreateFromModel(stGroundModel_.GetModel(), stGroundModel_.GetModel().GetWorldMatrix());
 
 			/* ゴール(セーフルーム)の目印を置く。ここへ到達で勝利。発光球を目線高さに浮かせて視認性を確保する。*/
 			stSafeRoomModel_.Init(sGoalBeaconModelPath_, nullptr, 0, enModelUpAxisY);
@@ -128,6 +147,9 @@ namespace nsApp
 				}
 				return;
 			}
+
+			/* 再生中エフェクトの寿命を進める。*/
+			stEffectList_.Update(g_gameTime->GetFrameDeltaTime());
 
 			/* 一人称カメラをプレイヤーへ追従させる。*/
 			UpdateCamera();

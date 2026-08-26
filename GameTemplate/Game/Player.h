@@ -1,5 +1,6 @@
 #pragma once
 #include "Src/Actor/Character/ICharacter.h"
+#include "Src/Actor/Character/Common/CharacterMovement.h"
 #include "IPlayerController.h"
 #include "WeaponInventory.h"
 #include "Src/Event/GameEvent.h"
@@ -203,9 +204,11 @@ namespace nsApp
 
 			/**
 			 * @brief イベントバスへゲームイベントを発行する(バスが無ければ何もしない)。
-			 * @param enType 発行するイベント種別。
+			 * @param enType    発行する通知の種別。
+			 * @param vPosition 出来事が起きた位置。
+			 * @param vDirection 出来事の向き。
 			 */
-			void PublishGameEvent(nsEvent::EnGameEvent enType);
+			void PublishGameEvent(nsEvent::EnGameEvent enType, const Vector3& vPosition = Vector3::Zero, const Vector3& vDirection = Vector3::Zero);
 
 			/**
 			 * @brief 移動状態に応じてモデルの位置・回転・アニメーションを更新する。
@@ -233,41 +236,42 @@ namespace nsApp
 
 
 		private:
-			IPlayerController*			pController_ = nullptr;	//! 操作意図の供給源(ローカル/ネットで差し替え可能)。
-			PlayerIntent				stIntent_;				//! このフレームの操作意図。
-			nsWeapon::WeaponInventory		stWeaponInventory_;	//! 武器の所持・切り替え担当。
+			CharacterMovement stMovement_;			//! 移動計算と壁との押し戻し。
+			IPlayerController* pController_ = nullptr;	//! 操作意図の供給源(ローカル/ネットで差し替え可能)。
+			PlayerIntent stIntent_;				//! このフレームの操作意図。
+			nsWeapon::WeaponInventory stWeaponInventory_;	//! 武器の所持・切り替え担当。
 
-			ModelRender	stModelRender_;											//! プレイヤーモデル。
+			ModelRender stModelRender_;											//! プレイヤーモデル。
 			AnimationClip aAnimationClip_[static_cast<int>(EnPlayerAnimation::Num)];	//! Idle/Walk/Run。
 
-			ModelRender	aWeaponModels_[static_cast<int>(nsWeapon::EnWeaponType::Num)];			//! 武器ごとのモデル(種類で添字)。切替のたびに再Initすると壊れるので一度だけ読み込む。
-			bool		aWeaponModelLoaded_[static_cast<int>(nsWeapon::EnWeaponType::Num)] = {};	//! 各武器モデルを読み込み済みか。
+			ModelRender aWeaponModels_[static_cast<int>(nsWeapon::EnWeaponType::Num)];			//! 武器ごとのモデル(種類で添字)。切替のたびに再Initすると壊れるので一度だけ読み込む。
+			bool aWeaponModelLoaded_[static_cast<int>(nsWeapon::EnWeaponType::Num)] = {};	//! 各武器モデルを読み込み済みか。
 			//! 各武器モデルのローカルAABB中心(原点ズレ吸収用)。Vector3に既定コンストラクタが無いので要素数ぶん明示初期化する。
-			Vector3		aWeaponModelCenter_[static_cast<int>(nsWeapon::EnWeaponType::Num)] = { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
-			float		aWeaponModelAutoScale_[static_cast<int>(nsWeapon::EnWeaponType::Num)] = {};//! 各武器モデルの自動サイズ合わせスケール。
-			nsWeapon::EnWeaponType	enEquippedType_ = nsWeapon::EnWeaponType::Handgun;			//! 現在装備中の武器の種類(描画対象)。
+			Vector3 aWeaponModelCenter_[static_cast<int>(nsWeapon::EnWeaponType::Num)] = { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
+			float aWeaponModelAutoScale_[static_cast<int>(nsWeapon::EnWeaponType::Num)] = {};//! 各武器モデルの自動サイズ合わせスケール。
+			nsWeapon::EnWeaponType enEquippedType_ = nsWeapon::EnWeaponType::Handgun;			//! 現在装備中の武器の種類(描画対象)。
 
-			Vector3		vPosition_ = { 0.0f, 0.0f, 0.0f };	//! 座標。
-			Vector3		vForward_ = { 0.0f, 0.0f, 1.0f };	//! 向いている方向(=移動方向)。
-			Quaternion	qRotation_ = Quaternion::Identity;	//! モデルの回転。
+			Vector3 vPosition_ = Vector3::Zero;	//! 座標。
+			Vector3 vForward_ = { 0.0f, 0.0f, 1.0f };	//! 向いている方向(=移動方向)。
+			Quaternion qRotation_ = Quaternion::Identity;	//! モデルの回転。
 
-			float		fCameraYaw_ = 0.0f;					//! カメラの旋回角(ラジアン、マウスで操作)。
-			float		fCameraPitch_ = 0.0f;				//! カメラのピッチ角(上下、ラジアン。マウス操作、上下限あり)。
+			float fCameraYaw_ = 0.0f;					//! カメラの旋回角(ラジアン、マウスで操作)。
+			float fCameraPitch_ = 0.0f;				//! カメラのピッチ角(上下、ラジアン。マウス操作、上下限あり)。
 
-			float		fMoveSpeed_ = 200.0f;				//! 移動速度(単位/秒)。
-			bool		bIsMoving_ = false;					//! 移動中か。
-			bool		bIsSprinting_ = false;				//! スプリント中か。
-			float		fBobTimer_ = 0.0f;					//! 歩行ボブの位相。
-			float		fBobWeight_ = 0.0f;					//! 歩行ボブの重み(移動→1/停止→0へ補間)。
-			bool		bIsLightOn_ = false;				//! ライトが点いているか。
-			EnPlayerAnimation	enPlayingAnimation_ = EnPlayerAnimation::Num;	//! 再生中のアニメーション。
+			float fMoveSpeed_ = 200.0f;				//! 移動速度(単位/秒)。
+			bool bIsMoving_ = false;					//! 移動中か。
+			bool bIsSprinting_ = false;				//! スプリント中か。
+			float fBobTimer_ = 0.0f;					//! 歩行ボブの位相。
+			float fBobWeight_ = 0.0f;					//! 歩行ボブの重み(移動→1/停止→0へ補間)。
+			bool bIsLightOn_ = false;				//! ライトが点いているか。
+			EnPlayerAnimation enPlayingAnimation_ = EnPlayerAnimation::Num;	//! 再生中のアニメーション。
 
-			EnLifeState			enLifeState_ = EnLifeState::Alive;	//! 生命状態(生存/ダウン/死亡)。
-			float				fBleedOutTimer_ = 0.0f;				//! ダウン中の出血残り時間(秒)。0で死亡。
-			float				fShoveCooldown_ = 0.0f;				//! 突き飛ばしのクールダウン残り(秒)。
-			int					iMedkitCount_ = 1;					//! 所持回復アイテム数。
-			int					iGrenadeCount_ = 2;					//! 所持投擲アイテム数。
-			nsEvent::EventBus*	pEventBus_ = nullptr;				//! イベント発行先(生成時にFindGOで取得。無ければ発行しない)。
+			EnLifeState enLifeState_ = EnLifeState::Alive;	//! 生命状態(生存/ダウン/死亡)。
+			float fBleedOutTimer_ = 0.0f;				//! ダウン中の出血残り時間(秒)。0で死亡。
+			float fShoveCooldown_ = 0.0f;				//! 突き飛ばしのクールダウン残り(秒)。
+			int iMedkitCount_ = 1;					//! 所持回復アイテム数。
+			int iGrenadeCount_ = 2;					//! 所持投擲アイテム数。
+			nsEvent::EventBus* pEventBus_ = nullptr;				//! イベント発行先(生成時にFindGOで取得。無ければ発行しない)。
 		};
 	}
 }

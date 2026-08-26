@@ -35,10 +35,10 @@ namespace nsApp
 
 
 		private:
-			ModelRender	stModel_;							//! トレーサーのモデル(細長く伸ばして使う)。
-			Vector3		vStart_ = { 0.0f, 0.0f, 0.0f };		//! 始点(銃口)。
-			Vector3		vEnd_ = { 0.0f, 0.0f, 0.0f };		//! 終点(着弾点/最大射程)。
-			float		fLifeTimer_ = 0.0f;					//! 残り表示時間(秒)。
+			ModelRender stModel_;							//! トレーサーのモデル(細長く伸ばして使う)。
+			Vector3 vStart_ = Vector3::Zero;		//! 始点(銃口)。
+			Vector3 vEnd_ = Vector3::Zero;		//! 終点(着弾点/最大射程)。
+			float fLifeTimer_ = 0.0f;					//! 残り表示時間(秒)。
 		};
 	}
 }

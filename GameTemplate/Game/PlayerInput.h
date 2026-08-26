@@ -102,31 +102,31 @@ namespace nsApp
 
 
 		private:
-			Vector3	vMoveAxis_ = { 0.0f, 0.0f, 0.0f };			//! 移動方向。
-			Vector2	vAimScreenPos_ = { 0.0f, 0.0f };			//! マウスカーソル位置(スプライト空間)。
-			float	fMouseDeltaX_ = 0.0f;						//! このフレームのマウス横移動量。
-			float	fMouseDeltaY_ = 0.0f;						//! このフレームのマウス縦移動量。
-			bool	bCursorLocked_ = false;						//! カーソルを非表示・固定中か。
+			Vector3 vMoveAxis_ = Vector3::Zero;			//! 移動方向。
+			Vector2 vAimScreenPos_ = { 0.0f, 0.0f };			//! マウスカーソル位置(スプライト空間)。
+			float fMouseDeltaX_ = 0.0f;						//! このフレームのマウス横移動量。
+			float fMouseDeltaY_ = 0.0f;						//! このフレームのマウス縦移動量。
+			bool bCursorLocked_ = false;						//! カーソルを非表示・固定中か。
 
-			bool	bFirePress_ = false;					//! 左クリック押下中か。
-			bool	bFireTrigger_ = false;					//! 左クリックを押した瞬間か。
-			bool	bShoveTrigger_ = false;					//! 右クリックを押した瞬間か(突き飛ばし)。
-			bool	bWeaponSwitchNextTrigger_ = false;		//! ホイール奥回転トリガー。
-			bool	bWeaponSwitchPrevTrigger_ = false;		//! ホイール手前回転トリガー。
-			bool	bReloadTrigger_ = false;				//! Rキートリガー。
-			bool	bInteractTrigger_ = false;				//! Eキートリガー。
-			bool	bLightTrigger_ = false;					//! Fキートリガー。
-			bool	bPauseTrigger_ = false;					//! Escキートリガー。
-			bool	bHealTrigger_ = false;					//! Hキートリガー(回復)。
-			bool	bThrowTrigger_ = false;					//! Gキートリガー(投擲)。
-			bool	bSprintPress_ = false;					//! Shift押下中か(スプリント)。
+			bool bFirePress_ = false;					//! 左クリック押下中か。
+			bool bFireTrigger_ = false;					//! 左クリックを押した瞬間か。
+			bool bShoveTrigger_ = false;					//! 右クリックを押した瞬間か(突き飛ばし)。
+			bool bWeaponSwitchNextTrigger_ = false;		//! ホイール奥回転トリガー。
+			bool bWeaponSwitchPrevTrigger_ = false;		//! ホイール手前回転トリガー。
+			bool bReloadTrigger_ = false;				//! Rキートリガー。
+			bool bInteractTrigger_ = false;				//! Eキートリガー。
+			bool bLightTrigger_ = false;					//! Fキートリガー。
+			bool bPauseTrigger_ = false;					//! Escキートリガー。
+			bool bHealTrigger_ = false;					//! Hキートリガー(回復)。
+			bool bThrowTrigger_ = false;					//! Gキートリガー(投擲)。
+			bool bSprintPress_ = false;					//! Shift押下中か(スプリント)。
 
-			bool	bPrevReloadPress_ = false;		//! 前回フレームのRキー押下状態。
-			bool	bPrevInteractPress_ = false;	//! 前回フレームのEキー押下状態。
-			bool	bPrevLightPress_ = false;		//! 前回フレームのFキー押下状態。
-			bool	bPrevPausePress_ = false;		//! 前回フレームのEscキー押下状態。
-			bool	bPrevHealPress_ = false;		//! 前回フレームのHキー押下状態。
-			bool	bPrevThrowPress_ = false;		//! 前回フレームのGキー押下状態。
+			bool bPrevReloadPress_ = false;		//! 前回フレームのRキー押下状態。
+			bool bPrevInteractPress_ = false;	//! 前回フレームのEキー押下状態。
+			bool bPrevLightPress_ = false;		//! 前回フレームのFキー押下状態。
+			bool bPrevPausePress_ = false;		//! 前回フレームのEscキー押下状態。
+			bool bPrevHealPress_ = false;		//! 前回フレームのHキー押下状態。
+			bool bPrevThrowPress_ = false;		//! 前回フレームのGキー押下状態。
 		};
 	}
 }
