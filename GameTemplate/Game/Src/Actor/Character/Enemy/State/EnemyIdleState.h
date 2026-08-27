@@ -1,6 +1,5 @@
 #pragma once
-#include "Src/StateMachine/IState.h"
-#include "Src/Actor/Actor.h"
+#include "Src/Actor/Character/Enemy/State/EnemyStateBase.h"
 
 namespace nsApp
 {
@@ -8,28 +7,29 @@ namespace nsApp
 	{
 		/**
 		 * @file   EnemyIdleState.h
-		 * @brief  雑魚敵の待機ステート。
+		 * @brief  敵の待機ステート。
+		 * @details IEnemy を所有者とする。流れは EnemyStateBase。差分は OnEnter / OnUpdate のみ。
 		 * @author Yamaguchi Hayato
 		 * @date   2026/08/18
 		 */
-		class EnemyIdleState : public nsState::IState<Actor>
+		class EnemyIdleState : public EnemyStateBase
 		{
-		public:
-			/* ライフサイクル。*/
+		protected:
 			/**
-			 * @brief 待機開始。
+			 * @brief このステートの種別を返す。
+			 * @return Idle。
 			 */
-			void Enter() override;
+			EnEnemyState GetStateKind() const override;
 
 			/**
-			 * @brief 待機更新。発見距離に入ったら追跡へ切り替える。
+			 * @brief 待機開始時の差分処理。
 			 */
-			void Update() override;
+			void OnEnter() override;
 
 			/**
-			 * @brief 待機終了。
+			 * @brief 待機更新時の差分処理。
 			 */
-			void Exit() override;
+			void OnUpdate() override;
 		};
 	}
 }

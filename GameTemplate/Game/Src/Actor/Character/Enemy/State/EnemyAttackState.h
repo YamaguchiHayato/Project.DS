@@ -1,36 +1,36 @@
 #pragma once
 /**
  * @file   EnemyAttackState.h
- * @brief  雑魚敵の攻撃ステート。
+ * @brief  敵の攻撃ステート。
+ * @details IEnemy を所有者とする。流れは EnemyStateBase。差分は OnEnter / OnUpdate のみ。
  * @author Yamaguchi Hayato
  * @date   2026/08/18
  */
 
-#include "Src/StateMachine/IState.h"
-#include "Src/Actor/Actor.h"
+#include "Src/Actor/Character/Enemy/State/EnemyStateBase.h"
 
 namespace nsApp
 {
 	namespace nsActor
 	{
-		class EnemyAttackState : public nsState::IState<Actor>
+		class EnemyAttackState : public EnemyStateBase
 		{
-		public:
-			/* ライフサイクル。*/
+		protected:
 			/**
- 			 * @brief 攻撃開始。
+			 * @brief このステートの種別を返す。
+			 * @return Attack。
 			 */
-			void Enter() override;
+			EnEnemyState GetStateKind() const override;
 
 			/**
-			 * @brief 攻撃更新。距離が離れたら追跡へ戻る。
+			 * @brief 攻撃開始時の差分処理。
 			 */
-			void Update() override;
+			void OnEnter() override;
 
 			/**
-			 * @brief 攻撃終了。
+			 * @brief 攻撃更新時の差分処理。
 			 */
-			void Exit() override;
+			void OnUpdate() override;
 		};
 	}
 }

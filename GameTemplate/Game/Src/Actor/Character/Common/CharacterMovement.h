@@ -60,6 +60,15 @@ namespace nsApp
 		 */
 		void SetPosition(const Vector3& vPosition);
 
+		/**
+		 * @brief 重力の有効化/無効化を設定する。
+		 * @param bEnabled 有効化する場合はtrue。
+		 */
+		void SetGravityEnabled(bool bEnabled)
+		{
+			bUseGravity_ = bEnabled;
+		}
+
 
 		/* ゲッター。*/
 	public:
@@ -87,5 +96,7 @@ namespace nsApp
 		CharacterController stCharaCon_; //! 壁との押し戻し用キャラクターコントローラー。
 		Vector3 vPosition_ = Vector3::Zero; //! 現在位置。
 		bool bIsInited_ = false; //! 初期化済みか。
+		bool bUseGravity_ = false; //! true のときだけ重力を適用する。
+		float fFallSpeed_ = 0.0f;		//! 落下速度（秒速）。
 	};
 }

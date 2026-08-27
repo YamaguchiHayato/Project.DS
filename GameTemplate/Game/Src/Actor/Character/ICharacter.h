@@ -92,7 +92,7 @@ namespace nsApp
 			 * @brief ダメージを与える。
 			 * @param iDamage ダメージ量。
 			 */
-			inline void ApplyDamage(int iDamage)
+			virtual void ApplyDamage(int iDamage)
 			{
 				/* 現在HPからダメージを引く。*/
 				stCharacterStatus_.stHp_.iCurrentHP_ -= iDamage;

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Src/Actor/Character/ICharacter.h"
+#include "Src/Actor/Character/Enemy/IEnemy.h"
 #include "Src/Actor/Character/Common/CharacterMovement.h"
+#include "Src/Actor/Character/Enemy/Transition/EnemyTransition.h"
 #include "Src/System/RayTest/SightCheck.h"
 
 namespace nsApp
@@ -14,7 +15,7 @@ namespace nsApp
 		 * @author Yamaguchi Hayato
 		 * @date   2026/08/18
 		 */
-		class CommonEnemy : public ICharacter
+		class CommonEnemy : public IEnemy
 		{
 		public:
 			/* コンストラクタとデストラクタ。*/
@@ -46,18 +47,46 @@ namespace nsApp
 			/**
 			 * @brief 待機アニメーションを再生する。
 			 */
-			void PlayIdle();
+			void PlayIdle() override;
 
 			/**
 			 * @brief 歩きアニメーションを再生する。
 			 */
-			void PlayWalk();
+			void PlayWalk() override;
 
 			/**
 			 * @brief 現在のステート名を取得する。
 			 * @return 現在のステート名。
 			 */
 			const wchar_t* GetCurrentStateName() const;
+
+			/**
+			 * @brief ダメージを与え、ノックバック要求を立てる。
+			 * @param iDamage ダメージ量。
+			 */
+			void ApplyDamage(int iDamage) override;
+
+			/**
+			 * @brief ノックバック開始待ちか。
+			 * @return 待ちなら true。
+			 */
+			bool IsKnockBackPending() const override;
+
+			/**
+			 * @brief ノックバックが終了したか。
+			 * @return 終了していれば true。
+			 */
+			bool IsKnockBackFinished() const override;
+
+			/**
+			 * @brief ノックバック開始時の準備をする。
+			 */
+			void BeginKnockBack() override;
+
+			/**
+			 * @brief ノックバック移動を1フレーム進める。
+			 */
+			void ExecuteKnockBack() override;
 
 
 		public:
@@ -95,7 +124,7 @@ namespace nsApp
 			 * @brief 追跡対象が死亡しているか。
 			 * @return 対象がいない、または死亡していればtrue。
 			 */
-			inline bool IsTargetDead() const
+			inline bool IsTargetDead() const override
 			{
 				/* 対象が無ければ死亡扱い。*/
 				if (pTarget_ == nullptr)
@@ -106,9 +135,9 @@ namespace nsApp
 			}
 
 			/**
-	          * @brief すぐに攻撃できる状態にする。
-               */
-			inline void ReadyAttack()
+			 * @brief すぐに攻撃できる状態にする。
+			 */
+			inline void ReadyAttack() override
 			{
 				/* 攻撃間隔を満たした扱いにする。*/
 				fAttackTimer_ = fAttackInterval_;
@@ -121,32 +150,50 @@ namespace nsApp
 			float GetDistanceToTarget();
 
 			/**
-			 * @brief 発見距離に入っているか。
-			 * @return 入っていればtrue。
+			 * @brief アグロ円内に対象がいるか。
+			 * @return 円内なら true。
 			 */
-			bool IsTargetInDetectRange();
+			bool IsTargetInAggroRange() override;
 
 			/**
 			 * @brief 攻撃距離に入っているか。
 			 * @return 入っていればtrue。
 			 */
-			bool IsTargetInAttackRange();
+			bool IsTargetInAttackRange() override;
 
 			/**
 			 * @brief 対象が視線上にいるか。
 			 * @return 視線が通っていれば true。
 			 */
-			bool IsTargetVisible() const;
+			bool IsTargetVisible() const override;
+
+			/**
+			 * @brief 遷移樹に判定を依頼する。
+			 * @return ステートを切り替えたら true。
+			 */
+			bool TryChangeState() override;
+
+			/**
+			 * @brief 現在のステート種別を遷移樹へ通知する。
+			 * @param enState 入ったステート種別。
+			 */
+			void NotifyEnemyState(EnEnemyState enState) override;
+
+			/**
+			 * @brief ステートマシーンを取得する。
+			 * @return ステートマシーン（非所有）。
+			 */
+			nsState::StateMachine<Actor>* GetStateMachine() override;
 
 			/**
 			 * @brief 追跡対象へ移動する。
 			 */
-			void MoveToTarget();
+			void MoveToTarget() override;
 
 			/**
 			 * @brief 追跡対象を攻撃する。
 			 */
-			void AttackTarget();
+			void AttackTarget() override;
 
 			/**
 			 * @brief 位置をモデルへ反映する。
@@ -184,8 +231,9 @@ namespace nsApp
 			 */
 			Vector3 MakeEyePosition(const Vector3& vPos) const;
 
-			
+
 		private:
+			EnemyTransition stTransition_; //! ステート遷移。
 			CharacterMovement stMovement_; //! 移動処理。
 			ModelRender stModelRender_; //! 仮モデル。
 			ICharacter* pTarget_ = nullptr; //! 追跡対象。
@@ -193,7 +241,7 @@ namespace nsApp
 			Vector3 vToTarget_ = Vector3::Zero; //! 対象への水平ベクトル。
 			Quaternion qLook_ = Quaternion::Identity; //! 対象方向の回転。
 			Vector3 vSpeed_ = Vector3::Zero; //! 移動速度。
-			float fDetectRange_ = 250.0f; //! 発見距離。
+			float fAggroRange_ = 250.0f; //! アグロ円の半径。
 			float fChaseSpeed_ = 120.0f; //! 追跡速度。
 			float fAttackRange_ = 120.0f; //! 攻撃距離。
 			float fAttackInterval_ = 1.0f; //! 攻撃間隔。
@@ -201,6 +249,13 @@ namespace nsApp
 			int iAttackPower_ = 10; //! 攻撃力。
 			int iPlayingAnimation_ = -1; //! 再生中のアニメーション番号。
 			nsSystem::SightCheck stSightCheck_; //! 視線判定。
+			Vector3 vKnockBackSpeed_ = Vector3::Zero; //! ノックバック速度。
+			float fKnockBackTimer_ = 0.0f; //! ノックバック残り時間（秒）。
+			float fKnockBackDuration_ = 0.15f; //! ノックバック時間。
+			float fKnockBackPower_ = 200.0f; //! ノックバック初速（秒速）。
+			bool bKnockBackPending_ = false; //! ノックバック開始待ち。
+			bool bKnockBackFinished_ = false; //! ノックバック終了。
+			Vector3 vAway_ = Vector3::Zero;//! ノックバック方向。
 		};
 	}
 }

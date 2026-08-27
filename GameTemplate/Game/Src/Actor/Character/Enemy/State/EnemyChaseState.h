@@ -1,35 +1,35 @@
 #pragma once
-#include "Src/StateMachine/IState.h"
-#include "Src/Actor/Actor.h"
+#include "Src/Actor/Character/Enemy/State/EnemyStateBase.h"
 
 namespace nsApp
 {
 	namespace nsActor
 	{
 		/**
-	     * @file   EnemyChaseState.h
-		 * @brief  雑魚敵の追跡ステート。
+		 * @file   EnemyChaseState.h
+		 * @brief  敵の追跡ステート。
+		 * @details IEnemy を所有者とする。流れは EnemyStateBase。差分は OnEnter / OnUpdate のみ。
 		 * @author Yamaguchi Hayato
 		 * @date   2026/08/18
 		 */
-		class EnemyChaseState : public nsState::IState<Actor>
+		class EnemyChaseState : public EnemyStateBase
 		{
-		public:
-			/* ライフサイクル。*/
+		protected:
 			/**
-			 * @brief 追跡開始。
+			 * @brief このステートの種別を返す。
+			 * @return Chase。
 			 */
-			void Enter() override;
+			EnEnemyState GetStateKind() const override;
 
 			/**
-			 * @brief 追跡更新。対象へ近づく。
+			 * @brief 追跡開始時の差分処理。
 			 */
-			void Update() override;
+			void OnEnter() override;
 
 			/**
-			 * @brief 追跡終了。
+			 * @brief 追跡更新時の差分処理。
 			 */
-			void Exit() override;
+			void OnUpdate() override;
 		};
 	}
 }

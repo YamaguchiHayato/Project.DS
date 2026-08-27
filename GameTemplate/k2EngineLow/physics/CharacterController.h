@@ -51,6 +51,14 @@ namespace nsK2EngineLow {
 		void SetPosition(const Vector3& pos)
 		{
 			m_position = pos;
+			if (m_isInited && m_rigidBody.GetBody() != nullptr)
+			{
+				btTransform& trans = m_rigidBody.GetBody()->getWorldTransform();
+				trans.setOrigin(btVector3(
+					m_position.x,
+					m_position.y + m_height * 0.5f + m_radius,
+					m_position.z));
+			}
 		}
 
 		/*!
