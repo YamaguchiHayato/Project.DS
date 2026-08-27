@@ -1,6 +1,11 @@
 #include "stdafx.h"
 #include "CharacterMovement.h"
 
+namespace
+{
+	const float kGravity_ = 980.0f; //! 重力加速度。Grenadeと同じ単位。
+}
+
 namespace nsApp
 {
 	void CharacterMovement::Init(float fRadius, float fHeight, const Vector3& vPosition)
@@ -14,15 +19,33 @@ namespace nsApp
 
 	Vector3 CharacterMovement::Execute(const Vector3& vSpeed, float fDeltaTime)
 	{
-		/* 未初期化なら現在位置をそのまま返す。*/
+		/* 初期化されていなければ位置を返すだけ。*/
 		if (!bIsInited_)
 			return vPosition_;
 
-		/* 速度を書き換えてよいよう、ローカルにコピーする。*/
+		/* 移動速度をコピーする。*/
 		Vector3 vMoveSpeed = vSpeed;
 
-		/* キャラコンで衝突解決した位置を受け取る。*/
+		/* 重力を使う場合は落下速度を加える。*/
+		if (bUseGravity_)
+		{
+			/* Sample07系: 接地中は落下速度リセット、空中だけ重力を積む。*/
+			if (stCharaCon_.IsOnGround())
+				fFallSpeed_ = 0.0f;
+			else
+				fFallSpeed_ -= kGravity_ * fDeltaTime;
+
+			/* 落下速度を移動速度に加える。*/
+			vMoveSpeed.y = fFallSpeed_;
+		}
+
+		/* キャラコンを実行して移動する。*/
 		vPosition_ = stCharaCon_.Execute(vMoveSpeed, fDeltaTime);
+
+		/* 着地したら落下速度を捨てる。*/
+		if (bUseGravity_ && stCharaCon_.IsOnGround())
+			fFallSpeed_ = 0.0f;
+
 		return vPosition_;
 	}
 

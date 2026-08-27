@@ -239,6 +239,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Src\Actor\Character\Common\CharacterMovement.cpp" />
+    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyKnockBackState.cpp" />
+    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyStateBase.cpp" />
+    <ClCompile Include="Src\Actor\Character\Enemy\Transition\EnemySituation.cpp" />
+    <ClCompile Include="Src\Actor\Character\Enemy\Transition\EnemyTransition.cpp" />
     <ClCompile Include="Src\Scene\Debug\DebugEnemyScene.cpp" />
     <ClCompile Include="Src\Scene\Debug\DebugObstacle.cpp" />
     <ClCompile Include="Src\Scene\Debug\DebugPlayer.cpp" />
@@ -288,6 +292,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\Actor\Character\Common\CharacterMovement.h" />
+    <ClInclude Include="Src\Actor\Character\Common\CharacterTransition.h" />
+    <ClInclude Include="Src\Actor\Character\Enemy\IEnemy.h" />
+    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyKnockBackState.h" />
+    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyStateBase.h" />
+    <ClInclude Include="Src\Actor\Character\Enemy\Transition\EnemySituation.h" />
+    <ClInclude Include="Src\Actor\Character\Enemy\Transition\EnemyTransition.h" />
+    <ClInclude Include="Src\Actor\Character\Enemy\Transition\EnemyTransitionEdge.h" />
+    <ClInclude Include="Src\Actor\Character\Enemy\Transition\EnEnemyState.h" />
     <ClInclude Include="Src\Scene\Debug\DebugEnemyScene.h" />
     <ClInclude Include="Src\Scene\Debug\DebugObstacle.h" />
     <ClInclude Include="Src\Scene\Debug\DebugPlayer.h" />

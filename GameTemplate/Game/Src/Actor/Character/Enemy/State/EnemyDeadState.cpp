@@ -1,27 +1,27 @@
 #include "stdafx.h"
 #include "EnemyDeadState.h"
-#include "Src/Actor/Character/Enemy/CommonEnemy.h"
 
 namespace nsApp
 {
 	namespace nsActor
 	{
-		void EnemyDeathState::Enter()
+		EnEnemyState EnemyDeathState::GetStateKind() const
+		{
+			/* 樹の節は Death。*/
+			return EnEnemyState::Death;
+		}
+
+
+		void EnemyDeathState::OnEnter()
 		{
 			/* 死亡時は待機表示のまま止める。*/
-			static_cast<CommonEnemy*>(pOwner_)->PlayIdle();
+			pEnemy_->PlayIdle();
 		}
 
 
-		void EnemyDeathState::Update()
+		void EnemyDeathState::OnUpdate()
 		{
-			/* 死亡後は何もしない。*/
-
-		}
-
-
-		void EnemyDeathState::Exit()
-		{
+			/* todo 死亡後は何もしない。*/
 		}
 	}
 }

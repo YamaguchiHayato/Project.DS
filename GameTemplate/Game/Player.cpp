@@ -69,6 +69,7 @@ namespace nsApp
 
 			/* 移動処理を初期化する。カプセルで壁(PhysicsStaticObject)と当たる。*/
 			stMovement_.Init(kCapsuleRadius, kCapsuleHeight, vPosition_);
+			stMovement_.SetGravityEnabled(true);
 
 			/* モデルとアニメーションを読み込む。*/
 			InitModel();

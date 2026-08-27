@@ -58,6 +58,18 @@ namespace nsApp
 			virtual void Update() override;
 			virtual void Render(RenderContext& rc) override;
 
+		/* セッター。*/
+		public:
+			/**
+			 * @brief キャラクターの位置を設定する。
+			 * @param vPosition 設定する位置。
+			 */
+			inline void SetPosition(const Vector3& vPosition)
+			{
+				vPosition_ = vPosition;
+				stMovement_.SetPosition(vPosition_);
+			}
+
 
 		/* ゲッター。*/
 		public:

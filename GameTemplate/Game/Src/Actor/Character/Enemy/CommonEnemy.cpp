@@ -20,10 +20,11 @@ namespace nsApp
 			/* カプセルで壁（PhysicsStaticObject）と当たる。*/
 			stMovement_.Init(20.0f, 70.0f, vPosition_);
 
+			/* 視線判定の目の高さを設定する。*/
 			stSightCheck_.SetEyeHeight(120.0f);
 
 			/* 体力を初期化する。*/
-			/* @todo: 外部Parameter化。*/
+			/* todo 外部Parameter化。*/
 			stCharacterStatus_.stHp_.iMaxHP_ = 30;
 			stCharacterStatus_.stHp_.iCurrentHP_ = 30;
 
@@ -31,12 +32,16 @@ namespace nsApp
 			stModelRender_.Init(sUnityChanModelPath_, nullptr, 0, enModelUpAxisZ);
 			stModelRender_.SetPosition(vPosition_);
 
-
 			/* 初期位置をモデルへ反映する。*/
 			ApplyModelTransform();
 
+			/* 遷移樹を所有者に結び、Common 用の枝を組む。*/
+			stTransition_.Bind(this);
+			stTransition_.BuildCommonTree();
+
 			/* 最初は待機ステートから始める。*/
 			pStateMachine_->ChangeState(new EnemyIdleState());
+			stTransition_.SetCurrentState(EnEnemyState::Idle);
 
 			return true;
 		}
@@ -48,28 +53,12 @@ namespace nsApp
 			if (nsSystem::IsGamePaused())
 				return;
 
-			/* ステートマシーンを更新する。*/
+			/* 死亡以外は攻撃タイマーを進める。*/
+			if (stTransition_.GetCurrentState() != EnEnemyState::Death)
+				fAttackTimer_ += g_gameTime->GetFrameDeltaTime();
+
+			/* ステートマシーンを更新する（遷移は State 内の TryChangeState）。*/
 			ICharacter::Update();
-			/* 対象が死亡している場合は死亡ステートに遷移する。*/
-			if(IsDead() && !IsDeathState())
-				pStateMachine_->ChangeState(new EnemyDeathState());
-
-
-			/* 死亡ステートなら何もしない。*/
-			if (IsDeathState())
-			{
-				/* ステートマシーンを更新する。*/
-				ICharacter::Update();
-				/* 位置をモデルへ反映する。*/
-				ApplyModelTransform();
-				return;
-			}
-
-			/* ステートマシーンを更新する。*/
-			ICharacter::Update();
-
-			/* 攻撃タイマーを進める。*/
-			fAttackTimer_ += g_gameTime->GetFrameDeltaTime();
 
 			/* 位置をモデルへ反映する。*/
 			ApplyModelTransform();
@@ -106,10 +95,10 @@ namespace nsApp
 		}
 
 
-		bool CommonEnemy::IsTargetInDetectRange()
+		bool CommonEnemy::IsTargetInAggroRange()
 		{
-			/* 発見距離以内ならtrue。*/
-			return GetDistanceToTarget() <= fDetectRange_;
+			/* アグロ円以内なら true。*/
+			return GetDistanceToTarget() <= fAggroRange_;
 		}
 
 
@@ -140,14 +129,35 @@ namespace nsApp
 				return false;
 
 			/* 対象の目の高さまでの視線が通っていればtrue。*/
-			return stSightCheck_.HasClearSight( MakeEyePosition(vPosition_), MakeEyePosition(pTarget_->GetPosition()));
+			return stSightCheck_.HasClearSight(MakeEyePosition(vPosition_), MakeEyePosition(pTarget_->GetPosition()));
+		}
+
+
+		bool CommonEnemy::TryChangeState()
+		{
+			/* 遷移の判断は Transition に任せる。*/
+			return stTransition_.TryChangeState();
+		}
+
+
+		void CommonEnemy::NotifyEnemyState(EnEnemyState enState)
+		{
+			/* 樹の「今の節」を State の Enter と揃える。*/
+			stTransition_.SetCurrentState(enState);
+		}
+
+
+		nsState::StateMachine<Actor>* CommonEnemy::GetStateMachine()
+		{
+			/* Transition など外部から ChangeState できるように公開する。*/
+			return pStateMachine_;
 		}
 
 
 		void CommonEnemy::LookAtTarget()
 		{
-			/* 対象が無ければ向きを変えない。*/
-			if (!IsTargetInDetectRange())
+			/* アグロ円外なら向きを変えない。*/
+			if (!IsTargetInAggroRange())
 				return;
 
 			/* 対象へのベクトルを更新する。*/
@@ -175,12 +185,13 @@ namespace nsApp
 			/* 攻撃距離内ならその場にとどめる。*/
 			if (IsTargetInAttackRange())
 			{
+				/* 攻撃距離内では移動速度をゼロにして、CharacterMovement に計算させる。*/
 				vPosition_ = stMovement_.Execute(Vector3::Zero, g_gameTime->GetFrameDeltaTime());
 				return;
 			}
-			
+
 			/* 目標へ向かう移動計算はCharacterMovementクラスに一任する。*/
-			vPosition_ = stMovement_.MoveToward(pTarget_->GetPosition(), fChaseSpeed_, g_gameTime->GetFrameDeltaTime());
+			vPosition_ = stMovement_.MoveToward(pTarget_->GetPosition(),fChaseSpeed_,g_gameTime->GetFrameDeltaTime());
 		}
 
 
@@ -241,38 +252,105 @@ namespace nsApp
 		}
 
 
-		bool CommonEnemy::IsDeathState()const
+		bool CommonEnemy::IsDeathState() const
 		{
-			/* ステートマシーンが無ければ死亡ステートではない。*/
-			if (pStateMachine_ == nullptr || pStateMachine_->GetCurrentState() == nullptr)
-				return false;
-
-			/* 現在のステートが死亡ステートかを判定する。*/
-			return dynamic_cast<EnemyDeathState*>(pStateMachine_->GetCurrentState()) != nullptr;
+			/* 遷移樹の現在節が Death かで判定する。*/
+			return stTransition_.GetCurrentState() == EnEnemyState::Death;
 		}
 
 
 		const wchar_t* CommonEnemy::GetCurrentStateName() const
 		{
-			/* ステートマシーンが無ければNone。*/
-			if (pStateMachine_ == nullptr || pStateMachine_->GetCurrentState() == nullptr)
-				return L"None";
-
-			/* 現在のステートを取得して名前を返す。*/
-			nsState::IState<Actor>* pState = pStateMachine_->GetCurrentState();
-
-			/* ステートの型を判定して名前を返す。*/
-			/* ここではdynamic_castを使ってステートの型を判定している。*/
-			/* @todo TSVファイルを用いて文字列化する。*/
-			if (dynamic_cast<EnemyIdleState*>(pState) != nullptr)
+			/* 遷移樹の種別から表示名を返す。*/
+			switch (stTransition_.GetCurrentState())
+			{
+			case EnEnemyState::Idle:
 				return L"Idle";
-			if (dynamic_cast<EnemyChaseState*>(pState) != nullptr)
+			case EnEnemyState::Chase:
 				return L"Chase";
-			if (dynamic_cast<EnemyAttackState*>(pState) != nullptr)
+			case EnEnemyState::Attack:
 				return L"Attack";
-			if (dynamic_cast<EnemyDeathState*>(pState) != nullptr)
+			case EnEnemyState::Death:
 				return L"Death";
+			}
 			return L"Unknown";
+		}
+
+
+		void CommonEnemy::ApplyDamage(int iDamage)
+		{
+			/* HPを減らす。*/
+			IEnemy::ApplyDamage(iDamage);
+
+			/* 死亡していればノックバックしない。*/
+			if (IsDead())
+				return;
+
+			/* 攻撃者（追跡対象）と反対方向へ下がる準備をする。*/
+			if (pTarget_ == nullptr)
+				return;
+
+			/* 対象の方向を向く。*/
+			vAway_ = vPosition_ - pTarget_->GetPosition();
+			vAway_.y = 0.0f;
+			if (vAway_.Length() <= 0.0001f)
+				return;
+
+			/* 反対方向ベクトルを正規化して速度に変換する。*/
+			vAway_.Normalize();
+			vKnockBackSpeed_ = vAway_* fKnockBackPower_;
+			fKnockBackTimer_ = fKnockBackDuration_;
+			bKnockBackPending_ = true;
+			bKnockBackFinished_ = false;
+		}
+
+
+		bool CommonEnemy::IsKnockBackPending() const
+		{
+			/* ノックバック開始待ちか。*/
+			return bKnockBackPending_;
+		}
+
+
+		bool CommonEnemy::IsKnockBackFinished() const
+		{
+			/* ノックバックが終了したか。*/
+			return bKnockBackFinished_;
+		}
+
+
+		void CommonEnemy::BeginKnockBack()
+		{
+			/* 開始待ちを消費し、終了フラグを戻す。*/
+			bKnockBackPending_ = false;
+			bKnockBackFinished_ = false;
+
+			/* タイマーが無ければ既定時間を入れる。*/
+			if (fKnockBackTimer_ <= 0.0f)
+				fKnockBackTimer_ = fKnockBackDuration_;
+		}
+
+
+		void CommonEnemy::ExecuteKnockBack()
+		{
+			/* 終了済みなら何もしない。*/
+			if (bKnockBackFinished_)
+				return;
+
+			/* 開始待ちなら何もしない。*/
+			const float fDeltaTime = g_gameTime->GetFrameDeltaTime();
+
+			/* 後ずさりを進める。*/
+			vPosition_ = stMovement_.Execute(vKnockBackSpeed_, fDeltaTime);
+			fKnockBackTimer_ -= fDeltaTime;
+
+			/* 時間が切れたら終了事実を立てる。*/
+			if (fKnockBackTimer_ <= 0.0f)
+			{
+				fKnockBackTimer_ = 0.0f;
+				vKnockBackSpeed_ = Vector3::Zero;
+				bKnockBackFinished_ = true;
+			}
 		}
 	}
 }

@@ -13,9 +13,6 @@
     <Filter Include="Src\Actor\Character">
       <UniqueIdentifier>{99543f7f-91dd-4664-a4e0-e18ff6fe05af}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Src\Actor\Character\Player">
-      <UniqueIdentifier>{5cdb75f3-5a32-404c-8699-4fea7e254d0f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Src\Actor\Character\Enemy">
       <UniqueIdentifier>{80f59118-cd56-410e-9832-8b2591f353b3}</UniqueIdentifier>
     </Filter>
@@ -36,9 +33,6 @@
     </Filter>
     <Filter Include="Src\Actor\Common">
       <UniqueIdentifier>{7a1076f5-4aa7-4256-bb30-7b178704b46e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Src\Actor\Character\Player\State">
-      <UniqueIdentifier>{206394ef-a978-4b46-8f29-2112634db8c9}</UniqueIdentifier>
     </Filter>
     <Filter Include="Src\Actor\Weapon">
       <UniqueIdentifier>{c999b17d-cf76-4c1a-ad3f-cec33fb12ab1}</UniqueIdentifier>
@@ -66,6 +60,15 @@
     </Filter>
     <Filter Include="Src\System">
       <UniqueIdentifier>{cbfd1769-0364-42aa-adfc-d7959432187f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Actor\Character\Enemy\Transition">
+      <UniqueIdentifier>{97e0e26a-5fc8-4208-872a-2f547d3871ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Actor\Character\Enemy\Player">
+      <UniqueIdentifier>{5cdb75f3-5a32-404c-8699-4fea7e254d0f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Actor\Character\Enemy\Player\State">
+      <UniqueIdentifier>{206394ef-a978-4b46-8f29-2112634db8c9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -143,13 +146,13 @@
       <Filter>Src\UI\Title</Filter>
     </ClCompile>
     <ClCompile Include="Player.cpp">
-      <Filter>Src\Actor\Character\Player</Filter>
+      <Filter>Src\Actor\Character\Enemy\Player</Filter>
     </ClCompile>
     <ClCompile Include="PlayerInput.cpp">
-      <Filter>Src\Actor\Character\Player</Filter>
+      <Filter>Src\Actor\Character\Enemy\Player</Filter>
     </ClCompile>
     <ClCompile Include="LocalPlayerController.cpp">
-      <Filter>Src\Actor\Character\Player</Filter>
+      <Filter>Src\Actor\Character\Enemy\Player</Filter>
     </ClCompile>
     <ClCompile Include="WeaponInventory.cpp">
       <Filter>Src\Actor\Weapon</Filter>
@@ -189,6 +192,18 @@
     </ClCompile>
     <ClCompile Include="Src\Actor\Character\Common\CharacterMovement.cpp">
       <Filter>Src\Actor\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Enemy\Transition\EnemySituation.cpp">
+      <Filter>Src\Actor\Character\Enemy\Transition</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Enemy\Transition\EnemyTransition.cpp">
+      <Filter>Src\Actor\Character\Enemy\Transition</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyStateBase.cpp">
+      <Filter>Src\Actor\Character\Enemy\State</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyKnockBackState.cpp">
+      <Filter>Src\Actor\Character\Enemy\State</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -278,19 +293,19 @@
       <Filter>Src\UI\Title</Filter>
     </ClInclude>
     <ClInclude Include="Player.h">
-      <Filter>Src\Actor\Character\Player</Filter>
+      <Filter>Src\Actor\Character\Enemy\Player</Filter>
     </ClInclude>
     <ClInclude Include="PlayerInput.h">
-      <Filter>Src\Actor\Character\Player</Filter>
+      <Filter>Src\Actor\Character\Enemy\Player</Filter>
     </ClInclude>
     <ClInclude Include="PlayerIntent.h">
-      <Filter>Src\Actor\Character\Player</Filter>
+      <Filter>Src\Actor\Character\Enemy\Player</Filter>
     </ClInclude>
     <ClInclude Include="IPlayerController.h">
-      <Filter>Src\Actor\Character\Player</Filter>
+      <Filter>Src\Actor\Character\Enemy\Player</Filter>
     </ClInclude>
     <ClInclude Include="LocalPlayerController.h">
-      <Filter>Src\Actor\Character\Player</Filter>
+      <Filter>Src\Actor\Character\Enemy\Player</Filter>
     </ClInclude>
     <ClInclude Include="Weapon.h">
       <Filter>Src\Actor\Weapon</Filter>
@@ -330,6 +345,30 @@
     </ClInclude>
     <ClInclude Include="Src\Actor\Character\Common\CharacterMovement.h">
       <Filter>Src\Actor\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Common\CharacterTransition.h">
+      <Filter>Src\Actor\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Enemy\Transition\EnemySituation.h">
+      <Filter>Src\Actor\Character\Enemy\Transition</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Enemy\Transition\EnemyTransitionEdge.h">
+      <Filter>Src\Actor\Character\Enemy\Transition</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Enemy\Transition\EnEnemyState.h">
+      <Filter>Src\Actor\Character\Enemy\Transition</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Enemy\Transition\EnemyTransition.h">
+      <Filter>Src\Actor\Character\Enemy\Transition</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyStateBase.h">
+      <Filter>Src\Actor\Character\Enemy\State</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Enemy\IEnemy.h">
+      <Filter>Src\Actor\Character\Enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyKnockBackState.h">
+      <Filter>Src\Actor\Character\Enemy\State</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
