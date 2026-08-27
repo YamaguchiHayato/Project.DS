@@ -54,8 +54,11 @@ namespace nsApp
 			//! 左クリックを押した瞬間か(単発武器の発射判定)。
 			inline bool IsFireTrigger() const { return bFireTrigger_; }
 
-			//! 右クリックを押した瞬間か(近接=突き飛ばし)。
+			//! Vキーを押した瞬間か(近接=突き飛ばし)。
 			inline bool IsShoveTrigger() const { return bShoveTrigger_; }
+
+			//! 右クリックを押しているか(ADS=覗き込み)。
+			inline bool IsAdsPress() const { return bAdsPress_; }
 
 			//! ホイールを奥に回した瞬間か(次の武器へ切り替え)。
 			inline bool IsWeaponSwitchNextTrigger() const { return bWeaponSwitchNextTrigger_; }
@@ -80,6 +83,12 @@ namespace nsApp
 
 			//! Gキーが押された瞬間か(投擲アイテム)。
 			inline bool IsThrowTrigger() const { return bThrowTrigger_; }
+
+			//! 1キーを押した瞬間か(メイン武器へ持ち替え)。
+			inline bool IsMainWeaponTrigger() const { return bMainWeaponTrigger_; }
+
+			//! 2キーを押した瞬間か(サブ武器へ持ち替え)。
+			inline bool IsSubWeaponTrigger() const { return bSubWeaponTrigger_; }
 
 			//! Shiftキーを押しているか(スプリント。押しっぱなし判定)。
 			inline bool IsSprintPress() const { return bSprintPress_; }
@@ -110,7 +119,8 @@ namespace nsApp
 
 			bool bFirePress_ = false;					//! 左クリック押下中か。
 			bool bFireTrigger_ = false;					//! 左クリックを押した瞬間か。
-			bool bShoveTrigger_ = false;					//! 右クリックを押した瞬間か(突き飛ばし)。
+			bool bShoveTrigger_ = false;					//! Vキーを押した瞬間か(突き飛ばし)。
+			bool bAdsPress_ = false;						//! 右クリック押下中か(ADS)。
 			bool bWeaponSwitchNextTrigger_ = false;		//! ホイール奥回転トリガー。
 			bool bWeaponSwitchPrevTrigger_ = false;		//! ホイール手前回転トリガー。
 			bool bReloadTrigger_ = false;				//! Rキートリガー。
@@ -120,6 +130,8 @@ namespace nsApp
 			bool bHealTrigger_ = false;					//! Hキートリガー(回復)。
 			bool bThrowTrigger_ = false;					//! Gキートリガー(投擲)。
 			bool bSprintPress_ = false;					//! Shift押下中か(スプリント)。
+			bool bMainWeaponTrigger_ = false;			//! 1キートリガー(メイン武器)。
+			bool bSubWeaponTrigger_ = false;			//! 2キートリガー(サブ武器)。
 
 			bool bPrevReloadPress_ = false;		//! 前回フレームのRキー押下状態。
 			bool bPrevInteractPress_ = false;	//! 前回フレームのEキー押下状態。
@@ -127,6 +139,9 @@ namespace nsApp
 			bool bPrevPausePress_ = false;		//! 前回フレームのEscキー押下状態。
 			bool bPrevHealPress_ = false;		//! 前回フレームのHキー押下状態。
 			bool bPrevThrowPress_ = false;		//! 前回フレームのGキー押下状態。
+			bool bPrevShovePress_ = false;		//! 前回フレームのVキー押下状態。
+			bool bPrevMainWeaponPress_ = false;	//! 前回フレームの1キー押下状態。
+			bool bPrevSubWeaponPress_ = false;	//! 前回フレームの2キー押下状態。
 		};
 	}
 }

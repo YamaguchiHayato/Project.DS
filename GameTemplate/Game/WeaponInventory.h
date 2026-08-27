@@ -58,6 +58,13 @@ namespace nsApp
 			 */
 			void SwitchPrev();
 
+			/**
+			 * @brief 指定した区分の武器へ直接持ち替える(数字キーでの切り替えに使う)。
+			 *        持っていない区分や、すでに持っている武器を指定した場合は何もしない。
+			 * @param enSlot 持ち替えたい区分。
+			 */
+			void SwitchToSlot(EnWeaponSlot enSlot);
+
 
 		/* ゲッター。*/
 		public:

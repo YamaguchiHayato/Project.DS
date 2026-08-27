@@ -11,8 +11,9 @@ namespace nsK2EngineLow {
 			m_instance == nullptr,
 			"EffectEngineのインスタンスを複数作ることはできません。"
 		);
-		//auto format = DXGI_FORMAT_R8G8B8A8_UNORM;
-		auto format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+		//エフェクトを描画するのはメインレンダリングターゲット。
+		//形式が食い違うとD3D12が毎フレーム警告を出すため、RenderingEngine側と揃えている。
+		auto format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 		auto d3dDevice = g_graphicsEngine->GetD3DDevice();
 		auto commandQueue = g_graphicsEngine->GetCommandQueue();
 		for (int i = 0; i < 2; i++) {

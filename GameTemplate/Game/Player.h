@@ -161,6 +161,15 @@ namespace nsApp
 				return stWeaponInventory_.GetCurrentWeapon();
 			}
 
+			//! いまの弾の拡散角(ラジアン)。クロスヘアの開き具合に使う。
+			float GetCurrentSpread() const;
+
+			//! 覗き込みの度合い(0=腰だめ, 1=完全に覗き込み)。カメラの画角に使う。
+			inline float GetAdsRate() const { return fAdsRate_; }
+
+			//! 覗き込み時の画角の倍率(装備中の武器のもの。武器が無ければ1.0)。
+			float GetAdsZoomRate();
+
 			//! 所持している回復アイテム数(UI表示用)。
 			inline int GetMedkitCount() const { return iMedkitCount_; }
 
@@ -209,6 +218,31 @@ namespace nsApp
 			void UpdateItems();
 
 			/**
+			 * @brief 覗き込み(ADS)の度合いと、弾の拡散を更新する。
+			 * @param fDeltaTime 1フレームの経過時間(秒)。
+			 */
+			void UpdateAds(float fDeltaTime);
+
+			/**
+			 * @brief 射撃の反動を時間で元へ戻す(跳ね上がった視点と下がった銃を戻す)。
+			 * @param fDeltaTime 1フレームの経過時間(秒)。
+			 */
+			void UpdateRecoil(float fDeltaTime);
+
+			/**
+			 * @brief 拡散のぶんだけ照準をばらつかせた発射方向を作る。
+			 * @param vAimDir もとの照準方向。
+			 * @return ばらつかせた発射方向。
+			 */
+			Vector3 MakeSpreadDirection(const Vector3& vAimDir) const;
+
+			/**
+			 * @brief 1発ぶんの反動を加える(発射した瞬間に呼ぶ)。
+			 * @param pWeapon 発射した武器。
+			 */
+			void ApplyFireRecoil(nsWeapon::Weapon* pWeapon);
+
+			/**
 			 * @brief 生命状態(生存/ダウン/死亡)を更新する。HP0でダウン、出血タイマー切れで死亡。
 			 * @param fDeltaTime 1フレームの経過時間(秒)。
 			 */
@@ -219,8 +253,10 @@ namespace nsApp
 			 * @param enType    発行する通知の種別。
 			 * @param vPosition 出来事が起きた位置。
 			 * @param vDirection 出来事の向き。
+			 * @param iParam 付随する数値(命中ならダメージ量)。
+			 * @param bIsCritical 弱点(頭)への命中か。
 			 */
-			void PublishGameEvent(nsEvent::EnGameEvent enType, const Vector3& vPosition = Vector3::Zero, const Vector3& vDirection = Vector3::Zero);
+			void PublishGameEvent(nsEvent::EnGameEvent enType, const Vector3& vPosition = Vector3::Zero, const Vector3& vDirection = Vector3::Zero, int iParam = 0, bool bIsCritical = false);
 
 			/**
 			 * @brief 移動状態に応じてモデルの位置・回転・アニメーションを更新する。
@@ -269,6 +305,13 @@ namespace nsApp
 
 			float fCameraYaw_ = 0.0f;					//! カメラの旋回角(ラジアン、マウスで操作)。
 			float fCameraPitch_ = 0.0f;				//! カメラのピッチ角(上下、ラジアン。マウス操作、上下限あり)。
+			float fRecoilPitch_ = 0.0f;				//! 射撃で跳ね上がった視点の角度(ラジアン)。時間で0へ戻る。
+			float fRecoilYaw_ = 0.0f;				//! 射撃で左右へブレた視点の角度(ラジアン)。時間で0へ戻る。
+			float fWeaponKickBack_ = 0.0f;			//! 射撃で銃が手前へ下がっている距離。時間で0へ戻る。
+			float fAdsRate_ = 0.0f;					//! 覗き込みの度合い(0=腰だめ, 1=完全に覗き込み)。
+			float fSpreadShot_ = 0.0f;				//! 連射で増えた拡散角(ラジアン)。時間で0へ戻る。
+			int iPrevHP_ = 0;						//! 前フレームのHP(減っていれば被弾とみなす)。
+			float fLowerRate_ = 0.0f;				//! 銃を下げている度合い(0=構え, 1=完全に下げる)。走ると1へ近づく。
 
 			float fMoveSpeed_ = 200.0f;				//! 移動速度(単位/秒)。
 			bool bIsMoving_ = false;					//! 移動中か。

@@ -31,6 +31,10 @@ namespace nsApp
 			stOut.bWeaponNextTrigger_ = stInput_.IsWeaponSwitchNextTrigger();
 			stOut.bWeaponPrevTrigger_ = stInput_.IsWeaponSwitchPrevTrigger();
 
+			/* 数字キーでの直接持ち替え(1=メイン, 2=サブ)。*/
+			stOut.bMainWeaponTrigger_ = stInput_.IsMainWeaponTrigger();
+			stOut.bSubWeaponTrigger_ = stInput_.IsSubWeaponTrigger();
+
 			/* ライト・ポーズ。*/
 			stOut.bLightTrigger_ = stInput_.IsLightTrigger();
 			stOut.bPauseTrigger_ = stInput_.IsPauseTrigger();
@@ -42,8 +46,11 @@ namespace nsApp
 			/* スプリント(Shift)。*/
 			stOut.bSprintPress_ = stInput_.IsSprintPress();
 
-			/* 突き飛ばし(右クリック)。*/
+			/* 突き飛ばし(Vキー)。*/
 			stOut.bShoveTrigger_ = stInput_.IsShoveTrigger();
+
+			/* 覗き込み(右クリック)。*/
+			stOut.bAdsPress_ = stInput_.IsAdsPress();
 
 			/*
 			 * TODO(Phase2): 蘇生ホールド(Eキー長押し)を PlayerInput に追加してここで充填する。

@@ -27,8 +27,8 @@ namespace nsApp
 				bFirePress_ = pMouse->IsPress(nsK2EngineLow::enMouseButtonLeft);
 				bFireTrigger_ = pMouse->IsTrigger(nsK2EngineLow::enMouseButtonLeft);
 
-				/* 右クリックで突き飛ばし(近接)。*/
-				bShoveTrigger_ = pMouse->IsTrigger(nsK2EngineLow::enMouseButtonRight);
+				/* 右クリックで覗き込み(ADS)。押しっぱなしで構え続ける。*/
+				bAdsPress_ = pMouse->IsPress(nsK2EngineLow::enMouseButtonRight);
 
 				/* ホイールで武器切り替え(奥へ1ノッチ=次の武器、手前へ1ノッチ=前の武器)。*/
 				const int iWheelDelta = pMouse->GetWheelDelta();
@@ -39,7 +39,7 @@ namespace nsApp
 				/* g_mouseが未初期化の場合は何もしない(安全側に倒す)。*/
 				bFirePress_ = false;
 				bFireTrigger_ = false;
-				bShoveTrigger_ = false;
+				bAdsPress_ = false;
 				bWeaponSwitchNextTrigger_ = false;
 				bWeaponSwitchPrevTrigger_ = false;
 			}
@@ -55,6 +55,9 @@ namespace nsApp
 			bHealTrigger_ = CheckTrigger('H', bPrevHealPress_);
 			bThrowTrigger_ = CheckTrigger('G', bPrevThrowPress_);
 			bSprintPress_ = (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
+			bShoveTrigger_ = CheckTrigger('V', bPrevShovePress_);
+			bMainWeaponTrigger_ = CheckTrigger('1', bPrevMainWeaponPress_);
+			bSubWeaponTrigger_ = CheckTrigger('2', bPrevSubWeaponPress_);
 		}
 
 		PlayerInput::~PlayerInput()

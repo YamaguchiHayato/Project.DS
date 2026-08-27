@@ -297,6 +297,8 @@ namespace nsK2EngineLow {
 	*/
 	void CharacterController::RemoveRigidBoby()
 	{
-		PhysicsWorld::GetInstance()->RemoveRigidBody(m_rigidBody);
+		//剛体が作られていない(Initを呼ぶ前に破棄された)場合もあるため、
+		//nullptrチェックを行っているRigidBody::Releaseを経由して取り除く。
+		m_rigidBody.Release();
 	}
 }

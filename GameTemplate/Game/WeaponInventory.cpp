@@ -51,6 +51,9 @@ namespace nsApp
 
 			/* 末尾なら先頭へ回り込む。*/
 			iCurrentIndex_ = (iCurrentIndex_ + 1) % static_cast<int>(vecWeapons_.size());
+
+			/* 持ち替えたので構える動作を始める(リロード中だった場合は中断される)。*/
+			vecWeapons_[iCurrentIndex_].Deploy();
 		}
 
 
@@ -62,6 +65,30 @@ namespace nsApp
 
 			/* 先頭なら末尾へ回り込む。*/
 			iCurrentIndex_ = (iCurrentIndex_ - 1 + static_cast<int>(vecWeapons_.size())) % static_cast<int>(vecWeapons_.size());
+
+			/* 持ち替えたので構える動作を始める(リロード中だった場合は中断される)。*/
+			vecWeapons_[iCurrentIndex_].Deploy();
+		}
+
+
+		void WeaponInventory::SwitchToSlot(EnWeaponSlot enSlot)
+		{
+			/* 所持リストから、指定された区分の武器を探す。*/
+			for (int i = 0; i < static_cast<int>(vecWeapons_.size()); i++)
+			{
+				/* 区分が違えば次へ。*/
+				if (vecWeapons_[i].GetSlot() != enSlot)
+					continue;
+
+				/* すでに持っている武器なら持ち替えない(構え直しを起こさない)。*/
+				if (i == iCurrentIndex_)
+					return;
+
+				/* 見つかったので持ち替える。*/
+				iCurrentIndex_ = i;
+				vecWeapons_[iCurrentIndex_].Deploy();
+				return;
+			}
 		}
 
 

@@ -8,9 +8,12 @@
 #include "Src/UI/InGameHud.h"
 #include "Src/Director/EnemyDirector.h"
 #include "Src/System/GamePause.h"
+#include "Tracer.h"
+#include "Src/Item/Grenade.h"
 
 namespace
 {
+	const float fDefaultViewAngle_ = 0.0f;	//! 通常時の画角(0のときは起動時の値を使う)。
 	const float fEyeHeight_ = 160.0f;								//! 目(カメラ)の高さ。Player側の kEyeHeight と合わせる。
 	const char* sGroundModelPath_ = "Assets/modelData/ground.tkm";	//! 地面モデル。
 	const float fGroundScale_ = 200.0f;								//! 地面の拡大率。
@@ -74,6 +77,19 @@ namespace nsApp
 				DeleteGO(pEventBus_);
 				pEventBus_ = nullptr;
 			}
+
+			/* シーンをまたいで残らないよう、撃った弾筋と投げたグレネードも片付ける。*/
+			for (nsWeapon::Tracer* pTracer : FindGOs<nsWeapon::Tracer>("tracer"))
+				DeleteGO(pTracer);
+			for (nsItem::Grenade* pGrenade : FindGOs<nsItem::Grenade>("grenade"))
+				DeleteGO(pGrenade);
+
+			/*
+			 * 地面のコライダを物理ワールドから取り除く。
+			 * PhysicsStaticObject はデストラクタで剛体を外さないため、
+			 * ここで明示的に解放しないと解放済みの剛体が物理ワールドに残ってしまう。
+			 */
+			stGroundCollider_.Release();
 		}
 
 
@@ -171,6 +187,9 @@ namespace nsApp
 
 		void InGameScene::InitCamera()
 		{
+			/* 覗き込みで倍率を掛けるため、もとの画角を覚えておく。*/
+			fBaseViewAngle_ = g_camera3D->GetViewAngle();
+
 			/* ニアクリップ・ファークリップを設定する。*/
 			g_camera3D->SetNear(1.0f);
 			g_camera3D->SetFar(10000.0f);
@@ -195,6 +214,12 @@ namespace nsApp
 
 			g_camera3D->SetPosition(vEyePos);
 			g_camera3D->SetTarget(vEyePos + vLook * 100.0f);
+
+			/* 覗き込むほど画角を狭めて、拡大されたように見せる。*/
+			const float fAdsRate = pPlayer_->GetAdsRate();
+			const float fZoomRate = 1.0f + (pPlayer_->GetAdsZoomRate() - 1.0f) * fAdsRate;
+			g_camera3D->SetViewAngle(fBaseViewAngle_ * fZoomRate);
+
 			g_camera3D->Update();
 		}
 

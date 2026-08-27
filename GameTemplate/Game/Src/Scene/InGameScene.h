@@ -77,6 +77,7 @@ namespace nsApp
 
 			nsUI::InGameHud* pHud_ = nullptr;			//! HUD(HP/弾/目標/クロスヘア/ダウン表示)。
 			bool bPrevEnter_ = false;		//! 前フレームのEnter押下(ポーズ中のタイトル復帰用)。
+			float fBaseViewAngle_ = 0.0f;	//! 覗き込みの倍率を掛ける前の、もとの画角。
 			nsEffect::EffectList stEffectList_;			//! エフェクトの登録・再生・寿命管理。
 			nsEffect::EffectListener stEffectListener_;		//! 通知を購読してエフェクトを再生する係。
 		};
