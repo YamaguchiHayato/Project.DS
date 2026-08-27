@@ -3,13 +3,17 @@
 #include "Player.h"
 #include "Weapon.h"
 #include "Src/System/GamePause.h"
+#include "Src/Event/EventBus.h"
 #include <cstdio>
 
 namespace
 {
-	const Vector3 vCrosshairPos_ = { -8.0f, 12.0f, 0.0f };	//! 中央クロスヘア。
+	const Vector3 vCrosshairCenter_ = { -6.0f, 10.0f, 0.0f };	//! クロスヘアの中心(文字の見た目を合わせた微調整込み)。
+	const float fCrosshairBaseGap_ = 10.0f;					//! 拡散が無いときの、中心から各線までの距離。
+	const float fCrosshairSpreadScale_ = 900.0f;				//! 拡散角(ラジアン)を画面上の開き量へ変換する倍率。
+	const float fCrosshairMaxGap_ = 90.0f;					//! クロスヘアが開く上限。
 	const Vector3 vHpPos_ = { -900.0f, -470.0f, 0.0f };		//! HP(左下)。
-	const Vector3 vAmmoPos_ = { 700.0f, -470.0f, 0.0f };		//! 弾数(右下)。
+	const Vector3 vAmmoPos_ = { 430.0f, -470.0f, 0.0f };		//! 弾数(右下)。予備弾も出すので長くなり、右端からはみ出さない位置にしている。
 	const Vector3 vObjectivePos_ = { -420.0f, 500.0f, 0.0f };	//! 目標(上)。
 	const Vector3 vItemPos_ = { -160.0f, -440.0f, 0.0f };		//! アイテム所持数(下・中央)。
 	const Vector3 vStatusPos_ = { -230.0f, 140.0f, 0.0f };	//! 状態(中央やや上)。
@@ -17,6 +21,24 @@ namespace
 	const float fStatusFontScale_ = 2.0f;					//! 状態表示の大きさ。
 	const Vector3 vPausePos_ = { -340.0f, 40.0f, 0.0f };		//! ポーズ表示(中央やや上)。
 	const float fPauseFontScale_ = 1.3f;					//! ポーズ表示の大きさ。
+	const Vector3 vHitMarkerPos_ = { -14.0f, 18.0f, 0.0f };	//! ヒットマーカー(クロスヘアへ重ねる)。
+	const Vector3 vDamagePos_ = { 40.0f, 60.0f, 0.0f };		//! ダメージ数値(クロスヘアの右上)。
+	const float fHitMarkerScale_ = 1.4f;					//! ヒットマーカーの大きさ。
+	const float fDamageScale_ = 1.0f;						//! ダメージ数値の大きさ。
+	const float fHitMarkerLifeTime_ = 0.12f;				//! ヒットマーカーの表示時間(秒)。
+	const float fDamageLifeTime_ = 0.6f;					//! ダメージ数値の表示時間(秒)。
+	const char* sDamageOverlayPath_ = "Assets/sprite/white.dds";	//! 被弾時に重ねる幕(白い画像を赤く染めて使う)。
+	const float fDamageFlashTime_ = 0.35f;					//! 被弾したときに赤い幕を出す時間(秒)。
+	const float fDamageFlashAlpha_ = 0.45f;					//! 被弾した瞬間の赤い幕の濃さ。
+	const float fLowHpRate_ = 0.35f;						//! この割合を下回ると画面が脈打ち始める。
+	const float fLowHpPulseSpeed_ = 4.0f;					//! 脈打つ速さ。
+	const float fLowHpMaxAlpha_ = 0.30f;					//! 脈打つときの赤の濃さの上限。
+	/*
+	 * ダメージ数値を表示するか。
+	 * 本作は L4D2 を基盤にしているため、数値表示は画面の雰囲気に合わない。
+	 * 実装は残しつつ、今は表示しない方針にしている。
+	 */
+	const bool bShowDamageNumber_ = false;
 }
 
 namespace nsApp
@@ -25,11 +47,14 @@ namespace nsApp
 	{
 		bool InGameHud::Start()
 		{
-			/* クロスヘア(中央の+)。*/
-			stCrosshair_.SetPosition(vCrosshairPos_);
-			stCrosshair_.SetScale(1.0f);
-			stCrosshair_.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-			stCrosshair_.SetText(L"+");
+			/* クロスヘアの4本線。位置は毎フレーム拡散に応じて動かす。*/
+			const wchar_t* aCrosshairText[4] = { L"|", L"|", L"-", L"-" };
+			for (int i = 0; i < 4; i++)
+			{
+				aCrosshair_[i].SetScale(0.7f);
+				aCrosshair_[i].SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+				aCrosshair_[i].SetText(aCrosshairText[i]);
+			}
 
 			/* HP(左下・緑寄り)。*/
 			stHpText_.SetPosition(vHpPos_);
@@ -66,6 +91,27 @@ namespace nsApp
 			stPauseText_.SetScale(fPauseFontScale_);
 			stPauseText_.SetColor(1.0f, 0.95f, 0.4f, 1.0f);
 			stPauseText_.SetText(L"");
+
+			/* 被弾したときに画面へ重ねる赤い幕。最初は透明にしておく。*/
+			stDamageOverlay_.Init(sDamageOverlayPath_, 1920.0f, 1080.0f);
+			stDamageOverlay_.SetMulColor({ 1.0f, 0.0f, 0.0f, 0.0f });
+			stDamageOverlay_.Update();
+
+			/* ヒットマーカー(通常時は空)。*/
+			stHitMarker_.SetPosition(vHitMarkerPos_);
+			stHitMarker_.SetScale(fHitMarkerScale_);
+			stHitMarker_.SetText(L"");
+
+			/* ダメージ数値(通常時は空)。*/
+			stDamageText_.SetPosition(vDamagePos_);
+			stDamageText_.SetScale(fDamageScale_);
+			stDamageText_.SetText(wcDamage_);
+
+			/* 命中の通知を受け取れるよう購読する。*/
+			nsEvent::EventBus* pBus = FindGO<nsEvent::EventBus>("eventBus");
+			if (pBus != nullptr)
+				pBus->Subscribe(this);
+
 			return true;
 		}
 
@@ -96,7 +142,11 @@ namespace nsApp
 				if (pWeapon->IsReloading())
 					swprintf_s(wcAmmo_, L"%hs  RELOADING", pWeapon->GetName());
 				else
-					swprintf_s(wcAmmo_, L"%hs  %d/%d", pWeapon->GetName(), pWeapon->GetCurrentAmmo(), pWeapon->GetMaxAmmo());
+					/* サブ武器は予備弾が無限なので、数の代わりに印を出す。*/
+					if (pWeapon->IsInfiniteReserve())
+						swprintf_s(wcAmmo_, L"%hs  %d / --", pWeapon->GetName(), pWeapon->GetCurrentAmmo());
+					else
+						swprintf_s(wcAmmo_, L"%hs  %d / %d", pWeapon->GetName(), pWeapon->GetCurrentAmmo(), pWeapon->GetReserveAmmo());
 			}
 			else
 			{
@@ -120,6 +170,86 @@ namespace nsApp
 			}
 			stStatusText_.SetText(wcStatus_);
 
+			/* 拡散が大きいほどクロスヘアを広げ、いまの精度が見て分かるようにする。*/
+			float fGap = fCrosshairBaseGap_ + pPlayer->GetCurrentSpread() * fCrosshairSpreadScale_;
+			if (fGap > fCrosshairMaxGap_)
+				fGap = fCrosshairMaxGap_;
+
+			/* 上下左右へ振り分けて配置する。*/
+			Vector3 vUp = vCrosshairCenter_;
+			vUp.y += fGap;
+			aCrosshair_[0].SetPosition(vUp);
+
+			Vector3 vDown = vCrosshairCenter_;
+			vDown.y -= fGap;
+			aCrosshair_[1].SetPosition(vDown);
+
+			Vector3 vLeft = vCrosshairCenter_;
+			vLeft.x -= fGap;
+			aCrosshair_[2].SetPosition(vLeft);
+
+			Vector3 vRight = vCrosshairCenter_;
+			vRight.x += fGap;
+			aCrosshair_[3].SetPosition(vRight);
+
+			/* 被弾した赤い幕を時間で薄くする。*/
+			if (fDamageFlashTimer_ > 0.0f)
+				fDamageFlashTimer_ -= g_gameTime->GetFrameDeltaTime();
+
+			/* HPが少ないほど、ゆっくり脈打たせて危険を伝える。*/
+			fLowHpPulse_ += g_gameTime->GetFrameDeltaTime() * fLowHpPulseSpeed_;
+
+			float fOverlayAlpha = 0.0f;
+
+			/* 被弾直後の幕。*/
+			if (fDamageFlashTimer_ > 0.0f)
+				fOverlayAlpha = fDamageFlashAlpha_ * (fDamageFlashTimer_ / fDamageFlashTime_);
+
+			/* HPが少ないときの脈打ち。濃いほうを採用する。*/
+			const int iMaxHP = pPlayer->GetMaxHP();
+			if (iMaxHP > 0)
+			{
+				const float fHpRate = static_cast<float>(pPlayer->GetCurrentHP()) / static_cast<float>(iMaxHP);
+				if (fHpRate < fLowHpRate_)
+				{
+					/* HPが低いほど濃く、sin波で明滅させる。*/
+					const float fDanger = 1.0f - (fHpRate / fLowHpRate_);
+					const float fPulse = (sinf(fLowHpPulse_) * 0.5f + 0.5f);
+					const float fLowHpAlpha = fLowHpMaxAlpha_ * fDanger * fPulse;
+					if (fLowHpAlpha > fOverlayAlpha)
+						fOverlayAlpha = fLowHpAlpha;
+				}
+			}
+
+			stDamageOverlay_.SetMulColor({ 1.0f, 0.0f, 0.0f, fOverlayAlpha });
+			stDamageOverlay_.Update();
+
+			/* 命中の手応えを時間で消す。*/
+			const float fDeltaTime = g_gameTime->GetFrameDeltaTime();
+			if (fHitMarkerTimer_ > 0.0f)
+				fHitMarkerTimer_ -= fDeltaTime;
+			if (fDamageTimer_ > 0.0f)
+				fDamageTimer_ -= fDeltaTime;
+
+			/* 表示中だけ印と数値を出す。弱点なら色を変える。*/
+			if (fHitMarkerTimer_ > 0.0f)
+			{
+				stHitMarker_.SetText(L"X");
+				if (bLastHitCritical_)
+					stHitMarker_.SetColor(1.0f, 0.85f, 0.2f, 1.0f);
+				else
+					stHitMarker_.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+			}
+			else
+			{
+				stHitMarker_.SetText(L"");
+			}
+
+			if (fDamageTimer_ <= 0.0f)
+			{
+				stDamageText_.SetText(L"");
+			}
+
 			/* ポーズ中だけ中央にPAUSED表示。*/
 			if (nsSystem::IsGamePaused())
 				stPauseText_.SetText(L"- PAUSED -    [Esc] 再開    [Enter] タイトルへ");
@@ -128,16 +258,55 @@ namespace nsApp
 		}
 
 
+		void InGameHud::OnGameEvent(const nsEvent::GameEvent& stEvent)
+		{
+			/* 攻撃を受けたら画面を赤く光らせる。*/
+			if (stEvent.enType_ == nsEvent::EnGameEvent::PlayerDamaged)
+			{
+				fDamageFlashTimer_ = fDamageFlashTime_;
+				return;
+			}
+
+			/* 命中以外の通知では何もしない。*/
+			if (stEvent.enType_ != nsEvent::EnGameEvent::BulletHit)
+				return;
+
+			/* 印を出し、弱点かどうかを覚えておく。*/
+			fHitMarkerTimer_ = fHitMarkerLifeTime_;
+			bLastHitCritical_ = stEvent.bIsCritical_;
+
+			/* ダメージ量が乗っていれば数値も出す(表示しない方針のときは何もしない)。*/
+			if (!bShowDamageNumber_ || stEvent.iParam_ <= 0)
+				return;
+
+			fDamageTimer_ = fDamageLifeTime_;
+			swprintf_s(wcDamage_, L"%d", stEvent.iParam_);
+			stDamageText_.SetText(wcDamage_);
+
+			/* 弱点なら数値の色も変える。*/
+			if (stEvent.bIsCritical_)
+				stDamageText_.SetColor(1.0f, 0.85f, 0.2f, 1.0f);
+			else
+				stDamageText_.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+		}
+
+
 		void InGameHud::Render(RenderContext& rc)
 		{
+			/* 被弾の幕を最初に描いて、他のUIはその上に重ねる。*/
+			stDamageOverlay_.Draw(rc);
+
 			/* クロスヘアと各種テキストを描画する。*/
-			stCrosshair_.Draw(rc);
+			for (int i = 0; i < 4; i++)
+				aCrosshair_[i].Draw(rc);
 			stHpText_.Draw(rc);
 			stAmmoText_.Draw(rc);
 			stObjective_.Draw(rc);
 			stItemText_.Draw(rc);
 			stStatusText_.Draw(rc);
 			stPauseText_.Draw(rc);
+			stHitMarker_.Draw(rc);
+			stDamageText_.Draw(rc);
 		}
 	}
 }

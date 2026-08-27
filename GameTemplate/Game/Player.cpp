@@ -37,6 +37,25 @@ namespace
 	const float kShovePush = 120.0f;			//! 突き飛ばしで敵を押し返す距離。
 	const float kShoveFrontDot = 0.5f;			//! 正面判定のしきい値(0.5=正面±60度)。
 	const float kShoveCooldownTime = 0.7f;		//! 突き飛ばしのクールダウン(秒)。
+	const float kPi = 3.14159265f;			//! 円周率。
+	const float kAdsTransitionRate = 12.0f;	//! 覗き込みの切り替わる速さ(大きいほど素早く構える)。
+	const float kSpreadRecoverRate = 4.0f;	//! 連射で広がった拡散が収まる速さ。
+	const float kMaxSpreadShot = 0.06f;		//! 連射で増える拡散角の上限(ラジアン)。
+	const float kAdsViewModelRight = 6.0f;	//! 覗き込み時に銃を画面中央へ寄せた後の右オフセット。
+	const float kAdsViewModelDown = -12.0f;	//! 覗き込み時の銃の下オフセット。
+	const float kReloadLowerAngle = 0.9f;	//! リロード中に銃口を下げる角度(ラジアン)。
+	const float kReloadLowerDown = 26.0f;	//! リロード中に銃を下げる距離。
+	const float kReloadSpinAngle = 6.2832f;	//! リロード中に銃を回す角度(ラジアン。1周ぶん)。
+	const float kSprintLowerAngle = 0.7f;	//! スプリント中に銃口を下げる角度(ラジアン)。走っている間は構えを解く。
+	const float kSprintLowerDown = 18.0f;	//! スプリント中に銃を下げる距離。
+	const float kSprintLowerRate = 8.0f;	//! 銃を下げる/戻す速さ。
+	const float kHeadHeightRate = 0.85f;	//! 体の高さのうち、ここから上を頭とみなす割合。
+	const float kHeadShotRate = 2.0f;		//! 頭に当てたときのダメージ倍率。
+	const float kAdsRollAngle = 1.5708f;	//! 覗き込み時に銃を倒す角度(ラジアン。約90度)。視界を塞がないよう横倒しにする。
+	const float kAdsSensitivityRate = 0.55f;	//! 覗き込み中の視点移動の倍率(拡大しているぶん狙いを合わせやすくする)。
+	const float kAdsRecoilRate = 0.6f;		//! 覗き込み中の反動の倍率(構えるほど跳ねが小さくなる)。
+	const float kRecoilRecoverRate = 6.0f;	//! 反動が戻る速さ(大きいほど早く元へ戻る)。
+	const float kKickBackRecoverRate = 12.0f;	//! 銃のキックバックが戻る速さ。
 	const float kMaxPitch = 1.4f;				//! カメラピッチの上下限(rad, ≈±80度)。真上/真下での破綻防止。
 	const float kCapsuleRadius = 25.0f;		//! 移動用カプセルの半径(壁との押し戻しに使う)。
 	const float kCapsuleHeight = 120.0f;	//! 移動用カプセルの高さ。
@@ -78,6 +97,9 @@ namespace nsApp
 			stCharacterStatus_.stHp_.iCurrentHP_ = 100;
 			stCharacterStatus_.stHp_.iMaxHP_ = 100;
 
+			/* 被弾を見つけるため、開始時のHPを覚えておく。*/
+			iPrevHP_ = GetCurrentHP();
+
 			/* イベント発行先(勝敗管理などが購読)を取得する。デバッグシーン等、無い場合は発行しない。*/
 			pEventBus_ = FindGO<nsEvent::EventBus>("eventBus");
 
@@ -111,10 +133,23 @@ namespace nsApp
 				return;
 			}
 
-			/* 2.生命状態を更新する(HP0でダウン→出血タイマー切れで死亡)。*/
+			/* HPが減っていれば攻撃を受けたとみなして通知する。*/
+			const int iNowHP = GetCurrentHP();
+			if (iNowHP < iPrevHP_)
+				PublishGameEvent(nsEvent::EnGameEvent::PlayerDamaged, vPosition_, Vector3::Zero, iPrevHP_ - iNowHP);
+
+			iPrevHP_ = iNowHP;
+
+			/* 2.覗き込みの度合いと弾の拡散を更新する。*/
+			UpdateAds(fDeltaTime);
+
+			/* 3.射撃の反動を時間で元へ戻す。*/
+			UpdateRecoil(fDeltaTime);
+
+			/* 4.生命状態を更新する(HP0でダウン→出血タイマー切れで死亡)。*/
 			UpdateLifeState(fDeltaTime);
 
-			/* 3.生存しているときだけ移動・武器・アクションを処理する(ダウン/死亡中は行動不能)。*/
+			/* 5.生存しているときだけ移動・武器・アクションを処理する(ダウン/死亡中は行動不能)。*/
 			if (enLifeState_ == EnLifeState::Alive)
 			{
 				UpdateMove(fDeltaTime);
@@ -130,7 +165,7 @@ namespace nsApp
 				bIsMoving_ = false;
 			}
 
-			/* 4.移動状態をモデル(位置・回転・アニメーション)へ反映する。*/
+			/* 6.移動状態をモデル(位置・回転・アニメーション)へ反映する。*/
 			UpdateModel();
 		}
 
@@ -180,10 +215,13 @@ namespace nsApp
 			 * PlayerInput側でカーソルをウィンドウ中央にロックしているので、
 			 * 端で止まらず無限に旋回できる(GetMouseDeltaXは1フレームの移動量)。
 			 */
-			fCameraYaw_ += stIntent_.fLookYawDelta_;
+			/* 覗き込み中は拡大されるぶん、視点の動きを鈍くして狙いやすくする。*/
+			const float fLookRate = 1.0f - (1.0f - kAdsSensitivityRate) * fAdsRate_;
+
+			fCameraYaw_ += stIntent_.fLookYawDelta_ * fLookRate;
 
 			/* マウスの縦移動量でカメラのピッチ(上下)を更新し、真上/真下付近で止める。*/
-			fCameraPitch_ += stIntent_.fLookPitchDelta_;
+			fCameraPitch_ += stIntent_.fLookPitchDelta_ * fLookRate;
 			if (fCameraPitch_ > kMaxPitch)
 				fCameraPitch_ = kMaxPitch;
 			else if (fCameraPitch_ < -kMaxPitch)
@@ -213,7 +251,12 @@ namespace nsApp
 
 			/* スプリント(Shift)中は移動速度を上げて進む。*/
 			bIsSprinting_ = stIntent_.bSprintPress_;
-			const float fSpeed = bIsSprinting_ ? (fMoveSpeed_ * kSprintMul) : fMoveSpeed_;
+			float fSpeed = bIsSprinting_ ? (fMoveSpeed_ * kSprintMul) : fMoveSpeed_;
+
+			/* 覗き込み中はゆっくり歩く。*/
+			nsWeapon::Weapon* pAdsWeapon = stWeaponInventory_.GetCurrentWeapon();
+			if (pAdsWeapon != nullptr && fAdsRate_ > 0.0f)
+				fSpeed *= 1.0f + (pAdsWeapon->GetAdsSpeedRate() - 1.0f) * fAdsRate_;
 
 			/* 移動計算と壁との押し戻しは CharacterMovement クラスに一任する。*/
 			vPosition_ = stMovement_.MoveOnDirection(vMoveDir, fSpeed, fDeltaTime);
@@ -231,12 +274,141 @@ namespace nsApp
 
 		Vector3 Player::GetLookDirection() const
 		{
+			/* 操作した向きに射撃の反動を足したものが実際の視線になる。*/
+			const float fYaw = fCameraYaw_ + fRecoilYaw_;
+			const float fPitch = fCameraPitch_ + fRecoilPitch_;
+
 			/* ヨー(水平)＋ピッチ(上下)から視線の単位ベクトルを作る。カメラと照準で共通。*/
-			const float fCosPitch = cosf(fCameraPitch_);
-			return Vector3(
-				fCosPitch * sinf(fCameraYaw_),
-				sinf(fCameraPitch_),
-				fCosPitch * cosf(fCameraYaw_));
+			const float fCosPitch = cosf(fPitch);
+			return Vector3(fCosPitch * sinf(fYaw), sinf(fPitch), fCosPitch * cosf(fYaw));
+		}
+
+
+		void Player::UpdateAds(float fDeltaTime)
+		{
+			/* 走っている間は構えられない(Apex同様、スプリントを優先する)。*/
+			const bool bWantAds = stIntent_.bAdsPress_ && !bIsSprinting_;
+
+			/* 覗き込みの度合いを目標へ滑らかに近づける。*/
+			float fRate = fDeltaTime * kAdsTransitionRate;
+			if (fRate > 1.0f)
+				fRate = 1.0f;
+
+			const float fTarget = bWantAds ? 1.0f : 0.0f;
+			fAdsRate_ += (fTarget - fAdsRate_) * fRate;
+
+			/* 走っている間は銃を下げ、やめたら構え直す。*/
+			float fLowerRate = fDeltaTime * kSprintLowerRate;
+			if (fLowerRate > 1.0f)
+				fLowerRate = 1.0f;
+
+			const float fLowerTarget = (bIsSprinting_ && bIsMoving_) ? 1.0f : 0.0f;
+			fLowerRate_ += (fLowerTarget - fLowerRate_) * fLowerRate;
+
+			/* 連射で広がった拡散を時間で収める。*/
+			float fSpreadRate = fDeltaTime * kSpreadRecoverRate;
+			if (fSpreadRate > 1.0f)
+				fSpreadRate = 1.0f;
+
+			fSpreadShot_ -= fSpreadShot_ * fSpreadRate;
+		}
+
+
+		float Player::GetAdsZoomRate()
+		{
+			/* 武器が無ければ画角を変えない。*/
+			nsWeapon::Weapon* pWeapon = stWeaponInventory_.GetCurrentWeapon();
+			if (pWeapon == nullptr)
+				return 1.0f;
+
+			return pWeapon->GetAdsZoomRate();
+		}
+
+
+		float Player::GetCurrentSpread() const
+		{
+			/* 武器が無ければ拡散も無い。*/
+			nsWeapon::Weapon* pWeapon = const_cast<Player*>(this)->stWeaponInventory_.GetCurrentWeapon();
+			if (pWeapon == nullptr)
+				return 0.0f;
+
+			/* 覗き込みの度合いで腰だめとADSの拡散を混ぜ、連射ぶんを足す。*/
+			const float fBase = pWeapon->GetSpreadHip() + (pWeapon->GetSpreadAds() - pWeapon->GetSpreadHip()) * fAdsRate_;
+			return fBase + fSpreadShot_;
+		}
+
+
+		Vector3 Player::MakeSpreadDirection(const Vector3& vAimDir) const
+		{
+			/* 武器が無ければ拡散させない。*/
+			nsWeapon::Weapon* pWeapon = const_cast<Player*>(this)->stWeaponInventory_.GetCurrentWeapon();
+			if (pWeapon == nullptr)
+				return vAimDir;
+
+			/* いまの拡散角を取り出す。*/
+			const float fSpread = GetCurrentSpread();
+			if (fSpread <= 0.0001f)
+				return vAimDir;
+
+			/* 照準を軸に、円錐の内側へランダムにずらす。*/
+			const float fAngle = (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * 2.0f * kPi;
+			const float fRadius = (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * fSpread;
+
+			/* 照準に垂直な2軸を作る。*/
+			Vector3 vRight = { cosf(fCameraYaw_), 0.0f, -sinf(fCameraYaw_) };
+			Vector3 vUp = vAimDir;
+			vUp.Cross(vRight);
+
+			/* 2軸へずらして方向を作り直す。*/
+			Vector3 vResult = vAimDir;
+			vResult += vRight * (cosf(fAngle) * fRadius);
+			vResult += vUp * (sinf(fAngle) * fRadius);
+			vResult.Normalize();
+
+			return vResult;
+		}
+
+
+		void Player::UpdateRecoil(float fDeltaTime)
+		{
+			/* 跳ね上がった視点を徐々に元へ戻す。*/
+			float fRecoverRate = fDeltaTime * kRecoilRecoverRate;
+			if (fRecoverRate > 1.0f)
+				fRecoverRate = 1.0f;
+
+			fRecoilPitch_ -= fRecoilPitch_ * fRecoverRate;
+			fRecoilYaw_ -= fRecoilYaw_ * fRecoverRate;
+
+			/* 手前へ下がった銃を徐々に元の位置へ戻す。*/
+			float fKickRate = fDeltaTime * kKickBackRecoverRate;
+			if (fKickRate > 1.0f)
+				fKickRate = 1.0f;
+
+			fWeaponKickBack_ -= fWeaponKickBack_ * fKickRate;
+		}
+
+
+		void Player::ApplyFireRecoil(nsWeapon::Weapon* pWeapon)
+		{
+			/* 武器が無ければ反動も無い。*/
+			if (pWeapon == nullptr)
+				return;
+
+			/*
+			 * 撃った1発ぶんの跳ね方は武器のリコイルパターンが決めている。
+			 * 同じ武器なら毎回同じ順で跳ねるので、形を覚えれば逆へ動かして抑えられる。
+			 */
+			const nsWeapon::RecoilStep& stStep = pWeapon->GetLastRecoilStep();
+
+			/* 覗き込み中は反動を抑える。*/
+			const float fAdsMul = 1.0f - (1.0f - kAdsRecoilRate) * fAdsRate_;
+
+			/* パターンの倍率に武器の反動量を掛けて、視点を跳ね上げる。*/
+			fRecoilPitch_ += pWeapon->GetRecoilPitch() * stStep.fPitch_ * fAdsMul;
+			fRecoilYaw_ += pWeapon->GetRecoilYaw() * stStep.fYaw_ * fAdsMul;
+
+			/* 銃を手前へ下げる(次のフレームから元へ戻っていく)。*/
+			fWeaponKickBack_ = pWeapon->GetKickBack();
 		}
 
 
@@ -277,11 +449,22 @@ namespace nsApp
 					/* 発射に成功したら、ヒットスキャン判定＋トレーサー表示を行う。*/
 					if (stWeaponInventory_.Fire(vMuzzlePos, vAimDir))
 					{
+							/* 発射の反動を加える(視点が跳ね、銃が手前へ下がる)。*/
+							ApplyFireRecoil(pWeapon);
+
+							/* 連射するほど弾がばらつくようにする。*/
+							fSpreadShot_ += pWeapon->GetSpreadPerShot();
+							if (fSpreadShot_ > kMaxSpreadShot)
+								fSpreadShot_ = kMaxSpreadShot;
+
 							/* 発射したことを通知する(演出は購読側が担当する)。*/
 							PublishGameEvent(nsEvent::EnGameEvent::WeaponFired, vMuzzlePos, vAimDir);
 
+							/* 拡散のぶんだけ照準をばらつかせた、実際の弾道。*/
+							const Vector3 vShotDir = MakeSpreadDirection(vAimDir);
+
 							/* レイの終点(最大射程)。命中したらここを命中点に置き換える。*/
-							Vector3 vHitPoint = vEyePos + vAimDir * kWeaponRange;
+							Vector3 vHitPoint = vEyePos + vShotDir * kWeaponRange;
 
 						/*
 						 * ヒットスキャン命中判定: レイ(銃口→射程)に対し、敵を球とみなして
@@ -291,6 +474,7 @@ namespace nsApp
 						const float kEnemyRadius = 45.0f;		// 敵の水平被弾半径(人型を縦シリンダー近似)。
 							const float kEnemyHeight = 175.0f;	// 足元(y=0)から頭までのおおよその高さ。
 						nsActor::CommonEnemy* pHitEnemy = nullptr;
+						bool bHeadShot = false;					// 頭に当たったか。
 						float fNearest = kWeaponRange;			// 命中点までの前方距離(近いほど手前)。
 						for (nsActor::CommonEnemy* pEnemy : FindGOs<nsActor::CommonEnemy>("commonEnemy"))
 						{
@@ -303,12 +487,12 @@ namespace nsApp
 								vBodyMid.y += kEnemyHeight * 0.5f;
 
 								const Vector3 vToMid = vBodyMid - vEyePos;
-								const float fForward = vToMid.Dot(vAimDir);
+								const float fForward = vToMid.Dot(vShotDir);
 								if (fForward < 0.0f || fForward > fNearest)
 									continue;
 
 								/* レイ上の最近点で、水平距離が半径以内 かつ 当たった高さが体の範囲内なら命中。*/
-								const Vector3 vClosest = vEyePos + vAimDir * fForward;
+								const Vector3 vClosest = vEyePos + vShotDir * fForward;
 								const float fDx = vClosest.x - vFeet.x;
 								const float fDz = vClosest.z - vFeet.z;
 								const float fHorizDist = sqrtf(fDx * fDx + fDz * fDz);
@@ -318,17 +502,25 @@ namespace nsApp
 								{
 									fNearest = fForward;
 									pHitEnemy = pEnemy;
+
+									/* 体の上のほうに当たっていれば頭とみなす。*/
+									bHeadShot = (vClosest.y >= vFeet.y + kEnemyHeight * kHeadHeightRate);
 								}
 						}
 
 						/* 命中していたら、トレーサーを命中点で止めてダメージを与える。*/
 						if (pHitEnemy != nullptr)
 						{
-							vHitPoint = vEyePos + vAimDir * fNearest;
-							pHitEnemy->ApplyDamage(pWeapon->GetAttackPower());
+							vHitPoint = vEyePos + vShotDir * fNearest;
+							/* 頭に当たっていればダメージを増やす。*/
+							int iDamage = pWeapon->GetAttackPower();
+							if (bHeadShot)
+								iDamage = static_cast<int>(iDamage * kHeadShotRate);
 
-								/* 命中の演出(当たった位置に出す)。*/
-								PublishGameEvent(nsEvent::EnGameEvent::BulletHit, vHitPoint, vAimDir);
+							pHitEnemy->ApplyDamage(iDamage);
+
+							/* 命中の演出(当たった位置に出す)。*/
+							PublishGameEvent(nsEvent::EnGameEvent::BulletHit, vHitPoint, vShotDir, iDamage, bHeadShot);
 
 							/* 倒したら撃破エフェクト＋撃破イベントを出して退場させる。*/
 								if (pHitEnemy->IsDead())
@@ -347,6 +539,12 @@ namespace nsApp
 					}
 				}
 			}
+
+			/* 数字キーでの直接持ち替え(ホイールより優先する)。*/
+			if (stIntent_.bMainWeaponTrigger_)
+				stWeaponInventory_.SwitchToSlot(nsWeapon::EnWeaponSlot::Main);
+			else if (stIntent_.bSubWeaponTrigger_)
+				stWeaponInventory_.SwitchToSlot(nsWeapon::EnWeaponSlot::Sub);
 
 			/* 武器切り替え(マウスホイール)。*/
 			if (stIntent_.bWeaponNextTrigger_)
@@ -504,8 +702,21 @@ namespace nsApp
 			Vector3 vGunPos = vPosition_;
 			vGunPos.y += kEyeHeight;						// 目の高さ
 			vGunPos += vLook * pWeapon->GetViewModelForward();	// 前(武器ごと)
-			vGunPos += vRight * kViewModelRight;			// 右
-			vGunPos.y += kViewModelDown;					// 下(負)
+			/* 覗き込むほど、銃を画面中央(照準の位置)へ寄せる。*/
+			const float fRightOffset = kViewModelRight + (kAdsViewModelRight - kViewModelRight) * fAdsRate_;
+			const float fDownOffset = kViewModelDown + (kAdsViewModelDown - kViewModelDown) * fAdsRate_;
+			vGunPos += vRight * fRightOffset;				// 右
+			vGunPos.y += fDownOffset;						// 下(負)
+			vGunPos.y -= kSprintLowerDown * fLowerRate_;	// 走っている間はさらに下げる
+
+			/*
+			 * リロード中は銃を下げて回す。
+			 * 弾を入れ替えている最中だと分かるよう、山なりに沈めてから戻す。
+			 */
+			const float fReloadRate = pWeapon->GetReloadRate();
+			const float fReloadDip = sinf(fReloadRate * kPi);	// 0→1→0 と動く沈み具合。
+			vGunPos.y -= kReloadLowerDown * fReloadDip;
+			vGunPos -= vLook * fWeaponKickBack_;			// 撃った直後は手前へ下がる
 
 			/* 歩行ボブ: 移動中は銃を軽く揺らす(スプリントで大きく速く)。*/
 			{
@@ -522,8 +733,10 @@ namespace nsApp
 				if (bIsMoving_)
 					fBobTimer_ += fBobDelta * fBobSpeed;
 
-				vGunPos += vRight * (sinf(fBobTimer_) * fBobAmp * fBobWeight_);
-				vGunPos.y += sinf(fBobTimer_ * 2.0f) * fBobAmp * fBobWeight_;
+				/* 覗き込み中は狙いが定まるよう揺れを抑える。*/
+				const float fBobScale = fBobAmp * fBobWeight_ * (1.0f - fAdsRate_);
+				vGunPos += vRight * (sinf(fBobTimer_) * fBobScale);
+				vGunPos.y += sinf(fBobTimer_ * 2.0f) * fBobScale;
 			}
 
 			/*
@@ -541,6 +754,10 @@ namespace nsApp
 			Quaternion qGun;
 			qGun.SetRotationY(fCameraYaw_);		// ヨー(横向き)を先に設定。
 			qGun.AddRotationX(-fCameraPitch_);	// ピッチをローカル軸で後乗せ→横向きでもロールしない。上下が逆なら符号反転。
+			qGun.AddRotationZ(kAdsRollAngle * fAdsRate_);	// 覗き込むほど銃を横倒しにし、拡大時に視界を塞がないようにする。
+			qGun.AddRotationX(kSprintLowerAngle * fLowerRate_);	// 走っている間は銃口を下げて構えを解く。
+			qGun.AddRotationX(kReloadLowerAngle * fReloadDip);	// リロード中は銃口を下げる。
+			qGun.AddRotationZ(kReloadSpinAngle * fReloadRate);	// リロード中は銃を1周させる。
 			weaponModel.SetRotation(qGun);
 			weaponModel.SetScale(Vector3(fScale, fScale, fScale));
 			weaponModel.Update();
@@ -651,7 +868,7 @@ namespace nsApp
 		}
 
 
-		void Player::PublishGameEvent(nsEvent::EnGameEvent enType, const Vector3& vPosition, const Vector3& vDirection)
+		void Player::PublishGameEvent(nsEvent::EnGameEvent enType, const Vector3& vPosition, const Vector3& vDirection, int iParam, bool bIsCritical)
 		{
 			/* バスが取得できていれば発行する。*/
 			if (pEventBus_ == nullptr)
@@ -661,6 +878,8 @@ namespace nsApp
 			stEvent.enType_ = enType;
 			stEvent.vPosition_ = vPosition;
 			stEvent.vDirection_ = vDirection;
+			stEvent.iParam_ = iParam;
+			stEvent.bIsCritical_ = bIsCritical;
 			pEventBus_->Publish(stEvent);
 		}
 	}

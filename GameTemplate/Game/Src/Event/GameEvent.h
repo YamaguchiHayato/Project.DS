@@ -32,6 +32,7 @@ namespace nsApp
 			BulletHit,				//! 弾が命中した。
 			GrenadeExploded,		//! グレネードが爆発した。
 			PlayerHealed,			//! プレイヤーが回復した。
+			PlayerDamaged,			//! プレイヤーが攻撃を受けた。
 		};
 
 		/**
@@ -44,7 +45,8 @@ namespace nsApp
 			EnGameEvent enType_;						//! 出来事の種別。
 			Vector3 vPosition_ = Vector3::Zero;			//! 出来事が起きた位置。
 			Vector3 vDirection_ = Vector3::Zero;		//! 出来事の向き(発射方向・命中方向など)。
-			int iParam_ = 0;							//! 付随する数値(用途は種別依存)。
+			int iParam_ = 0;							//! 付随する数値(用途は種別依存。命中ならダメージ量)。
+			bool bIsCritical_ = false;					//! 弱点(頭)への命中か。
 		};
 
 		/**

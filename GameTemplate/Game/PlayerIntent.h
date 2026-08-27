@@ -23,11 +23,14 @@ namespace nsApp
 			bool bFirePress_ = false;		//! 射撃(押しっぱなし=フルオート)。
 			bool bFireTrigger_ = false;		//! 射撃(押した瞬間=単発)。
 			bool bShoveTrigger_ = false;		//! 近接(shove。押した瞬間)。
+			bool bAdsPress_ = false;			//! 覗き込み(ADS。押しっぱなし)。
 			bool bReloadTrigger_ = false;	//! リロード(押した瞬間)。
 			bool bUseTrigger_ = false;		//! 使用・インタラクト(押した瞬間。武器/アイテム/ドア等)。
 			bool bUseHold_ = false;			//! 使用・蘇生ホールド(押しっぱなし。ダウン中の味方を起こす)。
 			bool bWeaponNextTrigger_ = false;	//! 武器切替(次)。
 			bool bWeaponPrevTrigger_ = false;	//! 武器切替(前)。
+			bool bMainWeaponTrigger_ = false;	//! メイン武器へ直接持ち替え。
+			bool bSubWeaponTrigger_ = false;	//! サブ武器へ直接持ち替え。
 			bool bLightTrigger_ = false;		//! ライトON/OFF(押した瞬間)。
 			bool bPauseTrigger_ = false;		//! ポーズ・メニュー(押した瞬間)。
 
