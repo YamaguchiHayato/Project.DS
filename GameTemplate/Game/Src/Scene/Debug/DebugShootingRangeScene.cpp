@@ -8,7 +8,7 @@ namespace
 {
 	const int iTargetEnemyCount_ = 12;
 	const float fEyeHeight_ = 160.0f;
-	const char* sStageModelPath_ = "Assets/modelData/stage/DebugStage/demoStage.tkm";
+	const char* sStageModelPath_ = "Assets/modelData/stage/FirstStage/firstStage.tkm";
 	const Vector3 vHintFontPos_ = { -450.0f, 450.0f, 0.0f };
 	const float fStageScale_ = 150.0f;
 
