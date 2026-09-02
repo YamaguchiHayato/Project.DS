@@ -196,6 +196,27 @@ namespace nsApp
 			//! 現在の予備弾数(無限の武器では常に上限を返す)。
 			inline int GetReserveAmmo() const { return IsInfiniteReserve() ? stStatus_.iMaxReserveAmmo_ : iReserveAmmo_; }
 
+			/**
+			 * @brief 予備弾を補給する(上限を超えないよう切り詰める)。
+			 * @param iAmount 補給する数。
+			 * @return 実際に補給できた数(すでに満タンなら0)。
+			 */
+			inline int AddReserveAmmo(int iAmount)
+			{
+				/* 無限の武器は補給の必要がない。*/
+				if (IsInfiniteReserve())
+					return 0;
+
+				/* 上限までの空きぶんだけ受け取る。*/
+				const int iSpace = stStatus_.iMaxReserveAmmo_ - iReserveAmmo_;
+				const int iAdd = (iAmount < iSpace) ? iAmount : iSpace;
+				if (iAdd <= 0)
+					return 0;
+
+				iReserveAmmo_ += iAdd;
+				return iAdd;
+			}
+
 			//! 予備弾数の上限。
 			inline int GetMaxReserveAmmo() const { return stStatus_.iMaxReserveAmmo_; }
 

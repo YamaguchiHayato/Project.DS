@@ -7,6 +7,7 @@
 #include "Src/Event/EventBus.h"
 #include "Src/System/GamePause.h"
 #include "Src/Item/Grenade.h"
+#include "Src/Item/Pickup.h"
 
 namespace
 {
@@ -34,6 +35,12 @@ namespace
 	const float kBleedOutTime = 15.0f;			//! ダウンしてから死亡するまでの出血時間(秒)。
 	const int kReviveHP = 30;					//! 救助で復帰したときのHP。
 	const float kShoveRange = 180.0f;			//! 突き飛ばしが届く距離。
+	const float kEnemyCenterHeightForShove = 85.0f;	//! 突き飛ばしの手応えを出す高さ(敵の体の中心)。
+	const int kShoveDamage = 10;			//! 突き飛ばしで与えるダメージ。押し返しが主で、削るのはおまけ。
+	const int kPickupAmmoAmount = 60;		//! 弾薬をひとつ拾ったときに補給される予備弾数。
+	const int kFlashLightIndex = 0;			//! 手持ちライトに使うスポットライトの番号。
+	const float kFlashLightRange = 900.0f;	//! ライトが届く距離。
+	const float kFlashLightAngle = 0.5f;	//! ライトの広がり(ラジアン)。
 	const float kShovePush = 120.0f;			//! 突き飛ばしで敵を押し返す距離。
 	const float kShoveFrontDot = 0.5f;			//! 正面判定のしきい値(0.5=正面±60度)。
 	const float kShoveCooldownTime = 0.7f;		//! 突き飛ばしのクールダウン(秒)。
@@ -43,9 +50,9 @@ namespace
 	const float kMaxSpreadShot = 0.06f;		//! 連射で増える拡散角の上限(ラジアン)。
 	const float kAdsViewModelRight = 6.0f;	//! 覗き込み時に銃を画面中央へ寄せた後の右オフセット。
 	const float kAdsViewModelDown = -12.0f;	//! 覗き込み時の銃の下オフセット。
-	const float kReloadLowerAngle = 0.9f;	//! リロード中に銃口を下げる角度(ラジアン)。
-	const float kReloadLowerDown = 26.0f;	//! リロード中に銃を下げる距離。
-	const float kReloadSpinAngle = 6.2832f;	//! リロード中に銃を回す角度(ラジアン。1周ぶん)。
+	const float kReloadLowerAngle = 0.5f;	//! リロード中に銃口を下げる角度(ラジアン)。
+	const float kReloadLowerDown = 14.0f;	//! リロード中に銃を下げる距離。
+	const float kReloadSpinAngle = 0.6f;	//! リロード中に銃をひねる角度(ラジアン)。大きく回すと手元から外れて見えるので控えめにする。
 	const float kSprintLowerAngle = 0.7f;	//! スプリント中に銃口を下げる角度(ラジアン)。走っている間は構えを解く。
 	const float kSprintLowerDown = 18.0f;	//! スプリント中に銃を下げる距離。
 	const float kSprintLowerRate = 8.0f;	//! 銃を下げる/戻す速さ。
@@ -88,7 +95,11 @@ namespace nsApp
 
 			/* 移動処理を初期化する。カプセルで壁(PhysicsStaticObject)と当たる。*/
 			stMovement_.Init(kCapsuleRadius, kCapsuleHeight, vPosition_);
-			stMovement_.SetGravityEnabled(true);
+			/*
+			 * 重力は床のあるステージが入ってから有効にする。
+			 * 床が無い状態で有効にすると、接地できず落ち続けてしまう。
+			 */
+			stMovement_.SetGravityEnabled(false);
 
 			/* モデルとアニメーションを読み込む。*/
 			InitModel();
@@ -177,7 +188,7 @@ namespace nsApp
 			 * TODO: 他プレイヤーからは3人称で見える必要があるので、将来「自分視点か否か」で
 			 *       描画を切り替える(今はデバッグ用に一人称固定)。
 			 */
-			/* stModelRender_.Draw(rc); */
+			 /*stModelRender_.Draw(rc);*/
 
 			/* 現在装備中の武器モデル(ビューモデル)だけ描画する。*/
 			const int iType = static_cast<int>(enEquippedType_);
@@ -556,19 +567,22 @@ namespace nsApp
 
 		void Player::UpdateAction()
 		{
-			/* インタラクト。*/
+			/* インタラクト: 足元に落ちている物資を拾う。*/
 			if (stIntent_.bUseTrigger_)
-			{
-				/* TODO: 近くのインタラクト可能なオブジェクトを探して処理する。*/
-				OutputDebugStringA("[Player] Interact!\n");
-			}
+				PickUpItem();
 
 			/* ライトのON/OFF切り替え。*/
 			if (stIntent_.bLightTrigger_)
-			{
 				bIsLightOn_ = !bIsLightOn_;
-				/* TODO: 実際のライト(スポットライト等)のON/OFF処理に差し替える。*/
-			}
+
+			/*
+			 * 手持ちのライトを目線の位置から視線の先へ向ける。
+			 * 消えているときは届く距離を0にして、光が出ないようにする。
+			 */
+			Vector3 vLightPos = vPosition_;
+			vLightPos.y += kEyeHeight;
+
+			g_renderingEngine->SetSpotLight(kFlashLightIndex, vLightPos, { 1.0f, 0.95f, 0.85f }, bIsLightOn_ ? kFlashLightRange : 0.0f, GetLookDirection(), kFlashLightAngle);
 
 			/* メニュー・ポーズ画面。*/
 			if (stIntent_.bPauseTrigger_)
@@ -620,10 +634,68 @@ namespace nsApp
 				 * 移動処理へも反映される SetPosition を使う。
 				 */
 				pEnemy->SetPosition(pEnemy->GetPosition() + vDir * kShovePush);
+
+				/* 押し返すだけでなく、わずかに削る。*/
+				pEnemy->ApplyDamage(kShoveDamage);
+
+				/* 当たった手応えを通知する(位置は敵の体の中心あたり)。*/
+				Vector3 vShoveHitPos = pEnemy->GetPosition();
+				vShoveHitPos.y += kEnemyCenterHeightForShove;
+				PublishGameEvent(nsEvent::EnGameEvent::BulletHit, vShoveHitPos, vDir, kShoveDamage);
+
+				/* 倒したら退場させる。*/
+				if (pEnemy->IsDead())
+				{
+					PublishGameEvent(nsEvent::EnGameEvent::EnemyKilled, pEnemy->GetPosition());
+					DeleteGO(pEnemy);
+				}
 			}
 
 			/* TODO: 突き飛ばしのSE/モーション、特殊感染者への効果差など。*/
 			OutputDebugStringA("[Player] Shove!\n");
+		}
+
+
+		void Player::PickUpItem()
+		{
+			/* 拾える距離にある物資を探す。*/
+			for (nsItem::Pickup* pPickup : FindGOs<nsItem::Pickup>("pickup"))
+			{
+				if (pPickup == nullptr || !pPickup->IsInRange(vPosition_))
+					continue;
+
+				/* 種類に応じて補給する。満たされていて拾えない場合は次を探す。*/
+				bool bPickedUp = false;
+				switch (pPickup->GetType())
+				{
+				case nsItem::EnPickupType::Ammo:
+					/* 所持している武器の予備弾を補給する。*/
+					bPickedUp = stWeaponInventory_.AddReserveAmmoToAll(kPickupAmmoAmount);
+					break;
+
+				case nsItem::EnPickupType::Medkit:
+					iMedkitCount_++;
+					bPickedUp = true;
+					break;
+
+				case nsItem::EnPickupType::Grenade:
+					iGrenadeCount_++;
+					bPickedUp = true;
+					break;
+
+				default:
+					break;
+				}
+
+				/* 拾えなければ物資はその場に残す。*/
+				if (!bPickedUp)
+					continue;
+
+				/* 拾ったことを通知して、その物資を消す。*/
+				PublishGameEvent(nsEvent::EnGameEvent::ItemPickedUp, pPickup->GetPosition());
+				DeleteGO(pPickup);
+				return;
+			}
 		}
 
 
@@ -739,18 +811,7 @@ namespace nsApp
 				vGunPos.y += sinf(fBobTimer_ * 2.0f) * fBobScale;
 			}
 
-			/*
-			 * モデル原点のズレを打ち消す。ローカル中心を世界の基底(右=vRight, 上=Y, 前=vLook)に
-			 * 写して vGunPos から引けば、中心がぴったり vGunPos に来る(上下の微差は無視できる範囲)。
-			 * これで原点がズレたモデルでもカメラにめり込まなくなる。
-			 */
-			const Vector3& vCenter = aWeaponModelCenter_[iType];
-			Vector3 vCenterOffset =
-				  vRight * (vCenter.x * fScale)
-				+ Vector3(0.0f, vCenter.y * fScale, 0.0f)
-				+ vLook  * (vCenter.z * fScale);
-
-			weaponModel.SetPosition(vGunPos - vCenterOffset);
+			/* 銃の姿勢を先に決める。原点のズレを打ち消すのに、この回転を使う。*/
 			Quaternion qGun;
 			qGun.SetRotationY(fCameraYaw_);		// ヨー(横向き)を先に設定。
 			qGun.AddRotationX(-fCameraPitch_);	// ピッチをローカル軸で後乗せ→横向きでもロールしない。上下が逆なら符号反転。
@@ -758,6 +819,23 @@ namespace nsApp
 			qGun.AddRotationX(kSprintLowerAngle * fLowerRate_);	// 走っている間は銃口を下げて構えを解く。
 			qGun.AddRotationX(kReloadLowerAngle * fReloadDip);	// リロード中は銃口を下げる。
 			qGun.AddRotationZ(kReloadSpinAngle * fReloadRate);	// リロード中は銃を1周させる。
+
+			/*
+			 * モデル原点のズレを打ち消す。
+			 * 補正には視点の向き(ヨー＋ピッチ)だけを使い、演出でつけた回転は含めない。
+			 * 演出の回転まで含めると、リロードのように大きく回したときに銃の位置まで動いてしまう。
+			 */
+			Quaternion qBase;
+			qBase.SetRotationY(fCameraYaw_);
+			qBase.AddRotationX(-fCameraPitch_);
+
+			Vector3 vCenterOffset = aWeaponModelCenter_[iType] * fScale;
+			qBase.Apply(vCenterOffset);
+
+			/* 不具合を調べられるよう、実際に置いた位置を控えておく。*/
+			vWeaponViewPos_ = vGunPos - vCenterOffset;
+
+			weaponModel.SetPosition(vWeaponViewPos_);
 			weaponModel.SetRotation(qGun);
 			weaponModel.SetScale(Vector3(fScale, fScale, fScale));
 			weaponModel.Update();

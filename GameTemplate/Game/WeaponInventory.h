@@ -65,6 +65,13 @@ namespace nsApp
 			 */
 			void SwitchToSlot(EnWeaponSlot enSlot);
 
+			/**
+			 * @brief 所持している武器へ予備弾を補給する。
+			 * @param iAmount 武器1丁あたりに補給する数。
+			 * @return 1発でも補給できたら true。
+			 */
+			bool AddReserveAmmoToAll(int iAmount);
+
 
 		/* ゲッター。*/
 		public:

@@ -272,6 +272,7 @@
     <ClCompile Include="Src\Effect\EffectListener.cpp" />
     <ClCompile Include="Src\System\GamePause.cpp" />
     <ClCompile Include="Src\Item\Grenade.cpp" />
+    <ClCompile Include="Src\Item\Pickup.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Src\Actor\Actor.cpp" />
     <ClCompile Include="Src\Actor\Character\Common\CharacterAnimation.cpp" />
@@ -333,6 +334,7 @@
     <ClInclude Include="Src\Effect\EffectListener.h" />
     <ClInclude Include="Src\System\GamePause.h" />
     <ClInclude Include="Src\Item\Grenade.h" />
+    <ClInclude Include="Src\Item\Pickup.h" />
     <ClInclude Include="Src\Actor\Actor.h" />
     <ClInclude Include="Src\Actor\Character\Common\CharacterAnimation.h" />
     <ClInclude Include="Src\Actor\Character\Common\CharacterModel.h" />

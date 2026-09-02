@@ -173,6 +173,12 @@ namespace nsApp
 			//! 所持している回復アイテム数(UI表示用)。
 			inline int GetMedkitCount() const { return iMedkitCount_; }
 
+			//! 画面に出している銃の位置(不具合を調べるための確認用)。
+			inline const Vector3& GetWeaponViewPosition() const { return vWeaponViewPos_; }
+
+			//! ライトが点いているか(UI表示用)。
+			inline bool IsLightOn() const { return bIsLightOn_; }
+
 			//! 所持している投擲アイテム数(UI表示用)。
 			inline int GetGrenadeCount() const { return iGrenadeCount_; }
 
@@ -216,6 +222,11 @@ namespace nsApp
 			 * @brief アイテム(回復/投擲)の入力を処理する。
 			 */
 			void UpdateItems();
+
+			/**
+			 * @brief 足元に落ちている物資を拾う。
+			 */
+			void PickUpItem();
 
 			/**
 			 * @brief 覗き込み(ADS)の度合いと、弾の拡散を更新する。
@@ -319,6 +330,7 @@ namespace nsApp
 			float fBobTimer_ = 0.0f;					//! 歩行ボブの位相。
 			float fBobWeight_ = 0.0f;					//! 歩行ボブの重み(移動→1/停止→0へ補間)。
 			bool bIsLightOn_ = false;				//! ライトが点いているか。
+			Vector3 vWeaponViewPos_ = Vector3::Zero;	//! 画面に出している銃の位置(確認用に控えておく)。
 			EnPlayerAnimation enPlayingAnimation_ = EnPlayerAnimation::Num;	//! 再生中のアニメーション。
 
 			EnLifeState enLifeState_ = EnLifeState::Alive;	//! 生命状態(生存/ダウン/死亡)。

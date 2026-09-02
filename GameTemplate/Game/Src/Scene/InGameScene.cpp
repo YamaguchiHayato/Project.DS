@@ -14,6 +14,7 @@
 namespace
 {
 	const float fDefaultViewAngle_ = 0.0f;	//! 通常時の画角(0のときは起動時の値を使う)。
+	const Vector3 vPlayerStartPos_ = Vector3::Zero;			//! プレイヤーの開始位置。
 	const float fEyeHeight_ = 160.0f;								//! 目(カメラ)の高さ。Player側の kEyeHeight と合わせる。
 	const char* sGroundModelPath_ = "Assets/modelData/ground.tkm";	//! 地面モデル。
 	const float fGroundScale_ = 200.0f;								//! 地面の拡大率。
@@ -64,6 +65,10 @@ namespace nsApp
 			if (pEventBus_ != nullptr)
 				pEventBus_->Unsubscribe(&stEffectListener_);
 
+			/* 戦績を数えるための購読も解除する。*/
+			if (pEventBus_ != nullptr)
+				pEventBus_->Unsubscribe(this);
+
 			/* ルールをバスから購読解除してから、ルール・バスを破棄する(解放後アクセス防止)。*/
 			if (pEventBus_ != nullptr && pGameRule_ != nullptr)
 				pEventBus_->Unsubscribe(pGameRule_);
@@ -113,14 +118,20 @@ namespace nsApp
 			stEffectListener_.Initialize(&stEffectList_);
 			pEventBus_->Subscribe(&stEffectListener_);
 
+			/* 戦績を数えるため、シーン自身も通知を購読する。*/
+			pEventBus_->Subscribe(this);
+
 			/* 地面を読み込んで大きく敷く。*/
 			stGroundModel_.Init(sGroundModelPath_, nullptr, 0, enModelUpAxisY);
 			stGroundModel_.SetScale(Vector3(fGroundScale_, fGroundScale_, fGroundScale_));
 			stGroundModel_.SetPosition(Vector3(0.0f, 0.0f, 0.0f));
 			stGroundModel_.Update();
 
-			/* 地面の静的コライダを作る。これが無いとキャラクターが接地できない。*/
-			stGroundCollider_.CreateFromModel(stGroundModel_.GetModel(), stGroundModel_.GetModel().GetWorldMatrix());
+			/*
+			 * 地面の当たり判定は、床のあるステージが入ってから用意する。
+			 * 重力を使わない今は接地させる必要がなく、地面モデルから作った当たり判定が
+			 * キャラクターと重なって見えない壁になってしまうため、ここでは作らない。
+			 */
 
 			/* ゴール(セーフルーム)の目印を置く。ここへ到達で勝利。発光球を目線高さに浮かせて視認性を確保する。*/
 			stSafeRoomModel_.Init(sGoalBeaconModelPath_, nullptr, 0, enModelUpAxisY);
@@ -134,6 +145,9 @@ namespace nsApp
 
 			/* プレイヤーを生成する。*/
 			pPlayer_ = NewGO<nsActor::Player>(0, "player");
+
+			/* 地面に埋まった状態から始まらないよう、少し上に置く。*/
+			pPlayer_->SetPosition(vPlayerStartPos_);
 
 			/* 敵の湧き係(EnemyDirector)を生成する。時間・同時数上限に応じて雑魚敵を湧かせ続ける。*/
 			pEnemyDirector_ = NewGO<nsDirector::EnemyDirector>(0, "enemyDirector");
@@ -164,6 +178,9 @@ namespace nsApp
 				return;
 			}
 
+			/* 遊んでいる時間を数える(戦績に使う)。*/
+			fPlayTime_ += g_gameTime->GetFrameDeltaTime();
+
 			/* 再生中エフェクトの寿命を進める。*/
 			stEffectList_.Update(g_gameTime->GetFrameDeltaTime());
 
@@ -172,6 +189,16 @@ namespace nsApp
 
 			/* 勝敗判定(到達=勝ち/死亡=負け)。*/
 			UpdateResultJudge();
+		}
+
+
+		void InGameScene::OnGameEvent(const nsEvent::GameEvent& stEvent)
+		{
+			/* 敵を倒した通知だけ数える。*/
+			if (stEvent.enType_ != nsEvent::EnGameEvent::EnemyKilled)
+				return;
+
+			iKillCount_++;
 		}
 
 
@@ -255,6 +282,7 @@ namespace nsApp
 			if (!bResultRequested_ && pGameRule_ != nullptr && pGameRule_->IsOver() && pGameFlow_ != nullptr)
 			{
 				pGameFlow_->SetMatchWon(pGameRule_->IsWin());
+				pGameFlow_->SetMatchRecord(iKillCount_, fPlayTime_);
 				pGameFlow_->ChangeScene(EnSceneID::Result);
 				bResultRequested_ = true;
 			}

@@ -66,6 +66,23 @@ namespace nsApp
 			 * @brief 直近の試合結果を取得する。
 			 * @return 勝利していたら true。
 			 */
+			/**
+			 * @brief 直近の試合の戦績を記録する。ResultScene へ渡す受け皿。
+			 * @param iKillCount 撃破数。
+			 * @param fClearTime かかった時間(秒)。
+			 */
+			inline void SetMatchRecord(int iKillCount, float fClearTime)
+			{
+				iMatchKillCount_ = iKillCount;
+				fMatchClearTime_ = fClearTime;
+			}
+
+			//! 直近の試合の撃破数。
+			inline int GetMatchKillCount() const { return iMatchKillCount_; }
+
+			//! 直近の試合にかかった時間(秒)。
+			inline float GetMatchClearTime() const { return fMatchClearTime_; }
+
 			inline bool IsMatchWon() const
 			{
 				/* 保持した勝敗を返す。*/
@@ -106,6 +123,8 @@ namespace nsApp
 			EnSceneID enReserveSceneID_ = EnSceneID::None; //! 予約された通常シーンID。
 			EnDebugSceneID enReserveDebugSceneID_ = EnDebugSceneID::None; //! 予約されたDebugシーンID。
 			bool bMatchWon_ = false; //! 直近の試合結果(勝ち=true)。ResultSceneへ渡す。
+			int iMatchKillCount_ = 0; //! 直近の試合の撃破数。
+			float fMatchClearTime_ = 0.0f; //! 直近の試合にかかった時間(秒)。
 		};
 	}
 }

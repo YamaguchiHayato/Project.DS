@@ -27,6 +27,13 @@ namespace
 			{ nsApp::nsEffect::EnEffectID::Heal, 15.0f, 1.5f, false } },
 	};
 
+	/*
+	 * エフェクト素材の基準軸を、進む向きへ倒すための角度。
+	 * 素材は上(Y軸)へ伸びる作りになっているため、そのままだと縦向きに出てしまう。
+	 * 90度倒して、射線の方向へ伸びるようにしている。向きが逆なら符号を反転する。
+	 */
+	const float fEffectAxisFix_ = -1.5708f;
+
 	/**
 	 * @brief 方向ベクトルから、その向きを向く回転を作る。
 	 * @param vDirection 向ける方向(ゼロベクトルなら回転なし)。
@@ -55,6 +62,9 @@ namespace
 
 		/* 上下のピッチをローカル軸で後乗せする。*/
 		qRotation.AddRotationX(-asinf(fSin));
+
+		/* 素材の基準軸(上)を、進む向きへ倒す。*/
+		qRotation.AddRotationX(fEffectAxisFix_);
 
 		return qRotation;
 	}
