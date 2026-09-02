@@ -26,6 +26,21 @@ namespace
 	const float fHitMarkerScale_ = 1.4f;					//! ヒットマーカーの大きさ。
 	const float fDamageScale_ = 1.0f;						//! ダメージ数値の大きさ。
 	const float fHitMarkerLifeTime_ = 0.12f;				//! ヒットマーカーの表示時間(秒)。
+
+	/*
+	 * 弱点(頭)に当てたときは、普通の命中とはっきり差をつける。
+	 * 数値は出さない方針なので、印の大きさ・形・色・残る長さで伝える。
+	 */
+	const wchar_t* sHitMarkerText_ = L"X";					//! 命中の印。
+	/*
+	 * 弱点に当てた印。普通の命中と形で区別する。
+	 * ※フォントに無い文字を渡すと SpriteFont が例外を投げて落ちる。
+	 *   新しい記号を使うときは、すでに画面に出ている文字に寄せること。
+	 */
+	const wchar_t* sCriticalMarkerText_ = L"[X]";				//! 弱点に当てた印。
+	const Vector3 vCriticalMarkerPos_ = { -46.0f, 22.0f, 0.0f };	//! 弱点の印の位置(大きくなるぶん左へずらして中央に合わせる)。
+	const float fCriticalMarkerScale_ = 2.1f;				//! 弱点の印の大きさ。
+	const float fCriticalMarkerLifeTime_ = 0.35f;			//! 弱点の印の表示時間(秒)。普通の命中より長く残す。
 	const float fDamageLifeTime_ = 0.6f;					//! ダメージ数値の表示時間(秒)。
 	const char* sDamageOverlayPath_ = "Assets/sprite/white.dds";	//! 被弾時に重ねる幕(白い画像を赤く染めて使う)。
 	const float fDamageFlashTime_ = 0.35f;					//! 被弾したときに赤い幕を出す時間(秒)。
@@ -231,14 +246,27 @@ namespace nsApp
 			if (fDamageTimer_ > 0.0f)
 				fDamageTimer_ -= fDeltaTime;
 
-			/* 表示中だけ印と数値を出す。弱点なら色を変える。*/
+			/*
+			 * 表示中だけ命中の印を出す。
+			 * 弱点(頭)は、形・大きさ・色・残る長さの4つを変えて普通の命中と区別する。
+			 * 色だけだと一瞬すぎて気づけないため。
+			 */
 			if (fHitMarkerTimer_ > 0.0f)
 			{
-				stHitMarker_.SetText(L"X");
 				if (bLastHitCritical_)
-					stHitMarker_.SetColor(1.0f, 0.85f, 0.2f, 1.0f);
+				{
+					stHitMarker_.SetText(sCriticalMarkerText_);
+					stHitMarker_.SetPosition(vCriticalMarkerPos_);
+					stHitMarker_.SetScale(fCriticalMarkerScale_);
+					stHitMarker_.SetColor(1.0f, 0.8f, 0.1f, 1.0f);
+				}
 				else
+				{
+					stHitMarker_.SetText(sHitMarkerText_);
+					stHitMarker_.SetPosition(vHitMarkerPos_);
+					stHitMarker_.SetScale(fHitMarkerScale_);
 					stHitMarker_.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+				}
 			}
 			else
 			{
@@ -272,8 +300,10 @@ namespace nsApp
 				return;
 
 			/* 印を出し、弱点かどうかを覚えておく。*/
-			fHitMarkerTimer_ = fHitMarkerLifeTime_;
 			bLastHitCritical_ = stEvent.bIsCritical_;
+
+			/* 弱点は気づけるよう長めに残す。*/
+			fHitMarkerTimer_ = bLastHitCritical_ ? fCriticalMarkerLifeTime_ : fHitMarkerLifeTime_;
 
 			/* ダメージ量が乗っていれば数値も出す(表示しない方針のときは何もしない)。*/
 			if (!bShowDamageNumber_ || stEvent.iParam_ <= 0)
