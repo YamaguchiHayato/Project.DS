@@ -1,76 +1,16 @@
 #include "stdafx.h"
 #include "Weapon.h"
+#include "Src/Data/WeaponStatusTable.h"
 
 namespace nsApp
 {
 	namespace nsWeapon
 	{
-		namespace
-		{
-			/**
-			 * @brief 武器のステータステーブル。EnWeaponTypeの並び順と一致させること。
-			 *        銃を増やすときはEnWeaponTypeに種類を足し、ここに1行追加する。
-			 *        { 武器名, 発射間隔(秒), 区分, 最大弾数, 予備弾数, リロード時間(秒), 構え時間(秒), 威力, フルオートか, モデルパス, サイズ倍率, 前方距離, 反動(上), 反動(左右), キックバック, 拡散(腰だめ), 拡散(ADS), 拡散増加/発, ADS画角率, ADS速度率, リコイルパターン, 段数 }
-			 *        サイズ倍率は自動サイズ合わせに対する倍率(1.0=標準。大きく見せたい銃は1.2等)。
-			 */
-			const float kRecoilResetTime = 0.35f;	//! 撃つのをやめてからパターンが最初へ戻るまでの時間(秒)。
-
-			/*
-			 * ハンドガンのリコイルパターン。
-			 * 単発なので素直に真上へ跳ね、撃ち続けると少しずつ左右へ散る。
-			 */
-			const RecoilStep HANDGUN_RECOIL_PATTERN[] =
-			{
-				{ 1.00f,  0.00f },
-				{ 1.00f,  0.25f },
-				{ 0.95f, -0.30f },
-				{ 0.90f,  0.45f },
-				{ 0.85f, -0.50f },
-				{ 0.80f,  0.35f },
-			};
-
-			/*
-			 * アサルトライフルのリコイルパターン。
-			 * 最初の数発は真上へ強く跳ね、そのあと右へ流れてから左へ返す。
-			 * この形を覚えて逆へ動かせば制御できる、という遊びを狙っている。
-			 */
-			const RecoilStep ASSAULT_RIFLE_RECOIL_PATTERN[] =
-			{
-				{ 1.00f,  0.00f },
-				{ 1.00f,  0.05f },
-				{ 1.00f,  0.15f },
-				{ 0.90f,  0.35f },
-				{ 0.85f,  0.55f },
-				{ 0.80f,  0.70f },
-				{ 0.75f,  0.60f },
-				{ 0.70f,  0.30f },
-				{ 0.65f, -0.10f },
-				{ 0.60f, -0.45f },
-				{ 0.60f, -0.70f },
-				{ 0.55f, -0.60f },
-				{ 0.55f, -0.30f },
-				{ 0.50f,  0.10f },
-				{ 0.50f,  0.40f },
-			};
-
-			const WeaponStatus WEAPON_STATUS_TABLE[] =
-			{
-				/* Handgun。      */ { "Handgun",      0.25f, EnWeaponSlot::Sub,   8,  0, 2.2f, 0.35f, 18, false, "Assets/modelData/gun/subWeapon/m1911.tkm",   1.0f,  55.0f, 0.030f, 0.010f, 10.0f, 0.035f, 0.004f, 0.006f, 0.80f, 0.70f, HANDGUN_RECOIL_PATTERN, _countof(HANDGUN_RECOIL_PATTERN) },
-				/* AssaultRifle。 */ { "AssaultRifle", 0.10f, EnWeaponSlot::Main, 30, 180, 2.8f, 0.55f, 20, true,  "Assets/modelData/gun/mainWeapon/M4A1.tkm",    2.0f,  35.0f, 0.014f, 0.008f,  6.0f, 0.050f, 0.008f, 0.004f, 0.70f, 0.60f, ASSAULT_RIFLE_RECOIL_PATTERN, _countof(ASSAULT_RIFLE_RECOIL_PATTERN) },
-			};
-
-			/* テーブルの要素数がEnWeaponType::Numと一致しているかをコンパイル時に検査する。*/
-			static_assert(
-				sizeof(WEAPON_STATUS_TABLE) / sizeof(WEAPON_STATUS_TABLE[0]) == static_cast<size_t>(EnWeaponType::Num),
-				"WEAPON_STATUS_TABLE の行数と EnWeaponType::Num が一致していません。");
-		}
-
-
 		void Weapon::Init(EnWeaponType enType)
 		{
-			/* 種類を保持し、テーブルからパラメータを引く。*/
+			/* 種類を保持し、ステータス表(JSON)からパラメータを引く。*/
 			enType_ = enType;
-			stStatus_ = WEAPON_STATUS_TABLE[static_cast<size_t>(enType)];
+			stStatus_ = nsData::WeaponStatusTable::Get(enType);
 
 			/* 弾を満タンにし、タイマー類を初期化する。*/
 			iCurrentAmmo_ = stStatus_.iMaxAmmo_;
@@ -95,7 +35,7 @@ namespace nsApp
 
 			/* 撃つのをやめてしばらく経ったら、リコイルパターンを最初へ戻す。*/
 			fRecoilResetTimer_ += fDeltaTime;
-			if (fRecoilResetTimer_ >= kRecoilResetTime)
+			if (fRecoilResetTimer_ >= stStatus_.fRecoilResetTime_)
 				iRecoilIndex_ = 0;
 
 			/* リロード中ならリロードタイマーを進める。*/

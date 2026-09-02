@@ -268,6 +268,10 @@
     <ClCompile Include="Src\Rule\ResolveGameWinner.cpp" />
     <ClCompile Include="Src\UI\InGameHud.cpp" />
     <ClCompile Include="Src\Director\EnemyDirector.cpp" />
+    <ClCompile Include="Src\Combat\HitBoxSet.cpp" />
+    <ClCompile Include="Src\Data\ParameterFile.cpp" />
+    <ClCompile Include="Src\Data\PlayerStatusTable.cpp" />
+    <ClCompile Include="Src\Data\WeaponStatusTable.cpp" />
     <ClCompile Include="Src\Effect\EffectList.cpp" />
     <ClCompile Include="Src\Effect\EffectListener.cpp" />
     <ClCompile Include="Src\System\GamePause.cpp" />
@@ -330,6 +334,10 @@
     <ClInclude Include="Src\Rule\ResolveGameWinner.h" />
     <ClInclude Include="Src\UI\InGameHud.h" />
     <ClInclude Include="Src\Director\EnemyDirector.h" />
+    <ClInclude Include="Src\Combat\HitBoxSet.h" />
+    <ClInclude Include="Src\Data\ParameterFile.h" />
+    <ClInclude Include="Src\Data\PlayerStatusTable.h" />
+    <ClInclude Include="Src\Data\WeaponStatusTable.h" />
     <ClInclude Include="Src\Effect\EffectList.h" />
     <ClInclude Include="Src\Effect\EffectListener.h" />
     <ClInclude Include="Src\System\GamePause.h" />

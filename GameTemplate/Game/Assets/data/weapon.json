@@ -1,0 +1,102 @@
+// 武器のステータス表。
+// このファイルを書き換えて保存し、ゲームを起動し直せば数値が反映される(リビルド不要)。
+//
+// ・キー("Handgun" など)は Weapon.h の EnWeaponType の名前と一致させること。
+//   一致しない、または項目が足りない場合は、その値だけ WeaponStatusTable.cpp の既定値が使われる。
+// ・角度の単位はラジアン(0.017 ≒ 1度)。距離・長さの単位はゲーム内単位(人の身長が約175)。
+// ・recoilPattern は撃つ順の跳ね方。[上へ跳ねる倍率, 左右へブレる倍率(正で右)] を並べる。
+//   実際の角度は recoilPitch / recoilYaw を掛けたもの。撃つのをやめると先頭へ戻る。
+{
+	"weapons": {
+		"Handgun": {
+			"name": "Handgun",                                          // UIに出す武器名。
+			"slot": "Sub",                                              // "Main"(予備弾に限りあり) か "Sub"(予備弾は無限)。
+			"fireInterval": 0.25,                                       // 発射間隔(秒)。小さいほど連射が速い。
+			"maxAmmo": 8,                                               // マガジンの最大弾数。
+			"maxReserveAmmo": 0,                                        // 予備弾数の上限(Subでは使わない)。
+			"reloadTime": 2.2,                                          // リロードにかかる時間(秒)。
+			"deployTime": 0.35,                                         // 持ち替えてから撃てるようになるまでの時間(秒)。
+			"attackPower": 18,                                          // 1発の威力。
+			"isFullAuto": false,                                        // 押しっぱなしで連射できるか。
+			"modelPath": "Assets/modelData/gun/subWeapon/m1911.tkm",    // 手に持つ武器モデル。
+			"modelScale": 1.0,                                          // 表示サイズ倍率(自動サイズ合わせに対する倍率)。
+			"viewModelForward": 55.0,                                   // ビューモデルをカメラから前へ離す距離。
+
+			// 三人称(他プレイヤーから見た姿)で、右手のボーンに持たせるときの合わせ込み。
+			// handLength は「世界の中での銃の実寸」。ビューモデル(画面用に誇張)とは別物なので、身長175を基準にした長さで書く。
+			"handLength": 22.0,                                         // 持たせたときの銃の長さ(m1911は実物約22cm)。
+			"handForward": 7.0,                                         // 手のボーンから前へずらす距離。銃はモデルの中心が手に来るので、長さの半分くらいにすると握りが合う。
+			"handRight": 0.0,                                           // 手のボーンから右へずらす距離。
+			"handUp": 0.0,                                              // 手のボーンから上へずらす距離。
+			"recoilPitch": 0.030,                                       // 1発で視点が跳ね上がる角度。
+			"recoilYaw": 0.010,                                         // 1発で視点が左右へブレる角度の最大値。
+			"kickBack": 10.0,                                           // 1発で銃が手前へ下がる距離。
+			"spreadHip": 0.035,                                         // 腰だめ撃ちの拡散角。
+			"spreadAds": 0.004,                                         // 覗き込み(ADS)中の拡散角。
+			"spreadPerShot": 0.006,                                     // 1発撃つごとに増える拡散角。
+			"maxSpreadShot": 0.060,                                     // 連射で増える拡散角の上限。
+			"recoilResetTime": 0.35,                                    // 撃つのをやめてからリコイルパターンが先頭へ戻るまでの時間(秒)。
+			"adsZoomRate": 0.80,                                        // 覗き込み時の画角の倍率(小さいほど拡大)。
+			"adsSpeedRate": 0.70,                                       // 覗き込み中の移動速度の倍率。
+
+			// 単発なので素直に真上へ跳ね、撃ち続けると少しずつ左右へ散る。
+			"recoilPattern": [
+				[ 1.00,  0.00 ],
+				[ 1.00,  0.25 ],
+				[ 0.95, -0.30 ],
+				[ 0.90,  0.45 ],
+				[ 0.85, -0.50 ],
+				[ 0.80,  0.35 ]
+			]
+		},
+
+		"AssaultRifle": {
+			"name": "AssaultRifle",
+			"slot": "Main",
+			"fireInterval": 0.10,
+			"maxAmmo": 30,
+			"maxReserveAmmo": 180,
+			"reloadTime": 2.8,
+			"deployTime": 0.55,
+			"attackPower": 20,
+			"isFullAuto": true,
+			"modelPath": "Assets/modelData/gun/mainWeapon/M4A1.tkm",
+			"modelScale": 2.0,
+			"viewModelForward": 35.0,
+			"handLength": 85.0,                                         // 持たせたときの銃の長さ(M4A1は実物約85cm)。
+			"handForward": 30.0,
+			"handRight": 0.0,
+			"handUp": 0.0,
+			"recoilPitch": 0.014,
+			"recoilYaw": 0.008,
+			"kickBack": 6.0,
+			"spreadHip": 0.050,
+			"spreadAds": 0.008,
+			"spreadPerShot": 0.004,
+			"maxSpreadShot": 0.060,
+			"recoilResetTime": 0.35,
+			"adsZoomRate": 0.70,
+			"adsSpeedRate": 0.60,
+
+			// 最初の数発は真上へ強く跳ね、そのあと右へ流れてから左へ返す。
+			// この形を覚えて逆へ動かせば制御できる、という遊びを狙っている。
+			"recoilPattern": [
+				[ 1.00,  0.00 ],
+				[ 1.00,  0.05 ],
+				[ 1.00,  0.15 ],
+				[ 0.90,  0.35 ],
+				[ 0.85,  0.55 ],
+				[ 0.80,  0.70 ],
+				[ 0.75,  0.60 ],
+				[ 0.70,  0.30 ],
+				[ 0.65, -0.10 ],
+				[ 0.60, -0.45 ],
+				[ 0.60, -0.70 ],
+				[ 0.55, -0.60 ],
+				[ 0.55, -0.30 ],
+				[ 0.50,  0.10 ],
+				[ 0.50,  0.40 ]
+			]
+		}
+	}
+}

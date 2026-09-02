@@ -55,6 +55,12 @@ namespace nsApp
 			void UpdateCamera();
 
 			/**
+			 * @brief 一人称と三人称を切り替える入力を処理する(デバッグ用)。
+			 *        マルチで他プレイヤーから見たときの姿(銃を持った体)を、その場で確認するためのもの。
+			 */
+			void UpdateViewModeSwitch();
+
+			/**
 			 * @brief 状況をイベント発行し、勝敗管理(ResolveGameWinner)の決着を見てリザルトへ橋渡しする。
 			 * @details センサ(到達/死亡)→EventBus発行→GameRuleが勝敗確定→ここでシーン遷移を予約。
 			 */
@@ -87,6 +93,8 @@ namespace nsApp
 
 			nsUI::InGameHud* pHud_ = nullptr;			//! HUD(HP/弾/目標/クロスヘア/ダウン表示)。
 			bool bPrevEnter_ = false;		//! 前フレームのEnter押下(ポーズ中のタイトル復帰用)。
+			bool bPrevViewKey_ = false;		//! 前フレームの視点切り替えキー押下。
+			bool bIsThirdPersonView_ = false;	//! 三人称(他人から見た姿)で表示しているか。
 			int iKillCount_ = 0;			//! この試合での撃破数。
 			float fPlayTime_ = 0.0f;		//! この試合の経過時間(秒)。
 			float fBaseViewAngle_ = 0.0f;	//! 覗き込みの倍率を掛ける前の、もとの画角。

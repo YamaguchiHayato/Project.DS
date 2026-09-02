@@ -12,7 +12,11 @@ namespace nsApp
 		{
 			Handgun,		//! ハンドガン。
 			AssaultRifle,	//! アサルトライフル。
-			/* ↑ここに武器を追加したら、Weapon.cpp のステータステーブルにも1行追加する。*/
+			/*
+			 * ↑ここに武器を追加したら、
+			 * ・Assets/data/weapon.json に同じ名前で1件追加する。
+			 * ・Src/Data/WeaponStatusTable.cpp のキー名一覧と既定値にも1件追加する。
+			 */
 			Num,			//! 武器の数。
 		};
 
@@ -56,12 +60,19 @@ namespace nsApp
 			const char* pModelPath_;	//! 手に持つ武器モデルのファイルパス。
 			float fModelScale_;			//! 表示サイズ倍率(自動サイズ合わせに対する倍率。1.0=標準)。
 			float fViewModelForward_;	//! ビューモデルをカメラから前へ離す距離(大きい銃ほど離すとカメラにめり込みにくい)。
+			/* ↓三人称(他プレイヤーから見た姿)で、手のボーンに持たせるときの合わせ込み。銃ごとにグリップの位置が違うので調整する。*/
+			float fHandForward_;		//! 手のボーンから前へずらす距離。
+			float fHandRight_;			//! 手のボーンから右へずらす距離。
+			float fHandUp_;				//! 手のボーンから上へずらす距離。
+			float fHandLength_;			//! 手に持たせたときの銃の長さ(世界の単位)。ビューモデルは画面用に誇張しているので別に持つ。
 			float fRecoilPitch_;		//! 1発あたりに視点が跳ね上がる角度(ラジアン)。
 			float fRecoilYaw_;			//! 1発あたりに視点が左右へブレる角度の最大値(ラジアン)。
 			float fKickBack_;			//! 1発あたりに銃が手前へ下がる距離。
 			float fSpreadHip_;			//! 腰だめ撃ちの弾の拡散角(ラジアン)。
 			float fSpreadAds_;			//! 覗き込み(ADS)中の弾の拡散角(ラジアン)。
 			float fSpreadPerShot_;		//! 1発撃つごとに増える拡散角(ラジアン)。連射でばらつく。
+			float fMaxSpreadShot_;		//! 連射で増える拡散角の上限(ラジアン)。ここまで広がったら止まる。
+			float fRecoilResetTime_;	//! 撃つのをやめてからリコイルパターンが先頭へ戻るまでの時間(秒)。
 			float fAdsZoomRate_;		//! 覗き込み時の画角の倍率(小さいほど拡大される)。
 			float fAdsSpeedRate_;		//! 覗き込み中の移動速度の倍率。
 			const RecoilStep* pRecoilPattern_;	//! リコイルパターン(撃つ順に跳ねる方向が決まっている)。
@@ -73,7 +84,8 @@ namespace nsApp
 		 * @brief  データ駆動の武器クラス。
 		 *         挙動(クールタイム・弾数・リロード)は全武器共通で、
 		 *         EnWeaponTypeから引いたWeaponStatusのパラメータだけで銃の違いを表す。
-		 *         銃を増やすときはEnWeaponTypeとステータステーブルに1行足すだけでよい。
+		 *         パラメータの実体は Assets/data/weapon.json にあり、
+		 *         WeaponStatusTable が読み込んだものをこのクラスが受け取る(数値調整にリビルドは要らない)。
 		 * @author Izumida Kiryu
 		 * @date   2026/08/19
 		 */
@@ -164,6 +176,18 @@ namespace nsApp
 			{
 				return stStatus_.fViewModelForward_;
 			}
+
+			//! 三人称で手のボーンから前へずらす距離。
+			inline float GetHandForward() const { return stStatus_.fHandForward_; }
+
+			//! 三人称で手のボーンから右へずらす距離。
+			inline float GetHandRight() const { return stStatus_.fHandRight_; }
+
+			//! 三人称で手のボーンから上へずらす距離。
+			inline float GetHandUp() const { return stStatus_.fHandUp_; }
+
+			//! 三人称で手に持たせたときの銃の長さ(世界の単位)。
+			inline float GetHandLength() const { return stStatus_.fHandLength_; }
 
 			/**
 			 * @brief 現在の残弾数を取得する。
@@ -264,6 +288,9 @@ namespace nsApp
 
 			//! 1発撃つごとに増える拡散角(ラジアン)。
 			inline float GetSpreadPerShot() const { return stStatus_.fSpreadPerShot_; }
+
+			//! 連射で増える拡散角の上限(ラジアン)。
+			inline float GetMaxSpreadShot() const { return stStatus_.fMaxSpreadShot_; }
 
 			//! 覗き込み時の画角の倍率(小さいほど拡大される)。
 			inline float GetAdsZoomRate() const { return stStatus_.fAdsZoomRate_; }

@@ -7,9 +7,38 @@
 namespace
 {
 	const int iTargetEnemyCount_ = 12;
-	const float fEyeHeight_ = 160.0f;
+
+	/**
+	 * @brief 視線を軸にして「上」を回し、傾けたカメラの上方向を作る。
+	 * @param vLook 視線方向(正規化済み)。
+	 * @param fRoll 傾ける角度(ラジアン)。
+	 * @return 傾けた上方向。
+	 */
+	Vector3 MakeCameraUp(const Vector3& vLook, float fRoll)
+	{
+		Vector3 vUp = Vector3::AxisY;
+
+		/* 傾きが無ければ真上のまま返す。*/
+		if (fRoll == 0.0f)
+			return vUp;
+
+		Quaternion qRoll;
+		qRoll.SetRotation(vLook, fRoll);
+		qRoll.Apply(vUp);
+
+		return vUp;
+	}
 	const char* sStageModelPath_ = "Assets/modelData/stage/DebugStage/demoStage.tkm";
 	const Vector3 vHintFontPos_ = { -450.0f, 450.0f, 0.0f };
+	const int iViewModeKey_ = 'T';				//! 一人称/三人称を切り替えるキー。
+	/*
+	 * 三人称カメラの寄り引きは、モデルの実際の表示サイズに対する倍率で決める。
+	 * 固定の距離にすると、モデルを差し替えて大きさが変わったとき画面から外れてしまうため。
+	 */
+	const float fThirdPersonBackRate_ = 2.2f;		//! カメラを後ろへ引く距離(モデルの大きさに対する倍率)。
+	const float fThirdPersonUpRate_ = 0.5f;			//! カメラを持ち上げる高さ(同上)。
+	const float fThirdPersonLookRate_ = 0.55f;		//! 注視点の高さ(同上。胸のあたり)。
+	const float fThirdPersonMinSize_ = 50.0f;		//! モデルを測れなかったときに使う大きさ。
 	const float fStageScale_ = 150.0f;
 
 	/* 手前中央。敵とは離す。*/
@@ -44,6 +73,9 @@ namespace nsApp
 	{
 		DebugShootingRangeScene::~DebugShootingRangeScene()
 		{
+			/* カメラの傾きを戻す(g_camera3Dは他のシーンと共用なので傾いたままにしない)。*/
+			g_camera3D->SetUp(Vector3::AxisY);
+
 			/* 倒済みは FindGOs に出ないので二重破棄しない。*/
 			for (nsActor::CommonEnemy* pEnemy : FindGOs<nsActor::CommonEnemy>("commonEnemy"))
 				DeleteGO(pEnemy);
@@ -85,10 +117,11 @@ namespace nsApp
 			stHintFont_.SetPosition(vHintFontPos_);
 			stHintFont_.SetScale(1.0f);
 			stHintFont_.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-			stHintFont_.SetText(L"SHOOTING RANGE  ESC BACK");
+			stHintFont_.SetText(L"SHOOTING RANGE  ESC BACK  T VIEW(1st/3rd)");
 
 			/* 前フレームのESC状態を取る。 */
 			bWasPressEsc_ = (GetAsyncKeyState(VK_ESCAPE) & 0x8000) != 0;
+			bWasPressViewKey_ = (GetAsyncKeyState(iViewModeKey_) & 0x8000) != 0;
 			UpdateCamera();
 			return true;
 		}
@@ -106,8 +139,52 @@ namespace nsApp
 			/* 次フレーム判定用に今の状態を残す。*/
 			bWasPressEsc_ = bPressEsc;
 
-			/* 一人称カメラをプレイヤーへ追従させる。*/
+			/* 一人称と三人称を切り替える。*/
+			UpdateViewModeSwitch();
+
+			/* カメラをプレイヤーへ追従させる。*/
 			UpdateCamera();
+		}
+
+
+		void DebugShootingRangeScene::UpdateViewModeSwitch()
+		{
+			/* プレイヤーが無ければ切り替えられない。*/
+			if (pPlayer_ == nullptr)
+				return;
+
+			const bool bPressViewKey = (GetAsyncKeyState(iViewModeKey_) & 0x8000) != 0;
+
+			/* 押した瞬間だけ切り替える。*/
+			if (bPressViewKey && !bWasPressViewKey_)
+			{
+				bIsThirdPersonView_ = !bIsThirdPersonView_;
+
+				/* 三人称にすると体が描かれ、銃が右手のボーンへ移る。*/
+				pPlayer_->SetViewMode(bIsThirdPersonView_
+					? nsActor::EnViewMode::ThirdPerson
+					: nsActor::EnViewMode::FirstPerson);
+			}
+
+			/* 次フレーム判定用に今の状態を残す。*/
+			bWasPressViewKey_ = bPressViewKey;
+
+			/*
+			 * いまの視点と、体モデルの実測サイズを画面に出す。
+			 * キーが効いているかと、モデルの大きさが想定(目線の高さ)と合っているかをここで確かめる。
+			 */
+			const Vector3& vGunPos = pPlayer_->GetWeaponViewPosition();
+			const Vector3& vPlayerPos = pPlayer_->GetPosition();
+
+			swprintf_s(wcHint_, L"T VIEW=%s  size=%.1f eye=%.1f  hand=%s  gun(%.0f,%.0f,%.0f) ply(%.0f,%.0f,%.0f)",
+				bIsThirdPersonView_ ? L"3rd" : L"1st",
+				pPlayer_->GetBodyModelSize(),
+				pPlayer_->GetEyePosition().y - vPlayerPos.y,
+				pPlayer_->IsHandBoneFound() ? L"OK" : L"NG",
+				vGunPos.x, vGunPos.y, vGunPos.z,
+				vPlayerPos.x, vPlayerPos.y, vPlayerPos.z);
+
+			stHintFont_.SetText(wcHint_);
 		}
 
 
@@ -135,16 +212,43 @@ namespace nsApp
 			if (pPlayer_ == nullptr)
 				return;
 
-			/* 目の位置(プレイヤー座標＋目線の高さ)。*/
-			const Vector3& vPlayerPos = pPlayer_->GetPosition();
-			Vector3 vEyePos = vPlayerPos;
-			vEyePos.y += fEyeHeight_;
+			/* 目の位置(歩きの上下動を含む)。射撃の起点と同じ値をプレイヤーから受け取る。*/
+			const Vector3 vEyePos = pPlayer_->GetEyePosition();
 
 			/* 視線方向(プレイヤーの前方)。*/
 			const Vector3 vLook = pPlayer_->GetLookDirection();
 
-			g_camera3D->SetPosition(vEyePos);
-			g_camera3D->SetTarget(vEyePos + vLook * 100.0f);
+			if (bIsThirdPersonView_)
+			{
+				/*
+				 * 他人から見た姿を確認するため、後ろへ引いて胸のあたりを見る。
+				 * 距離はモデルの実際の大きさから決めるので、モデルを差し替えても画面に収まる。
+				 */
+				float fBodySize = pPlayer_->GetBodyModelSize();
+				if (fBodySize <= 0.0f)
+					fBodySize = fThirdPersonMinSize_;
+
+				Vector3 vLookPos = pPlayer_->GetPosition();
+				vLookPos.y += fBodySize * fThirdPersonLookRate_;
+
+				/* 上下を向いてもカメラが地面へ潜らないよう、引く向きは水平だけにする。*/
+				Vector3 vBack = { vLook.x, 0.0f, vLook.z };
+				vBack.Normalize();
+
+				Vector3 vCameraPos = vLookPos - vBack * (fBodySize * fThirdPersonBackRate_);
+				vCameraPos.y += fBodySize * fThirdPersonUpRate_;
+
+				g_camera3D->SetPosition(vCameraPos);
+				g_camera3D->SetTarget(vLookPos);
+			}
+			else
+			{
+				g_camera3D->SetPosition(vEyePos);
+				g_camera3D->SetTarget(vEyePos + vLook * 100.0f);
+			}
+
+			/* 歩きと横移動に合わせてカメラをわずかに傾ける。*/
+			g_camera3D->SetUp(MakeCameraUp(vLook, pPlayer_->GetViewRoll()));
 			g_camera3D->Update();
 		}
 

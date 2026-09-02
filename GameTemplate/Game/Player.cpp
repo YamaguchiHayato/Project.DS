@@ -8,6 +8,8 @@
 #include "Src/System/GamePause.h"
 #include "Src/Item/Grenade.h"
 #include "Src/Item/Pickup.h"
+#include "Src/Data/PlayerStatusTable.h"
+#include "Src/Combat/HitBoxSet.h"
 
 namespace
 {
@@ -22,42 +24,36 @@ namespace
 	};
 
 	const float kMuzzleForward = 50.0f;		//! 銃口の前方オフセット(照準方向)。
-	const float kMuzzleHeight = 150.0f;		//! 銃口の高さ(目線付近から撃つ)。
 	const float kMuzzleRight = 40.0f;		//! トレーサー始点を目線から右へずらす量(線を斜めに見せる)。
 	const float kMuzzleDown = -32.0f;		//! トレーサー始点を目線から下へずらす量(負で下)。
 	const float kAnimInterpolateTime = 0.2f;	//! アニメーション補間時間(秒)。
 
-	const float kEyeHeight = 160.0f;			//! 目(カメラ)の高さ。DebugPlayerScene側の kEyeHeight_ と合わせる。
 	const float kViewModelRight = 22.0f;		//! ビューモデル銃の右オフセット。
 	const float kViewModelDown = -26.0f;		//! ビューモデル銃の下オフセット(負で下)。
 	const float kTargetGunSize = 45.0f;			//! ビューモデル銃の目標サイズ(一番長い辺をこの長さに自動スケール)。
-	const float kWeaponRange = 3000.0f;			//! 射程(ヒットスキャンのレイ・トレーサーの長さ)。
-	const float kBleedOutTime = 15.0f;			//! ダウンしてから死亡するまでの出血時間(秒)。
-	const int kReviveHP = 30;					//! 救助で復帰したときのHP。
-	const float kShoveRange = 180.0f;			//! 突き飛ばしが届く距離。
+	const float kHandHeightRate = 0.55f;	//! 右手のボーンが見つからないときに銃を置く高さ(目線の高さに対する割合)。
+	const float kPi = 3.14159265f;			//! 円周率。
+	const float kAdsTransitionRate = 12.0f;	//! 覗き込みの切り替わる速さ(大きいほど素早く構える)。
+	const float kSpreadRecoverRate = 4.0f;	//! 連射で広がった拡散が収まる速さ。
+	const float kAdsViewModelRight = 6.0f;	//! 覗き込み時に銃を画面中央へ寄せた後の右オフセット。
+	const float kAdsViewModelDown = -12.0f;	//! 覗き込み時の銃の下オフセット。
+
+	/* リロード動作の区切り。0=リロード開始、1=完了間際。*/
+	const float kReloadPullEnd = 0.28f;		//! ここまでで銃を下げ切る(マガジンを抜く)。
+	const float kReloadInsertStart = 0.34f;	//! ここからマガジンを挿し込む。
+	const float kReloadInsertEnd = 0.52f;	//! ここで挿し込み終わる。
+	const float kReloadRaiseStart = 0.58f;	//! ここから構え直す。
+	const float kReloadRaiseEnd = 0.96f;	//! ここで構え終わる。
+	const float kReloadSettleStart = 0.90f;	//! ここから戻りの行き過ぎが出る。
 	const float kEnemyCenterHeightForShove = 85.0f;	//! 突き飛ばしの手応えを出す高さ(敵の体の中心)。
 	const int kShoveDamage = 10;			//! 突き飛ばしで与えるダメージ。押し返しが主で、削るのはおまけ。
 	const int kPickupAmmoAmount = 60;		//! 弾薬をひとつ拾ったときに補給される予備弾数。
 	const int kFlashLightIndex = 0;			//! 手持ちライトに使うスポットライトの番号。
 	const float kFlashLightRange = 900.0f;	//! ライトが届く距離。
 	const float kFlashLightAngle = 0.5f;	//! ライトの広がり(ラジアン)。
-	const float kShovePush = 120.0f;			//! 突き飛ばしで敵を押し返す距離。
-	const float kShoveFrontDot = 0.5f;			//! 正面判定のしきい値(0.5=正面±60度)。
-	const float kShoveCooldownTime = 0.7f;		//! 突き飛ばしのクールダウン(秒)。
-	const float kPi = 3.14159265f;			//! 円周率。
-	const float kAdsTransitionRate = 12.0f;	//! 覗き込みの切り替わる速さ(大きいほど素早く構える)。
-	const float kSpreadRecoverRate = 4.0f;	//! 連射で広がった拡散が収まる速さ。
-	const float kMaxSpreadShot = 0.06f;		//! 連射で増える拡散角の上限(ラジアン)。
-	const float kAdsViewModelRight = 6.0f;	//! 覗き込み時に銃を画面中央へ寄せた後の右オフセット。
-	const float kAdsViewModelDown = -12.0f;	//! 覗き込み時の銃の下オフセット。
-	const float kReloadLowerAngle = 0.5f;	//! リロード中に銃口を下げる角度(ラジアン)。
-	const float kReloadLowerDown = 14.0f;	//! リロード中に銃を下げる距離。
-	const float kReloadSpinAngle = 0.6f;	//! リロード中に銃をひねる角度(ラジアン)。大きく回すと手元から外れて見えるので控えめにする。
 	const float kSprintLowerAngle = 0.7f;	//! スプリント中に銃口を下げる角度(ラジアン)。走っている間は構えを解く。
 	const float kSprintLowerDown = 18.0f;	//! スプリント中に銃を下げる距離。
 	const float kSprintLowerRate = 8.0f;	//! 銃を下げる/戻す速さ。
-	const float kHeadHeightRate = 0.85f;	//! 体の高さのうち、ここから上を頭とみなす割合。
-	const float kHeadShotRate = 2.0f;		//! 頭に当てたときのダメージ倍率。
 	const float kAdsRollAngle = 1.5708f;	//! 覗き込み時に銃を倒す角度(ラジアン。約90度)。視界を塞がないよう横倒しにする。
 	const float kAdsSensitivityRate = 0.55f;	//! 覗き込み中の視点移動の倍率(拡大しているぶん狙いを合わせやすくする)。
 	const float kAdsRecoilRate = 0.6f;		//! 覗き込み中の反動の倍率(構えるほど跳ねが小さくなる)。
@@ -66,11 +62,67 @@ namespace
 	const float kMaxPitch = 1.4f;				//! カメラピッチの上下限(rad, ≈±80度)。真上/真下での破綻防止。
 	const float kCapsuleRadius = 25.0f;		//! 移動用カプセルの半径(壁との押し戻しに使う)。
 	const float kCapsuleHeight = 120.0f;	//! 移動用カプセルの高さ。
-	const float kSprintMul = 1.6f;			//! スプリント時の移動速度倍率。
-	const float kBobWalkSpeed = 9.0f;		//! 歩行ボブの速さ(歩き)。
-	const float kBobWalkAmp = 2.0f;			//! 歩行ボブの振れ幅(歩き)。
-	const float kBobSprintSpeed = 13.0f;	//! 歩行ボブの速さ(走り)。
-	const float kBobSprintAmp = 4.0f;		//! 歩行ボブの振れ幅(走り)。
+
+
+
+
+	/**
+	 * @brief 値を上限と下限の内側に収める。
+	 * @param fValue 収める値。
+	 * @param fLimit 上限(下限は-fLimit)。
+	 * @return 収めた値。
+	 */
+	float ClampAbs(float fValue, float fLimit)
+	{
+		if (fValue > fLimit)
+			return fLimit;
+
+		if (fValue < -fLimit)
+			return -fLimit;
+
+		return fValue;
+	}
+
+
+	/**
+	 * @brief 0から1へなめらかに変化する値を作る(始めと終わりがゆるやかになる)。
+	 * @param fStart 変化が始まる位置。
+	 * @param fEnd   変化が終わる位置。
+	 * @param fValue いまの位置。
+	 * @return 0〜1の値。
+	 */
+	float SmoothStep(float fStart, float fEnd, float fValue)
+	{
+		/* 幅が無ければ、終点を越えたかどうかだけで決める。*/
+		if (fEnd <= fStart)
+			return (fValue >= fEnd) ? 1.0f : 0.0f;
+
+		const float fRate = (fValue - fStart) / (fEnd - fStart);
+		if (fRate <= 0.0f)
+			return 0.0f;
+
+		if (fRate >= 1.0f)
+			return 1.0f;
+
+		/* 3次式で両端をなめらかにする。*/
+		return fRate * fRate * (3.0f - 2.0f * fRate);
+	}
+
+
+	/**
+	 * @brief 0→1→0 と山なりに変化する値を作る(短い動きの1往復に使う)。
+	 * @param fStart 動きが始まる位置。
+	 * @param fEnd   動きが終わる位置。
+	 * @param fValue いまの位置。
+	 * @return 0〜1の値。範囲の外では0。
+	 */
+	float PulseCurve(float fStart, float fEnd, float fValue)
+	{
+		if (fValue <= fStart || fValue >= fEnd || fEnd <= fStart)
+			return 0.0f;
+
+		return sinf(kPi * (fValue - fStart) / (fEnd - fStart));
+	}
 }
 
 namespace nsApp
@@ -90,6 +142,9 @@ namespace nsApp
 
 		bool Player::Start()
 		{
+			/* 調整用のステータスを読み込む(Assets/data/player.json。無ければ既定値)。*/
+			stPlayerStatus_ = nsData::PlayerStatusTable::Get();
+
 			/* 操作意図の供給源を作る(ローカル実機。将来ここをネット受信用に差し替えられる)。*/
 			pController_ = new LocalPlayerController();
 
@@ -104,9 +159,11 @@ namespace nsApp
 			/* モデルとアニメーションを読み込む。*/
 			InitModel();
 
-			/* テスト用のHPを設定する。*/
-			stCharacterStatus_.stHp_.iCurrentHP_ = 100;
-			stCharacterStatus_.stHp_.iMaxHP_ = 100;
+			/* HPと所持アイテム数をステータス表から設定する。*/
+			stCharacterStatus_.stHp_.iCurrentHP_ = stPlayerStatus_.iMaxHP_;
+			stCharacterStatus_.stHp_.iMaxHP_ = stPlayerStatus_.iMaxHP_;
+			iMedkitCount_ = stPlayerStatus_.iMedkitCount_;
+			iGrenadeCount_ = stPlayerStatus_.iGrenadeCount_;
 
 			/* 被弾を見つけるため、開始時のHPを覚えておく。*/
 			iPrevHP_ = GetCurrentHP();
@@ -164,6 +221,10 @@ namespace nsApp
 			if (enLifeState_ == EnLifeState::Alive)
 			{
 				UpdateMove(fDeltaTime);
+
+				/* 移動の結果から揺れを作る。射撃の起点(目の位置)にも効くので武器より先に更新する。*/
+				UpdateViewSway(fDeltaTime);
+
 				UpdateWeapon(fDeltaTime);
 				UpdateShove(fDeltaTime);
 				UpdateItems();
@@ -174,6 +235,10 @@ namespace nsApp
 				/* 行動不能中も武器のクールダウン等は進め、移動フラグは倒しておく。*/
 				stWeaponInventory_.Update(fDeltaTime);
 				bIsMoving_ = false;
+				bIsSprinting_ = false;
+
+				/* 動けないので揺れは収まっていく。*/
+				UpdateViewSway(fDeltaTime);
 			}
 
 			/* 6.移動状態をモデル(位置・回転・アニメーション)へ反映する。*/
@@ -184,13 +249,13 @@ namespace nsApp
 		void Player::Render(RenderContext& rc)
 		{
 			/*
-			 * FPS(一人称)なので、自分の体モデルは描画しない(カメラが頭の位置にあり視界を塞ぐため)。
-			 * TODO: 他プレイヤーからは3人称で見える必要があるので、将来「自分視点か否か」で
-			 *       描画を切り替える(今はデバッグ用に一人称固定)。
+			 * 自分の視点(一人称)のときは体モデルを描かない。カメラが頭の位置にあり視界を塞ぐため。
+			 * 他人から見た姿(三人称)では、銃を持った体がそのまま見える。
 			 */
-			 /*stModelRender_.Draw(rc);*/
+			if (enViewMode_ == EnViewMode::ThirdPerson)
+				stModelRender_.Draw(rc);
 
-			/* 現在装備中の武器モデル(ビューモデル)だけ描画する。*/
+			/* 現在装備中の武器モデルを描画する(置き場所は見せ方で変わる)。*/
 			const int iType = static_cast<int>(enEquippedType_);
 			if (aWeaponModelLoaded_[iType])
 				aWeaponModels_[iType].Draw(rc);
@@ -212,7 +277,29 @@ namespace nsApp
 			/* モデルをアニメーション付きで初期化する。*/
 			stModelRender_.Init(sPlayerModelPath_, aAnimationClip_, iNumAnimation, enModelUpAxisY);
 			stModelRender_.SetPosition(vPosition_);
+
+			/*
+			 * 体の大きさはステータス表で決める。
+			 * 一人称では体を描かないので今まで見えていなかったが、三人称では他プレイヤーに見える。
+			 * 敵や地面と大きさが揃わない場合は player.json の bodyModelScale で合わせる。
+			 */
+			const float fBodyScale = stPlayerStatus_.fBodyModelScale_;
+			stModelRender_.SetScale(Vector3(fBodyScale, fBodyScale, fBodyScale));
+
+			/* 実際の表示サイズを測っておく(三人称カメラの寄り引きに使う)。*/
+			CalcBodyModelSize();
 			stModelRender_.Update();
+
+			/*
+			 * 三人称で銃を持たせるボーンを探しておく(毎フレーム名前で探さないため)。
+			 * 名前は player.json の handBoneName。見つからなければ -1 になり、銃は腰のあたりへ置かれる。
+			 */
+			if (stModelRender_.m_skeleton.IsInited())
+			{
+				wchar_t wcBoneName[128] = {};
+				mbstowcs(wcBoneName, stPlayerStatus_.sHandBoneName_.c_str(), _countof(wcBoneName) - 1);
+				iRightHandBoneId_ = stModelRender_.m_skeleton.FindBoneID(wcBoneName);
+			}
 
 			/* 最初は待機アニメーションを再生する。*/
 			PlayAnimation(EnPlayerAnimation::Idle);
@@ -262,7 +349,7 @@ namespace nsApp
 
 			/* スプリント(Shift)中は移動速度を上げて進む。*/
 			bIsSprinting_ = stIntent_.bSprintPress_;
-			float fSpeed = bIsSprinting_ ? (fMoveSpeed_ * kSprintMul) : fMoveSpeed_;
+			float fSpeed = bIsSprinting_ ? (stPlayerStatus_.fMoveSpeed_ * stPlayerStatus_.fSprintRate_) : stPlayerStatus_.fMoveSpeed_;
 
 			/* 覗き込み中はゆっくり歩く。*/
 			nsWeapon::Weapon* pAdsWeapon = stWeaponInventory_.GetCurrentWeapon();
@@ -380,6 +467,87 @@ namespace nsApp
 		}
 
 
+		void Player::UpdateViewSway(float fDeltaTime)
+		{
+			/* 揺れの調整値(player.jsonのviewShake)。*/
+			const nsData::ViewShakeStatus& stShake = stPlayerStatus_.stViewShake_;
+
+			/* 覗き込んでいる間は狙いが定まるよう、揺れ全体を抑える。*/
+			const float fShakeRate = 1.0f - fAdsRate_ * stShake.fAdsSuppressRate_;
+
+			/*
+			 * 視点を振った量を「銃の遅れ」に変える。
+			 * 振った向きと逆へずれてから中央へ戻るので、腕が視点に引きずられているように見える。
+			 */
+			fSwayRight_ -= stIntent_.fLookYawDelta_ * stShake.fSwayGain_ * fShakeRate;
+			fSwayUp_ -= stIntent_.fLookPitchDelta_ * stShake.fSwayGain_ * fShakeRate;
+
+			/* 離れ過ぎないよう上限を掛ける。*/
+			fSwayRight_ = ClampAbs(fSwayRight_, stShake.fSwayMaxOffset_);
+			fSwayUp_ = ClampAbs(fSwayUp_, stShake.fSwayMaxOffset_);
+
+			/* 腕が追いついたぶんだけ中央へ戻す。*/
+			float fSwayRecover = fDeltaTime * stShake.fSwayRecoverRate_;
+			if (fSwayRecover > 1.0f)
+				fSwayRecover = 1.0f;
+
+			fSwayRight_ -= fSwayRight_ * fSwayRecover;
+			fSwayUp_ -= fSwayUp_ * fSwayRecover;
+
+			/* 歩行ボブの重み。止まった瞬間にピタッと消えないよう補間する。*/
+			float fWeightLerp = fDeltaTime * stShake.fBobWeightRate_;
+			if (fWeightLerp > 1.0f)
+				fWeightLerp = 1.0f;
+
+			const float fWeightTarget = bIsMoving_ ? 1.0f : 0.0f;
+			fBobWeight_ += (fWeightTarget - fBobWeight_) * fWeightLerp;
+
+			/* 歩いている間だけ位相を進める(止まると波が止まり、重みで消えていく)。*/
+			if (bIsMoving_)
+				fBobTimer_ += fDeltaTime * (bIsSprinting_ ? stShake.fBobSprintSpeed_ : stShake.fBobWalkSpeed_);
+
+			/*
+			 * カメラ自体を歩きに合わせて上下させる。
+			 * 銃だけを揺らすと「銃が揺れている」ようにしか見えないので、体のほうを動かす。
+			 * 1歩で2回沈むので、上下は位相の2倍で回す。
+			 */
+			const float fBobShake = fBobWeight_ * fShakeRate;
+			const float fBobHeight = bIsSprinting_ ? stShake.fViewBobHeightSprint_ : stShake.fViewBobHeightWalk_;
+			fViewBobHeight_ = sinf(fBobTimer_ * 2.0f) * fBobHeight * fBobShake;
+
+			/* 左右の踏み込みに合わせてカメラをわずかに傾ける。*/
+			const float fBobRollAngle = bIsSprinting_ ? stShake.fViewBobRollSprint_ : stShake.fViewBobRollWalk_;
+			const float fBobRoll = sinf(fBobTimer_) * fBobRollAngle * fBobShake;
+
+			/* 横移動に合わせた傾き(ストレイフロール)。入力を鈍らせてから使う。*/
+			float fStrafeLerp = fDeltaTime * stShake.fStrafeFollowRate_;
+			if (fStrafeLerp > 1.0f)
+				fStrafeLerp = 1.0f;
+
+			const float fStrafeTarget = bIsMoving_ ? stIntent_.vMoveAxis_.x : 0.0f;
+			fStrafeAxis_ += (fStrafeTarget - fStrafeAxis_) * fStrafeLerp;
+
+			fViewRoll_ = fBobRoll - fStrafeAxis_ * stShake.fStrafeRollAngle_ * fShakeRate;
+		}
+
+
+		void Player::CalcReloadMotion(float fReloadRate, float& fOutLower, float& fOutInsert, float& fOutSettle) const
+		{
+			/*
+			 * 銃を下げている度合い。
+			 * 前半で下げ切って(マガジンを抜く)、後半で構え直すぶんを引く。
+			 */
+			fOutLower = SmoothStep(0.0f, kReloadPullEnd, fReloadRate)
+				- SmoothStep(kReloadRaiseStart, kReloadRaiseEnd, fReloadRate);
+
+			/* マガジンを挿し込む短い突き上げ。0→1→0 と1往復する。*/
+			fOutInsert = PulseCurve(kReloadInsertStart, kReloadInsertEnd, fReloadRate);
+
+			/* 構え直した勢いで少し行き過ぎてから収まる。*/
+			fOutSettle = PulseCurve(kReloadSettleStart, 1.0f, fReloadRate);
+		}
+
+
 		void Player::UpdateRecoil(float fDeltaTime)
 		{
 			/* 跳ね上がった視点を徐々に元へ戻す。*/
@@ -423,6 +591,37 @@ namespace nsApp
 		}
 
 
+		CommonEnemy* Player::FindHitEnemy(const Vector3& vRayStart, const Vector3& vRayDirection, nsCombat::HitResult& stOutResult)
+		{
+			stOutResult = nsCombat::HitResult();
+
+			/* 敵の部位別当たり判定(形とダメージ倍率)を取り出す。*/
+			const nsCombat::HitBoxSet& stHitBoxSet = nsCombat::HitBoxSet::GetShared(CharacterModelType::Infected);
+
+			CommonEnemy* pHitEnemy = nullptr;
+
+			/* 当たった敵が見つかるたびに射程を縮め、より手前の敵だけを残す。*/
+			float fNearest = stPlayerStatus_.fWeaponRange_;
+
+			for (CommonEnemy* pEnemy : FindGOs<CommonEnemy>("commonEnemy"))
+			{
+				if (pEnemy == nullptr)
+					continue;
+
+				/* 敵1体ぶんの部位別判定。足元の座標を基準に頭・胴・脚を並べて判定する。*/
+				nsCombat::HitResult stResult;
+				if (!stHitBoxSet.RayTest(vRayStart, vRayDirection, fNearest, pEnemy->GetPosition(), stResult))
+					continue;
+
+				fNearest = stResult.fDistance_;
+				pHitEnemy = pEnemy;
+				stOutResult = stResult;
+			}
+
+			return pHitEnemy;
+		}
+
+
 		void Player::UpdateWeapon(float fDeltaTime)
 		{
 			/* 武器のクールタイム・リロード等を進める。*/
@@ -446,10 +645,9 @@ namespace nsApp
 				if (bWantFire)
 				{
 					/* 命中判定はカメラ(目)=クロスヘアから飛ばす。銃口はトレーサーの見た目始点にだけ使う。*/
-						Vector3 vEyePos = vPosition_;
-						vEyePos.y += kEyeHeight;
+					Vector3 vEyePos = GetEyePosition();
 
-						/* トレーサーの始点=画面の銃口あたり(目線から右・下・前へずらす)。
+					/* トレーサーの始点=画面の銃口あたり(目線から右・下・前へずらす)。
 					   目線=射線と横にずらすことで、線が点に潰れず斜めの線として見える。*/
 					const Vector3 vMuzzleRight = { cosf(fCameraYaw_), 0.0f, -sinf(fCameraYaw_) };
 					Vector3 vMuzzlePos = vEyePos;
@@ -460,73 +658,41 @@ namespace nsApp
 					/* 発射に成功したら、ヒットスキャン判定＋トレーサー表示を行う。*/
 					if (stWeaponInventory_.Fire(vMuzzlePos, vAimDir))
 					{
-							/* 発射の反動を加える(視点が跳ね、銃が手前へ下がる)。*/
-							ApplyFireRecoil(pWeapon);
+						/* 発射の反動を加える(視点が跳ね、銃が手前へ下がる)。*/
+						ApplyFireRecoil(pWeapon);
 
-							/* 連射するほど弾がばらつくようにする。*/
-							fSpreadShot_ += pWeapon->GetSpreadPerShot();
-							if (fSpreadShot_ > kMaxSpreadShot)
-								fSpreadShot_ = kMaxSpreadShot;
+						/* 連射するほど弾がばらつくようにする。*/
+						fSpreadShot_ += pWeapon->GetSpreadPerShot();
+						if (fSpreadShot_ > pWeapon->GetMaxSpreadShot())
+							fSpreadShot_ = pWeapon->GetMaxSpreadShot();
 
-							/* 発射したことを通知する(演出は購読側が担当する)。*/
-							PublishGameEvent(nsEvent::EnGameEvent::WeaponFired, vMuzzlePos, vAimDir);
+						/* 発射したことを通知する(演出は購読側が担当する)。*/
+						PublishGameEvent(nsEvent::EnGameEvent::WeaponFired, vMuzzlePos, vAimDir);
 
-							/* 拡散のぶんだけ照準をばらつかせた、実際の弾道。*/
-							const Vector3 vShotDir = MakeSpreadDirection(vAimDir);
+						/* 拡散のぶんだけ照準をばらつかせた、実際の弾道。*/
+						const Vector3 vShotDir = MakeSpreadDirection(vAimDir);
 
-							/* レイの終点(最大射程)。命中したらここを命中点に置き換える。*/
-							Vector3 vHitPoint = vEyePos + vShotDir * kWeaponRange;
+						/* レイの終点(最大射程)。命中したらここを命中点に置き換える。*/
+						Vector3 vHitPoint = vEyePos + vShotDir * stPlayerStatus_.fWeaponRange_;
 
-						/*
-						 * ヒットスキャン命中判定: レイ(銃口→射程)に対し、敵を球とみなして
-						 * 最も手前で交差する1体を探す。コライダー未整備のため自前の レイvs球。
-						 * (将来コライダーが付いたら PhysicsWorld::RayTest へ置換してよい)
-						 */
-						const float kEnemyRadius = 45.0f;		// 敵の水平被弾半径(人型を縦シリンダー近似)。
-							const float kEnemyHeight = 175.0f;	// 足元(y=0)から頭までのおおよその高さ。
-						nsActor::CommonEnemy* pHitEnemy = nullptr;
-						bool bHeadShot = false;					// 頭に当たったか。
-						float fNearest = kWeaponRange;			// 命中点までの前方距離(近いほど手前)。
-						for (nsActor::CommonEnemy* pEnemy : FindGOs<nsActor::CommonEnemy>("commonEnemy"))
-						{
-							if (pEnemy == nullptr)
-								continue;
-
-							/* 敵を「足元(y=0)〜頭」の縦シリンダーとみなし、まず体の中心で前方距離を測る。*/
-								const Vector3 vFeet = pEnemy->GetPosition();
-								Vector3 vBodyMid = vFeet;
-								vBodyMid.y += kEnemyHeight * 0.5f;
-
-								const Vector3 vToMid = vBodyMid - vEyePos;
-								const float fForward = vToMid.Dot(vShotDir);
-								if (fForward < 0.0f || fForward > fNearest)
-									continue;
-
-								/* レイ上の最近点で、水平距離が半径以内 かつ 当たった高さが体の範囲内なら命中。*/
-								const Vector3 vClosest = vEyePos + vShotDir * fForward;
-								const float fDx = vClosest.x - vFeet.x;
-								const float fDz = vClosest.z - vFeet.z;
-								const float fHorizDist = sqrtf(fDx * fDx + fDz * fDz);
-								if (fHorizDist <= kEnemyRadius &&
-									vClosest.y >= vFeet.y - 20.0f &&
-									vClosest.y <= vFeet.y + kEnemyHeight + 20.0f)
-								{
-									fNearest = fForward;
-									pHitEnemy = pEnemy;
-
-									/* 体の上のほうに当たっていれば頭とみなす。*/
-									bHeadShot = (vClosest.y >= vFeet.y + kEnemyHeight * kHeadHeightRate);
-								}
-						}
+						/* ヒットスキャン命中判定: 目線から弾の向きへレイを飛ばし、当たった敵と部位を求める。*/
+						nsCombat::HitResult stHitResult;
+						nsActor::CommonEnemy* pHitEnemy = FindHitEnemy(vEyePos, vShotDir, stHitResult);
 
 						/* 命中していたら、トレーサーを命中点で止めてダメージを与える。*/
 						if (pHitEnemy != nullptr)
 						{
-							vHitPoint = vEyePos + vShotDir * fNearest;
-							/* 頭に当たっていればダメージを増やす。*/
-							int iDamage = pWeapon->GetAttackPower();
-							if (bHeadShot)
-								iDamage = static_cast<int>(iDamage * kHeadShotRate);
+							vHitPoint = stHitResult.vHitPoint_;
+
+							/* 当たった部位の倍率でダメージを増減する(頭なら大ダメージ、脚なら効きが悪い)。*/
+							int iDamage = static_cast<int>(pWeapon->GetAttackPower() * stHitResult.fDamageRate_);
+
+							/* 倍率が小さくても、当てたのに0ダメージにはしない。*/
+							if (iDamage < 1)
+								iDamage = 1;
+
+							/* 頭に当たったかはUIと演出で使う。*/
+							const bool bHeadShot = (stHitResult.enPart_ == nsCombat::EnHitPart::Head);
 
 							pHitEnemy->ApplyDamage(iDamage);
 
@@ -534,14 +700,15 @@ namespace nsApp
 							PublishGameEvent(nsEvent::EnGameEvent::BulletHit, vHitPoint, vShotDir, iDamage, bHeadShot);
 
 							/* 倒したら撃破エフェクト＋撃破イベントを出して退場させる。*/
-								if (pHitEnemy->IsDead())
-								{
-									Vector3 vKillPos = pHitEnemy->GetPosition();
-									vKillPos.y += 85.0f;
-									PublishGameEvent(nsEvent::EnGameEvent::EnemyKilled, vKillPos);
+							if (pHitEnemy->IsDead())
+							{
+								/* 撃破の閃光は胸のあたり(身長の半分)に出す。*/
+								Vector3 vKillPos = pHitEnemy->GetPosition();
+								vKillPos.y += nsCombat::HitBoxSet::GetShared(CharacterModelType::Infected).GetHeight() * 0.5f;
+								PublishGameEvent(nsEvent::EnGameEvent::EnemyKilled, vKillPos);
 
-									DeleteGO(pHitEnemy);
-								}
+								DeleteGO(pHitEnemy);
+							}
 						}
 
 						/* 見せるためのトレーサー(曳光弾)を一瞬だけ表示する。*/
@@ -579,10 +746,7 @@ namespace nsApp
 			 * 手持ちのライトを目線の位置から視線の先へ向ける。
 			 * 消えているときは届く距離を0にして、光が出ないようにする。
 			 */
-			Vector3 vLightPos = vPosition_;
-			vLightPos.y += kEyeHeight;
-
-			g_renderingEngine->SetSpotLight(kFlashLightIndex, vLightPos, { 1.0f, 0.95f, 0.85f }, bIsLightOn_ ? kFlashLightRange : 0.0f, GetLookDirection(), kFlashLightAngle);
+			g_renderingEngine->SetSpotLight(kFlashLightIndex, GetEyePosition(), { 1.0f, 0.95f, 0.85f }, bIsLightOn_ ? kFlashLightRange : 0.0f, GetLookDirection(), kFlashLightAngle);
 
 			/* メニュー・ポーズ画面。*/
 			if (stIntent_.bPauseTrigger_)
@@ -604,7 +768,7 @@ namespace nsApp
 				return;
 
 			/* クールダウンを設定する。*/
-			fShoveCooldown_ = kShoveCooldownTime;
+			fShoveCooldown_ = stPlayerStatus_.fShoveCooldownTime_;
 
 			/* 正面(水平)方向。*/
 			const Vector3 vAimDir = { sinf(fCameraYaw_), 0.0f, cosf(fCameraYaw_) };
@@ -621,11 +785,11 @@ namespace nsApp
 				const float fDist = vToEnemy.Length();
 
 				/* 近距離かつ正面(約120度以内)のみ対象。*/
-				if (fDist <= 0.0001f || fDist > kShoveRange)
+				if (fDist <= 0.0001f || fDist > stPlayerStatus_.fShoveRange_)
 					continue;
 				Vector3 vDir = vToEnemy;
 				vDir.Normalize();
-				if (vDir.Dot(vAimDir) < kShoveFrontDot)
+				if (vDir.Dot(vAimDir) < stPlayerStatus_.fShoveFrontDot_)
 					continue;
 
 				/*
@@ -633,7 +797,7 @@ namespace nsApp
 				 * 座標を直接書き換えるだけだと敵の移動処理に上書きされてしまうため、
 				 * 移動処理へも反映される SetPosition を使う。
 				 */
-				pEnemy->SetPosition(pEnemy->GetPosition() + vDir * kShovePush);
+				pEnemy->SetPosition(pEnemy->GetPosition() + vDir * stPlayerStatus_.fShovePush_);
 
 				/* 押し返すだけでなく、わずかに削る。*/
 				pEnemy->ApplyDamage(kShoveDamage);
@@ -718,8 +882,7 @@ namespace nsApp
 				iGrenadeCount_--;
 
 				const Vector3 vLook = GetLookDirection();
-				Vector3 vThrowPos = vPosition_;
-				vThrowPos.y += kEyeHeight;
+				Vector3 vThrowPos = GetEyePosition();
 				vThrowPos += vLook * kMuzzleForward;
 				nsItem::Grenade* pGrenade = NewGO<nsItem::Grenade>(0, "grenade");
 				pGrenade->Setup(vThrowPos, vLook);
@@ -732,9 +895,20 @@ namespace nsApp
 			/* 移動状態に応じてアニメーションを切り替える。*/
 			PlayAnimation(bIsMoving_ ? EnPlayerAnimation::Walk : EnPlayerAnimation::Idle);
 
+			/*
+			 * 他人から見た姿のときは、体を「狙っている向き」へ向ける。
+			 * どこを狙っているかが味方から見て分かるようにするため(L4D2のサバイバーと同じ)。
+			 * 一人称では体を描かないので、進行方向を向いたままでよい。
+			 * TODO: 横歩き・後ろ歩きのアニメーションが無いので、真横へ進むと足が滑って見える。
+			 *       アニメーションが増えたら移動方向で出し分ける。
+			 */
+			Quaternion qBody = qRotation_;
+			if (enViewMode_ == EnViewMode::ThirdPerson)
+				qBody.SetRotationY(fCameraYaw_);
+
 			/* 位置と回転をモデルへ反映して更新する。*/
 			stModelRender_.SetPosition(vPosition_);
-			stModelRender_.SetRotation(qRotation_);
+			stModelRender_.SetRotation(qBody);
 			stModelRender_.Update();
 
 			/* 手に持つ武器モデルを更新する。*/
@@ -762,18 +936,31 @@ namespace nsApp
 				CalcWeaponModelFit(iType);
 			}
 
+			/* 見せ方で銃の置き場所が変わる。自分の視点なら画面手前、他人から見た姿なら右手のボーン。*/
+			if (enViewMode_ == EnViewMode::ThirdPerson)
+				UpdateHandWeaponModel(pWeapon, iType);
+			else
+				UpdateViewWeaponModel(pWeapon, iType);
+		}
+
+
+		void Player::UpdateViewWeaponModel(nsWeapon::Weapon* pWeapon, int iType)
+		{
 			/* FPSのビューモデルとして、カメラ(目)基準で画面手前(前・右・下)に銃を置く。*/
-			ModelRender& weaponModel = aWeaponModels_[iType];
 			const Vector3 vLook = GetLookDirection();								// 前(ヨー＋ピッチ。上下を向くと銃も追従)
 			const Vector3 vRight = { cosf(fCameraYaw_), 0.0f, -sinf(fCameraYaw_) };	// 右(水平・単位)
+
+			/* 揺れとリロード演出の調整値(player.jsonのviewShake / reload)。*/
+			const nsData::ViewShakeStatus& stShake = stPlayerStatus_.stViewShake_;
+			const nsData::ReloadMotionStatus& stReload = stPlayerStatus_.stReloadMotion_;
 
 			/* 最終スケール = 自動サイズ合わせ × 武器データの微調整倍率(1.0基準)。*/
 			const float fScale = aWeaponModelAutoScale_[iType] * pWeapon->GetModelScale();
 
-			/* 銃の「中心」を置きたい位置(目の前・右・下)。*/
-			Vector3 vGunPos = vPosition_;
-			vGunPos.y += kEyeHeight;						// 目の高さ
+			/* 銃の「中心」を置きたい位置(目の前・右・下)。目の位置は歩きの上下動を含む。*/
+			Vector3 vGunPos = GetEyePosition();
 			vGunPos += vLook * pWeapon->GetViewModelForward();	// 前(武器ごと)
+
 			/* 覗き込むほど、銃を画面中央(照準の位置)へ寄せる。*/
 			const float fRightOffset = kViewModelRight + (kAdsViewModelRight - kViewModelRight) * fAdsRate_;
 			const float fDownOffset = kViewModelDown + (kAdsViewModelDown - kViewModelDown) * fAdsRate_;
@@ -782,63 +969,168 @@ namespace nsApp
 			vGunPos.y -= kSprintLowerDown * fLowerRate_;	// 走っている間はさらに下げる
 
 			/*
-			 * リロード中は銃を下げて回す。
-			 * 弾を入れ替えている最中だと分かるよう、山なりに沈めてから戻す。
+			 * リロードは「マガジンを抜く→挿す→構え直す」の3段階で見せる。
+			 * 銃を手前・下へ引いて傾け(抜く)、下で一度突き上げ(挿す)、
+			 * 元へ戻して最後に少し行き過ぎる(構え直す)。
 			 */
 			const float fReloadRate = pWeapon->GetReloadRate();
-			const float fReloadDip = sinf(fReloadRate * kPi);	// 0→1→0 と動く沈み具合。
-			vGunPos.y -= kReloadLowerDown * fReloadDip;
+			float fReloadLower = 0.0f;
+			float fReloadInsert = 0.0f;
+			float fReloadSettle = 0.0f;
+			CalcReloadMotion(fReloadRate, fReloadLower, fReloadInsert, fReloadSettle);
+
+			vGunPos.y -= stReload.fLowerDown_ * fReloadLower;	// 抜く動作で沈める
+			vGunPos -= vLook * (stReload.fPullBack_ * fReloadLower);	// 手前へ引き寄せる
+			vGunPos -= vRight * (stReload.fPullRight_ * fReloadLower);	// 画面中央へ寄せる
+			vGunPos.y += stReload.fInsertUp_ * fReloadInsert;	// 挿し込みの突き上げ
+			vGunPos.y += stReload.fSettleUp_ * fReloadSettle;	// 構え直しの行き過ぎ
+
 			vGunPos -= vLook * fWeaponKickBack_;			// 撃った直後は手前へ下がる
 
-			/* 歩行ボブ: 移動中は銃を軽く揺らす(スプリントで大きく速く)。*/
+			/* 視点を振ったときの遅れ。腕が視点に引きずられているように見せる。*/
+			vGunPos += vRight * fSwayRight_;
+			vGunPos.y += fSwayUp_;
+
+			/*
+			 * 歩行ボブ(銃ぶん)。カメラ自体の上下動は GetEyePosition に含まれているので、
+			 * ここで足すのは「体の動きに対して銃がさらに遅れて振れる」ぶん。
+			 * 位相をずらしてあるので、カメラと同時に動いて画面上で消えることはない。
+			 * 横は1歩に1往復、縦は1歩に2往復＝8の字を描く。
+			 */
 			{
-				const float fBobDelta = g_gameTime->GetFrameDeltaTime();
-				const float fBobSpeed = bIsSprinting_ ? kBobSprintSpeed : kBobWalkSpeed;
-				const float fBobAmp = bIsSprinting_ ? kBobSprintAmp : kBobWalkAmp;
+				const float fBobPhase = fBobTimer_ - stShake.fBobPhaseLag_;
+				const float fBobAmp = bIsSprinting_ ? stShake.fBobSprintAmp_ : stShake.fBobWalkAmp_;
 
-				/* 停止時にピタッと消えないよう重みを補間する。*/
-				const float fBobTarget = bIsMoving_ ? 1.0f : 0.0f;
-				float fBobLerp = fBobDelta * 8.0f;
-				if (fBobLerp > 1.0f) fBobLerp = 1.0f;
-				fBobWeight_ += (fBobTarget - fBobWeight_) * fBobLerp;
-
-				if (bIsMoving_)
-					fBobTimer_ += fBobDelta * fBobSpeed;
-
-				/* 覗き込み中は狙いが定まるよう揺れを抑える。*/
+				/* 覗き込み中は銃の揺れを完全に止める(カメラ側の揺れは adsSuppressRate ぶんだけ残る)。*/
 				const float fBobScale = fBobAmp * fBobWeight_ * (1.0f - fAdsRate_);
-				vGunPos += vRight * (sinf(fBobTimer_) * fBobScale);
-				vGunPos.y += sinf(fBobTimer_ * 2.0f) * fBobScale;
+				vGunPos += vRight * (sinf(fBobPhase) * fBobScale);
+				vGunPos.y += sinf(fBobPhase * 2.0f) * fBobScale * stShake.fBobWeaponUpRate_;
 			}
 
-			/* 銃の姿勢を先に決める。原点のズレを打ち消すのに、この回転を使う。*/
-			Quaternion qGun;
-			qGun.SetRotationY(fCameraYaw_);		// ヨー(横向き)を先に設定。
-			qGun.AddRotationX(-fCameraPitch_);	// ピッチをローカル軸で後乗せ→横向きでもロールしない。上下が逆なら符号反転。
+			/* 原点ズレの補正に使う基準の回転(視点の向きだけ)。*/
+			Quaternion qBase;
+			qBase.SetRotationY(fCameraYaw_);
+			qBase.AddRotationX(-fCameraPitch_);
+
+			/* 実際に銃へ与える回転。ここへ演出ぶんを重ねていく。*/
+			Quaternion qGun = qBase;
 			qGun.AddRotationZ(kAdsRollAngle * fAdsRate_);	// 覗き込むほど銃を横倒しにし、拡大時に視界を塞がないようにする。
 			qGun.AddRotationX(kSprintLowerAngle * fLowerRate_);	// 走っている間は銃口を下げて構えを解く。
-			qGun.AddRotationX(kReloadLowerAngle * fReloadDip);	// リロード中は銃口を下げる。
-			qGun.AddRotationZ(kReloadSpinAngle * fReloadRate);	// リロード中は銃を1周させる。
+			qGun.AddRotationX(stReload.fLowerAngle_ * fReloadLower);	// マガジンを抜くあいだは銃口を下げる。
+			qGun.AddRotationZ(stReload.fRollAngle_ * fReloadLower);	// 差込口が見えるよう銃を傾ける。
+			qGun.AddRotationX(-stReload.fInsertAngle_ * fReloadInsert);	// 挿し込む瞬間だけ銃口が持ち上がる。
+			qGun.AddRotationZ(fSwayRight_ * stShake.fSwayRollRate_);		// 視点を振った遅れのぶん傾ける。
 
+			PlaceWeaponModel(iType, vGunPos, qBase, qGun, fScale);
+		}
+
+
+		void Player::UpdateHandWeaponModel(nsWeapon::Weapon* pWeapon, int iType)
+		{
+			/* 銃は視線の向きに構える。体の向きではなく視線を使うので、狙っている方向がそのまま出る。*/
+			const Vector3 vLook = GetLookDirection();
+			const Vector3 vRight = { cosf(fCameraYaw_), 0.0f, -sinf(fCameraYaw_) };
+
+			/*
+			 * 銃を置く基準は体の右手のボーン。
+			 * ボーンのワールド行列は ModelRender::Update が計算しているので、
+			 * 体のモデルを更新したあとに呼ぶこと(UpdateModel がその順で呼んでいる)。
+			 */
+			Vector3 vHandPos = vPosition_;
+			vHandPos.y += stPlayerStatus_.fEyeHeight_ * kHandHeightRate;
+
+			if (iRightHandBoneId_ >= 0 && stModelRender_.m_skeleton.IsInited())
+			{
+				/* ワールド行列の平行移動成分が、その骨のワールド座標。*/
+				const Matrix& mHand = stModelRender_.m_skeleton.GetBone(iRightHandBoneId_)->GetWorldMatrix();
+				vHandPos.Set(mHand.m[3][0], mHand.m[3][1], mHand.m[3][2]);
+			}
+
+			/* 銃ごとにグリップの位置が違うので、武器データのぶんだけずらして手に収める。*/
+			vHandPos += vLook * pWeapon->GetHandForward();
+			vHandPos += vRight * pWeapon->GetHandRight();
+			vHandPos.y += pWeapon->GetHandUp();
+
+			/*
+			 * 手に持たせる銃は「世界の中での実寸」で決める。
+			 * ビューモデルは画面に大きく映すため誇張しているので、そちらの倍率は使わない。
+			 * 体を大きくすると手のボーンの位置も一緒に動くが、銃の大きさは動かないので
+			 * ここで体の大きさに見合う長さを指定しておく必要がある。
+			 */
+			const float fLongestEdge = aWeaponModelLongestEdge_[iType];
+			const float fScale = (fLongestEdge > 0.0001f) ? (pWeapon->GetHandLength() / fLongestEdge) : 1.0f;
+
+			/* 銃口が視線を向くように回す(ビューモデルと同じく、ヨーを設定してからピッチを後乗せする)。*/
+			Quaternion qGun;
+			qGun.SetRotationY(fCameraYaw_);
+			qGun.AddRotationX(-fCameraPitch_);
+
+			/* 手に持たせるときは演出の回転を重ねないので、補正の基準も同じ回転でよい。*/
+			PlaceWeaponModel(iType, vHandPos, qGun, qGun, fScale);
+		}
+
+
+		void Player::PlaceWeaponModel(int iType, const Vector3& vCenterPos, const Quaternion& qBase, const Quaternion& qRotation, float fScale)
+		{
 			/*
 			 * モデル原点のズレを打ち消す。
 			 * 補正には視点の向き(ヨー＋ピッチ)だけを使い、演出でつけた回転は含めない。
 			 * 演出の回転まで含めると、リロードのように大きく回したときに銃の位置まで動いてしまう。
 			 */
-			Quaternion qBase;
-			qBase.SetRotationY(fCameraYaw_);
-			qBase.AddRotationX(-fCameraPitch_);
-
 			Vector3 vCenterOffset = aWeaponModelCenter_[iType] * fScale;
 			qBase.Apply(vCenterOffset);
 
 			/* 不具合を調べられるよう、実際に置いた位置を控えておく。*/
-			vWeaponViewPos_ = vGunPos - vCenterOffset;
+			vWeaponViewPos_ = vCenterPos - vCenterOffset;
 
+			ModelRender& weaponModel = aWeaponModels_[iType];
 			weaponModel.SetPosition(vWeaponViewPos_);
-			weaponModel.SetRotation(qGun);
+			weaponModel.SetRotation(qRotation);
 			weaponModel.SetScale(Vector3(fScale, fScale, fScale));
 			weaponModel.Update();
+		}
+
+
+		void Player::CalcBodyModelSize()
+		{
+			/* 全メッシュの全頂点を走査してローカルAABB(最小・最大)を求める。*/
+			Vector3 vMin = { 1e30f, 1e30f, 1e30f };
+			Vector3 vMax = { -1e30f, -1e30f, -1e30f };
+
+			stModelRender_.GetModel().GetTkmFile().QueryMeshParts(
+				[&](const TkmFile::SMesh& mesh)
+				{
+					for (const auto& vertex : mesh.vertexBuffer)
+					{
+						const Vector3& p = vertex.pos;
+						if (p.x < vMin.x) vMin.x = p.x;
+						if (p.y < vMin.y) vMin.y = p.y;
+						if (p.z < vMin.z) vMin.z = p.z;
+						if (p.x > vMax.x) vMax.x = p.x;
+						if (p.y > vMax.y) vMax.y = p.y;
+						if (p.z > vMax.z) vMax.z = p.z;
+					}
+				});
+
+			/* 頂点が取れなければ測れない。*/
+			if (vMax.x < vMin.x)
+			{
+				fBodyModelSize_ = 0.0f;
+				return;
+			}
+
+			/* 一番長い辺を大きさとする(モデルの上向き軸に依存しないようにするため)。*/
+			const Vector3 vSize = vMax - vMin;
+			float fLongest = vSize.x;
+			if (vSize.y > fLongest) fLongest = vSize.y;
+			if (vSize.z > fLongest) fLongest = vSize.z;
+
+			fBodyModelSize_ = fLongest * stPlayerStatus_.fBodyModelScale_;
+
+			/* デバッグ: 想定の身長(目線の高さ等)と実物の大きさが合っているか確認する。*/
+			DebugPrintW(L"[Player] body AABB min(%.1f,%.1f,%.1f) max(%.1f,%.1f,%.1f) size(%.1f,%.1f,%.1f) -> 表示サイズ %.1f (目線の高さ %.1f)\n",
+				vMin.x, vMin.y, vMin.z, vMax.x, vMax.y, vMax.z,
+				vSize.x, vSize.y, vSize.z, fBodyModelSize_, stPlayerStatus_.fEyeHeight_);
 		}
 
 
@@ -868,6 +1160,7 @@ namespace nsApp
 			{
 				aWeaponModelCenter_[iType] = Vector3(0.0f, 0.0f, 0.0f);
 				aWeaponModelAutoScale_[iType] = 1.0f;
+				aWeaponModelLongestEdge_[iType] = 0.0f;
 				return;
 			}
 
@@ -882,6 +1175,7 @@ namespace nsApp
 			if (vSize.y > fLongest) fLongest = vSize.y;
 			if (vSize.z > fLongest) fLongest = vSize.z;
 			aWeaponModelAutoScale_[iType] = (fLongest > 0.0001f) ? (kTargetGunSize / fLongest) : 1.0f;
+			aWeaponModelLongestEdge_[iType] = fLongest;
 
 			/* デバッグ: AABBに余分なジオメトリが混じっていないか確認する。*/
 			DebugPrintW(L"[Player] weapon%d AABB min(%.1f,%.1f,%.1f) max(%.1f,%.1f,%.1f) size(%.1f,%.1f,%.1f) center(%.1f,%.1f,%.1f) autoScale=%.4f\n",
@@ -910,7 +1204,7 @@ namespace nsApp
 				if (IsDead())
 				{
 					enLifeState_ = EnLifeState::Down;
-					fBleedOutTimer_ = kBleedOutTime;
+					fBleedOutTimer_ = stPlayerStatus_.fBleedOutTime_;
 					PublishGameEvent(nsEvent::EnGameEvent::PlayerDowned);
 				}
 				break;
@@ -939,7 +1233,7 @@ namespace nsApp
 			if (enLifeState_ != EnLifeState::Down)
 				return;
 
-			stCharacterStatus_.stHp_.iCurrentHP_ = kReviveHP;
+			stCharacterStatus_.stHp_.iCurrentHP_ = stPlayerStatus_.iReviveHP_;
 			enLifeState_ = EnLifeState::Alive;
 			fBleedOutTimer_ = 0.0f;
 			PublishGameEvent(nsEvent::EnGameEvent::PlayerRevived);

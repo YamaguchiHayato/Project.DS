@@ -4,6 +4,8 @@
 #include "IPlayerController.h"
 #include "WeaponInventory.h"
 #include "Src/Event/GameEvent.h"
+#include "Src/Data/PlayerStatusTable.h"
+#include "Src/Combat/HitBoxSet.h"
 
 namespace nsApp
 {
@@ -11,6 +13,8 @@ namespace nsApp
 
 	namespace nsActor
 	{
+		class CommonEnemy;	//! 前方宣言。
+
 		/**
 		 * @enum EnPlayerAnimation
 		 * @brief プレイヤーの基本アニメーション。ModelRenderに渡す配列の添字になる。
@@ -21,6 +25,17 @@ namespace nsApp
 			Walk,	//! 歩き。
 			Run,	//! 走り。
 			Num,	//! アニメーションの数。
+		};
+
+		/**
+		 * @enum  EnViewMode
+		 * @brief この Player をどう見せるか。
+		 *        マルチを想定して、自分の画面と他プレイヤーの画面で見せ方を切り替えるための区分。
+		 */
+		enum class EnViewMode : uint8_t
+		{
+			FirstPerson,	//! 自分の視点。体は描かず、銃は画面手前のビューモデルとして置く。
+			ThirdPerson,	//! 他人から見た姿。体を描き、銃を右手のボーンへ持たせる。
 		};
 
 		/**
@@ -60,6 +75,16 @@ namespace nsApp
 
 		/* セッター。*/
 		public:
+			/**
+			 * @brief 見せ方(自分の視点か、他人から見た姿か)を設定する。
+			 *        マルチでは自分の機体だけ FirstPerson、他プレイヤーは ThirdPerson になる。
+			 * @param enViewMode 設定する見せ方。
+			 */
+			inline void SetViewMode(EnViewMode enViewMode)
+			{
+				enViewMode_ = enViewMode;
+			}
+
 			/**
 			 * @brief キャラクターの位置を設定する。
 			 * @param vPosition 設定する位置。
@@ -107,6 +132,59 @@ namespace nsApp
 			inline float GetCameraPitch() const
 			{
 				return fCameraPitch_;
+			}
+
+			/**
+			 * @brief 見せ方を取得する。
+			 * @return 見せ方。
+			 */
+			inline EnViewMode GetViewMode() const
+			{
+				return enViewMode_;
+			}
+
+			/**
+			 * @brief 目(カメラ)の位置を取得する。歩きの上下動を含む。
+			 *        カメラの位置・射撃の起点・ビューモデルの基準を必ずこれで揃える。
+			 *        別々に計算するとクロスヘアと着弾がズレるため。
+			 * @return 目の位置。
+			 */
+			inline Vector3 GetEyePosition() const
+			{
+				Vector3 vEyePosition = vPosition_;
+				vEyePosition.y += stPlayerStatus_.fEyeHeight_ + fViewBobHeight_;
+
+				return vEyePosition;
+			}
+
+			/**
+			 * @brief 体モデルの実際の大きさ(一番長い辺)を取得する。
+			 *        モデルの頂点から測った値なので、想定の身長ではなく本当の表示サイズが返る。
+			 *        三人称カメラの寄り引きなど、モデルの大きさに合わせたい処理で使う。
+			 * @return 体モデルの大きさ。測れなかった場合は0。
+			 */
+			inline float GetBodyModelSize() const
+			{
+				return fBodyModelSize_;
+			}
+
+			/**
+			 * @brief 銃を持たせる右手のボーンが見つかっているか。
+			 * @return 見つかっていれば true。false のときは銃を腰の高さへ置いている。
+			 */
+			inline bool IsHandBoneFound() const
+			{
+				return iRightHandBoneId_ >= 0;
+			}
+
+			/**
+			 * @brief カメラの傾き(ロール)を取得する。
+			 *        横移動と歩行に合わせてわずかに傾け、歩いている感じを出す。
+			 * @return 傾きの角度(ラジアン)。
+			 */
+			inline float GetViewRoll() const
+			{
+				return fViewRoll_;
 			}
 
 			/**
@@ -235,6 +313,26 @@ namespace nsApp
 			void UpdateAds(float fDeltaTime);
 
 			/**
+			 * @brief 歩きと視点移動から生まれる揺れを更新する。
+			 *        ・視点を振ったときに銃が遅れてついてくるずれ(sway)。
+			 *        ・歩きに合わせたカメラの上下動と傾き。
+			 *        ・横移動に合わせたカメラの傾き(ストレイフロール)。
+			 * @param fDeltaTime 1フレームの経過時間(秒)。
+			 */
+			void UpdateViewSway(float fDeltaTime);
+
+			/**
+			 * @brief リロードの進み具合から、銃をどれだけ動かすかを求める。
+			 *        「マガジンを抜く→挿す→構え直す」の3段階に分けて、
+			 *        いま何をしているのかが見て分かるようにする。
+			 * @param fReloadRate リロードの進み具合(0=始まったところ, 1=完了間際)。
+			 * @param fOutLower   銃を下げている度合い(0〜1)。
+			 * @param fOutInsert  マガジンを挿し込む動きの度合い(0〜1)。
+			 * @param fOutSettle  構え直したときの行き過ぎの度合い(0〜1)。
+			 */
+			void CalcReloadMotion(float fReloadRate, float& fOutLower, float& fOutInsert, float& fOutSettle) const;
+
+			/**
 			 * @brief 射撃の反動を時間で元へ戻す(跳ね上がった視点と下がった銃を戻す)。
 			 * @param fDeltaTime 1フレームの経過時間(秒)。
 			 */
@@ -246,6 +344,16 @@ namespace nsApp
 			 * @return ばらつかせた発射方向。
 			 */
 			Vector3 MakeSpreadDirection(const Vector3& vAimDir) const;
+
+			/**
+			 * @brief 弾が当たった敵と、当たった部位を調べる(ヒットスキャン)。
+			 *        当たった敵が複数いれば、一番手前の1体を返す。
+			 * @param vRayStart     判定の起点(目の位置)。
+			 * @param vRayDirection 弾の進む向き(正規化済み)。
+			 * @param stOutResult   当たった部位の情報を受け取る。
+			 * @return 当たった敵。当たっていなければnullptr。
+			 */
+			CommonEnemy* FindHitEnemy(const Vector3& vRayStart, const Vector3& vRayDirection, nsCombat::HitResult& stOutResult);
 
 			/**
 			 * @brief 1発ぶんの反動を加える(発射した瞬間に呼ぶ)。
@@ -281,6 +389,36 @@ namespace nsApp
 			void UpdateWeaponModel();
 
 			/**
+			 * @brief 自分の視点用に、銃を画面手前のビューモデルとして配置する。
+			 * @param pWeapon 現在装備中の武器。
+			 * @param iType   武器種類(モデル配列の添字)。
+			 */
+			void UpdateViewWeaponModel(nsWeapon::Weapon* pWeapon, int iType);
+
+			/**
+			 * @brief 他人から見た姿用に、銃を体の右手のボーンへ持たせる。
+			 * @param pWeapon 現在装備中の武器。
+			 * @param iType   武器種類(モデル配列の添字)。
+			 */
+			void UpdateHandWeaponModel(nsWeapon::Weapon* pWeapon, int iType);
+
+			/**
+			 * @brief 武器モデルの中心が指定した位置へ来るよう、モデル原点のズレを打ち消して配置する。
+			 * @param iType      武器種類(モデル配列の添字)。
+			 * @param vCenterPos 銃の中心を置きたい位置。
+			 * @param qBase      原点ズレの補正に使う基準の回転(視点の向きだけ。演出の回転は含めない)。
+			 * @param qRotation  実際に銃へ与える回転(演出を含む)。
+			 * @param fScale     表示スケール。
+			 */
+			void PlaceWeaponModel(int iType, const Vector3& vCenterPos, const Quaternion& qBase, const Quaternion& qRotation, float fScale);
+
+			/**
+			 * @brief 体モデルのローカルAABBから実際の表示サイズを測って保存する。
+			 *        読み込み時に一度だけ呼ぶ。
+			 */
+			void CalcBodyModelSize();
+
+			/**
 			 * @brief 武器モデルのローカルAABBから中心と自動スケールを計算して保存する。
 			 *        銃ごとに原点のズレや基準サイズが違うのを自動で吸収するため、読み込み時に一度だけ呼ぶ。
 			 * @param iType 武器種類(配列の添字)。
@@ -308,7 +446,11 @@ namespace nsApp
 			//! 各武器モデルのローカルAABB中心(原点ズレ吸収用)。Vector3に既定コンストラクタが無いので要素数ぶん明示初期化する。
 			Vector3 aWeaponModelCenter_[static_cast<int>(nsWeapon::EnWeaponType::Num)] = { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
 			float aWeaponModelAutoScale_[static_cast<int>(nsWeapon::EnWeaponType::Num)] = {};//! 各武器モデルの自動サイズ合わせスケール。
+			float aWeaponModelLongestEdge_[static_cast<int>(nsWeapon::EnWeaponType::Num)] = {};//! 各武器モデルのローカルAABBの一番長い辺。実寸を指定して置くときに使う。
 			nsWeapon::EnWeaponType enEquippedType_ = nsWeapon::EnWeaponType::Handgun;			//! 現在装備中の武器の種類(描画対象)。
+			EnViewMode enViewMode_ = EnViewMode::FirstPerson;	//! 見せ方(自分の視点か、他人から見た姿か)。
+			int iRightHandBoneId_ = -1;							//! 銃を持たせる右手のボーン番号。見つからなければ-1。
+			float fBodyModelSize_ = 0.0f;						//! 体モデルの実際の大きさ(頂点から測った一番長い辺)。
 
 			Vector3 vPosition_ = Vector3::Zero;	//! 座標。
 			Vector3 vForward_ = { 0.0f, 0.0f, 1.0f };	//! 向いている方向(=移動方向)。
@@ -324,11 +466,16 @@ namespace nsApp
 			int iPrevHP_ = 0;						//! 前フレームのHP(減っていれば被弾とみなす)。
 			float fLowerRate_ = 0.0f;				//! 銃を下げている度合い(0=構え, 1=完全に下げる)。走ると1へ近づく。
 
-			float fMoveSpeed_ = 200.0f;				//! 移動速度(単位/秒)。
+			nsData::PlayerStatus stPlayerStatus_;	//! 調整用のステータス(player.jsonから読み込む)。
 			bool bIsMoving_ = false;					//! 移動中か。
 			bool bIsSprinting_ = false;				//! スプリント中か。
 			float fBobTimer_ = 0.0f;					//! 歩行ボブの位相。
 			float fBobWeight_ = 0.0f;					//! 歩行ボブの重み(移動→1/停止→0へ補間)。
+			float fViewBobHeight_ = 0.0f;				//! 歩きでカメラが上下している量。目の位置に足す。
+			float fViewRoll_ = 0.0f;					//! カメラの傾き(ラジアン)。歩行ボブと横移動の合計。
+			float fStrafeAxis_ = 0.0f;				//! 横移動の入力を鈍らせたもの(-1〜1)。カメラの傾きに使う。
+			float fSwayRight_ = 0.0f;				//! 視点を振ったときに銃が遅れて右へずれる量。
+			float fSwayUp_ = 0.0f;					//! 同・上へずれる量。
 			bool bIsLightOn_ = false;				//! ライトが点いているか。
 			Vector3 vWeaponViewPos_ = Vector3::Zero;	//! 画面に出している銃の位置(確認用に控えておく)。
 			EnPlayerAnimation enPlayingAnimation_ = EnPlayerAnimation::Num;	//! 再生中のアニメーション。
@@ -336,8 +483,8 @@ namespace nsApp
 			EnLifeState enLifeState_ = EnLifeState::Alive;	//! 生命状態(生存/ダウン/死亡)。
 			float fBleedOutTimer_ = 0.0f;				//! ダウン中の出血残り時間(秒)。0で死亡。
 			float fShoveCooldown_ = 0.0f;				//! 突き飛ばしのクールダウン残り(秒)。
-			int iMedkitCount_ = 1;					//! 所持回復アイテム数。
-			int iGrenadeCount_ = 2;					//! 所持投擲アイテム数。
+			int iMedkitCount_ = 0;					//! 所持回復アイテム数(開始時の数はステータス表から入れる)。
+			int iGrenadeCount_ = 0;					//! 所持投擲アイテム数(開始時の数はステータス表から入れる)。
 			nsEvent::EventBus* pEventBus_ = nullptr;				//! イベント発行先(生成時にFindGOで取得。無ければ発行しない)。
 		};
 	}

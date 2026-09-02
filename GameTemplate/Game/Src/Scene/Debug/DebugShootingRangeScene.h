@@ -60,9 +60,15 @@ namespace nsApp
 			void InitCamera();
 
 			/**
-			 * @brief 一人称カメラをプレイヤーへ追従させる。
+			 * @brief カメラをプレイヤーへ追従させる(一人称/三人称は切り替え式)。
 			 */
 			void UpdateCamera();
+
+			/**
+			 * @brief 一人称と三人称を切り替える入力を処理する。
+			 *        他プレイヤーから見たときの姿(銃を持った体)を確認するためのデバッグ機能。
+			 */
+			void UpdateViewModeSwitch();
 
 			/**
 			 * @brief 的となる雑魚敵を奥に配置する。
@@ -77,6 +83,9 @@ namespace nsApp
 			PhysicsStaticObject stGroundCollider_; //! 地面の静的コライダ。
 			FontRender stHintFont_; //! 操作ヒント。
 			bool bWasPressEsc_ = false; //! 前フレームでESCが押されていたか。
+			bool bWasPressViewKey_ = false; //! 前フレームで視点切り替えキーが押されていたか。
+			bool bIsThirdPersonView_ = false; //! 三人称(他人から見た姿)で表示しているか。
+			wchar_t wcHint_[128] = {}; //! ヒント表示の文字列(視点と実測サイズを出す)。
 		};
 	}
 }
