@@ -12,11 +12,13 @@ namespace nsApp
 		 */
 		struct ViewShakeStatus
 		{
+			/* 視点を振ったときの銃の遅れ。*/
 			float	fSwayGain_ = 28.0f;				//! 視点を1ラジアン振ったときに銃がずれる距離。
 			float	fSwayMaxOffset_ = 10.0f;		//! 銃のずれの上限(これ以上は離れない)。
 			float	fSwayRecoverRate_ = 9.0f;		//! ずれた銃が中央へ戻る速さ。
 			float	fSwayRollRate_ = 0.010f;		//! 銃のずれ1単位あたりの傾き(ラジアン)。
 
+			/* 銃の歩行ボブ。*/
 			float	fBobWalkSpeed_ = 9.0f;			//! 歩きのボブの速さ。
 			float	fBobWalkAmp_ = 2.0f;			//! 歩きで銃が横に振れる幅。
 			float	fBobSprintSpeed_ = 13.0f;		//! 走りのボブの速さ。
@@ -25,11 +27,13 @@ namespace nsApp
 			float	fBobWeaponUpRate_ = 0.6f;		//! 銃のボブの縦の振れ幅(横に対する比)。
 			float	fBobWeightRate_ = 8.0f;			//! ボブの重みが移り変わる速さ(止まった瞬間にピタッと消さないため)。
 
+			/* カメラ自体の揺れ。*/
 			float	fViewBobHeightWalk_ = 1.6f;		//! 歩きでカメラが上下する量。
 			float	fViewBobHeightSprint_ = 3.0f;	//! 走りでカメラが上下する量。
 			float	fViewBobRollWalk_ = 0.010f;		//! 歩きでカメラが傾く角度(ラジアン)。
 			float	fViewBobRollSprint_ = 0.020f;	//! 走りでカメラが傾く角度(ラジアン)。
 
+			/* 横移動の傾きと、覗き込み中の抑制。*/
 			float	fStrafeRollAngle_ = 0.035f;		//! 横移動でカメラが傾く角度(ラジアン)。逆に感じたら符号を反転する。
 			float	fStrafeFollowRate_ = 6.0f;		//! 横移動の傾きが追いつく速さ。
 			float	fAdsSuppressRate_ = 0.7f;		//! 覗き込み中に揺れを抑える割合(1.0で完全に止まる)。
@@ -59,6 +63,7 @@ namespace nsApp
 		 */
 		struct PlayerStatus
 		{
+			/* 基本のステータス。*/
 			int		iMaxHP_ = 100;					//! 最大HP。
 			float	fMoveSpeed_ = 200.0f;			//! 歩きの移動速度(1秒あたり)。
 			float	fSprintRate_ = 1.6f;			//! スプリント中の移動速度の倍率。
@@ -73,17 +78,21 @@ namespace nsApp
 			 */
 			std::string sHandBoneName_ = "Character1_LeftHand";	//! 銃を持たせるボーンの名前。
 
+			/* ダウンと救助。*/
 			float	fBleedOutTime_ = 15.0f;			//! ダウンしてから死亡するまでの出血時間(秒)。
 			int		iReviveHP_ = 30;				//! 救助で復帰したときのHP。
 
+			/* 突き飛ばし(近接)。*/
 			float	fShoveRange_ = 180.0f;			//! 突き飛ばしが届く距離。
 			float	fShovePush_ = 120.0f;			//! 突き飛ばしで敵を押し返す距離。
 			float	fShoveFrontDot_ = 0.5f;			//! 正面判定のしきい値(0.5=正面±60度)。
 			float	fShoveCooldownTime_ = 0.7f;		//! 突き飛ばしのクールダウン(秒)。
 
+			/* 開始時の所持品。*/
 			int		iMedkitCount_ = 1;				//! 開始時に持っている回復アイテムの数。
 			int		iGrenadeCount_ = 2;				//! 開始時に持っている投擲アイテムの数。
 
+			/* 見た目の調整値。まとまりごとに別の構造体へ分けている。*/
 			ViewShakeStatus		stViewShake_;		//! 歩きと視点移動の揺れ。
 			ReloadMotionStatus	stReloadMotion_;	//! リロード演出の振れ幅。
 		};

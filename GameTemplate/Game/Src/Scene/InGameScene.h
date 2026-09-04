@@ -28,6 +28,12 @@ namespace nsApp
 		 * @author Izumida Kiryu
 		 * @date   2026/08/20
 		 */
+		/*
+		 * IScene はシーンとしての役目、IGameEventListener は通知の購読者としての役目。
+		 * 撃破数を数えるために EventBus を購読する必要があり、購読者は
+		 * IGameEventListener を継承していないとバスへ登録できないため、
+		 * 役割の異なるインターフェースを2つ実装している(状態を持つ基底の多重継承ではない)。
+		 */
 		class InGameScene : public IScene, public nsEvent::IGameEventListener
 		{
 		public:

@@ -55,6 +55,19 @@ namespace nsApp
 		 *         人型を縦に積んだ円柱の集まりで表し、レイ(弾)がどの部位に当たったかを返す。
 		 *         形と部位ごとのダメージ倍率は Assets/data/hitbox.json から読み込むので、
 		 *         ヘッドショット倍率などの調整にリビルドは要らない。
+		 *
+		 * @note   nsSystem::RaycastQuery との違い。
+		 *         RaycastQuery は物理ワールド(Bullet)への問い合わせで、壁・地形・キャラクターの
+		 *         カプセルといった「実際にコリジョンを持つもの」に当たる。遮蔽の判定に使う。
+		 *         こちらは頭・胴・脚という「コリジョンを持たないデータ上の形」に対する幾何計算で、
+		 *         どの部位に当たったかを返す。敵が持つコリジョンはカプセル1本だけなので、
+		 *         物理側の問い合わせでは部位を区別できない。目的が別なので両方が要る。
+		 *
+		 * @todo   壁越しの射撃を止められていない。RaycastQuery で遮蔽物までの距離を測り、
+		 *         それより手前の命中だけを採用すれば塞げるが、PhysicsWorld::RayTest に
+		 *         フィルタが無く敵のカプセルも拾ってしまうため、いまのままでは
+		 *         カプセル(半径20)より内側にある頭(半径10)への命中が弾かれてしまう。
+		 *         RaycastQuery に「静的オブジェクトだけを見る」指定を足せば解決できる。
 		 * @author Izumida Kiryu
 		 * @date   2026/09/02
 		 */
@@ -70,6 +83,7 @@ namespace nsApp
 			/**
 			 * @brief レイ(弾)がこのキャラクターのどの部位に当たったかを調べる。
 			 *        当たった部位が複数あれば、一番手前のものを返す。
+			 *        物理ワールドは見ないので、遮蔽の判定が要る場合は呼び出し側で行うこと。
 			 * @param vRayStart     判定の起点(目の位置)。
 			 * @param vRayDirection 弾の進む向き(正規化済み)。
 			 * @param fMaxDistance  調べる最大距離(射程)。
@@ -77,7 +91,7 @@ namespace nsApp
 			 * @param stOutResult   結果を受け取る。
 			 * @return 当たっていたらtrue。
 			 */
-			bool RayTest(const Vector3& vRayStart, const Vector3& vRayDirection, float fMaxDistance, const Vector3& vFootPosition, HitResult& stOutResult) const;
+			bool FindHitPart(const Vector3& vRayStart, const Vector3& vRayDirection, float fMaxDistance, const Vector3& vFootPosition, HitResult& stOutResult) const;
 
 			/**
 			 * @brief 部位ごとのダメージ倍率を取得する。

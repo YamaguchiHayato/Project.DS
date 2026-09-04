@@ -63,10 +63,6 @@ namespace nsApp
 			}
 
 			/**
-			 * @brief 直近の試合結果を取得する。
-			 * @return 勝利していたら true。
-			 */
-			/**
 			 * @brief 直近の試合の戦績を記録する。ResultScene へ渡す受け皿。
 			 * @param iKillCount 撃破数。
 			 * @param fClearTime かかった時間(秒)。
@@ -77,12 +73,30 @@ namespace nsApp
 				fMatchClearTime_ = fClearTime;
 			}
 
-			//! 直近の試合の撃破数。
-			inline int GetMatchKillCount() const { return iMatchKillCount_; }
+			/**
+			 * @brief 直近の試合の撃破数を取得する。
+			 * @return 撃破数。
+			 */
+			inline int GetMatchKillCount() const
+			{
+				/* 記録した撃破数を返す。*/
+				return iMatchKillCount_;
+			}
 
-			//! 直近の試合にかかった時間(秒)。
-			inline float GetMatchClearTime() const { return fMatchClearTime_; }
+			/**
+			 * @brief 直近の試合にかかった時間を取得する。
+			 * @return かかった時間(秒)。
+			 */
+			inline float GetMatchClearTime() const
+			{
+				/* 記録した時間を返す。*/
+				return fMatchClearTime_;
+			}
 
+			/**
+			 * @brief 直近の試合結果を取得する。
+			 * @return 勝利していたら true。
+			 */
 			inline bool IsMatchWon() const
 			{
 				/* 保持した勝敗を返す。*/

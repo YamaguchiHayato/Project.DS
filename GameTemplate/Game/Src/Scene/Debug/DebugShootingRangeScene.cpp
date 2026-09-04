@@ -139,11 +139,12 @@ namespace nsApp
 			/* 次フレーム判定用に今の状態を残す。*/
 			bWasPressEsc_ = bPressEsc;
 
-			/* 一人称と三人称を切り替える。*/
-			UpdateViewModeSwitch();
-
 			/* カメラをプレイヤーへ追従させる。*/
 			UpdateCamera();
+
+			/* デバッグ用の処理はまとめてここで回す。*/
+			UpdateViewModeSwitch();
+			UpdateDebugHint();
 		}
 
 
@@ -168,6 +169,14 @@ namespace nsApp
 
 			/* 次フレーム判定用に今の状態を残す。*/
 			bWasPressViewKey_ = bPressViewKey;
+		}
+
+
+		void DebugShootingRangeScene::UpdateDebugHint()
+		{
+			/* プレイヤーが無ければ出す値が無い。*/
+			if (pPlayer_ == nullptr)
+				return;
 
 			/*
 			 * いまの視点と、体モデルの実測サイズを画面に出す。

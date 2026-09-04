@@ -19,7 +19,12 @@ namespace nsApp
 		class ParameterFile
 		{
 		public:
-			/* コンストラクタとデストラクタ。*/
+			/*
+			 * コンストラクタとデストラクタ。
+			 * ※中身(nlohmann::json)をヘッダへ出さないため Impl を前方宣言だけにしている。
+			 *   unique_ptr は破棄時に完全な型を必要とするので、この2つだけは Impl を定義した .cpp 側に置く。
+			 *   ヘッダで = default にすると不完全型でコンパイルが通らない。
+			 */
 			ParameterFile();
 			virtual ~ParameterFile();
 

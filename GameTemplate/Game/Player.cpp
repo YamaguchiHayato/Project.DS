@@ -610,7 +610,7 @@ namespace nsApp
 
 				/* 敵1体ぶんの部位別判定。足元の座標を基準に頭・胴・脚を並べて判定する。*/
 				nsCombat::HitResult stResult;
-				if (!stHitBoxSet.RayTest(vRayStart, vRayDirection, fNearest, pEnemy->GetPosition(), stResult))
+				if (!stHitBoxSet.FindHitPart(vRayStart, vRayDirection, fNearest, pEnemy->GetPosition(), stResult))
 					continue;
 
 				fNearest = stResult.fDistance_;

@@ -94,15 +94,18 @@ namespace nsApp
 
 		bool WeaponInventory::AddReserveAmmoToAll(int iAmount)
 		{
+			/* 1挺でも補給できたかを覚えておく。*/
 			bool bAdded = false;
 
 			/* 所持している武器を順に見て、余裕があるものへ補給する。*/
 			for (Weapon& weapon : vecWeapons_)
 			{
+				/* 満タンの武器と、予備弾が無限のサブ武器は0が返るので数に入れない。*/
 				if (weapon.AddReserveAmmo(iAmount) > 0)
 					bAdded = true;
 			}
 
+			/* どれにも入らなければ、物資はその場に残してもらう。*/
 			return bAdded;
 		}
 

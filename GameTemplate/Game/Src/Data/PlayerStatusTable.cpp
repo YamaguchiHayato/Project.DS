@@ -2,19 +2,125 @@
 #include "Src/Data/PlayerStatusTable.h"
 #include "Src/Data/ParameterFile.h"
 
+namespace
+{
+	const char* sPlayerStatusFilePath_ = "Assets/data/player.json";	//! プレイヤーステータス表のファイルパス。
+	const char* sViewShakeNodeName_ = "viewShake";					//! 揺れの調整値が入っているノード名。
+	const char* sReloadNodeName_ = "reload";						//! リロード演出の調整値が入っているノード名。
+
+	nsApp::nsData::PlayerStatus stPlayerStatus_;	//! 読み込んだプレイヤーのパラメータ。
+	bool bIsLoaded_ = false;						//! JSONの読み込みを済ませたか。
+
+	/**
+	 * @struct ReadEntry
+	 * @brief  JSONのキーと、その値を入れるメンバの対応。
+	 *         項目ごとに1行ずつ読み込む代わりに、この表を並べてまとめて読む。
+	 *         項目を増やすときは表に1行足すだけでよい。
+	 * @tparam TOwner 値を持つ構造体。
+	 * @tparam TValue 値の型。
+	 */
+	template<class TOwner, class TValue>
+	struct ReadEntry
+	{
+		const char* pKey_;					//! JSONのキー。
+		TValue TOwner::* pMember_;			//! 値を入れるメンバ。
+	};
+
+	/* プレイヤーの小数の項目。*/
+	const ReadEntry<nsApp::nsData::PlayerStatus, float> PLAYER_FLOAT_TABLE[] =
+	{
+		{ "moveSpeed",			&nsApp::nsData::PlayerStatus::fMoveSpeed_ },
+		{ "sprintRate",			&nsApp::nsData::PlayerStatus::fSprintRate_ },
+		{ "eyeHeight",			&nsApp::nsData::PlayerStatus::fEyeHeight_ },
+		{ "weaponRange",		&nsApp::nsData::PlayerStatus::fWeaponRange_ },
+		{ "bodyModelScale",		&nsApp::nsData::PlayerStatus::fBodyModelScale_ },
+		{ "bleedOutTime",		&nsApp::nsData::PlayerStatus::fBleedOutTime_ },
+		{ "shoveRange",			&nsApp::nsData::PlayerStatus::fShoveRange_ },
+		{ "shovePush",			&nsApp::nsData::PlayerStatus::fShovePush_ },
+		{ "shoveFrontDot",		&nsApp::nsData::PlayerStatus::fShoveFrontDot_ },
+		{ "shoveCooldownTime",	&nsApp::nsData::PlayerStatus::fShoveCooldownTime_ },
+	};
+
+	/* プレイヤーの整数の項目。*/
+	const ReadEntry<nsApp::nsData::PlayerStatus, int> PLAYER_INT_TABLE[] =
+	{
+		{ "maxHP",			&nsApp::nsData::PlayerStatus::iMaxHP_ },
+		{ "reviveHP",		&nsApp::nsData::PlayerStatus::iReviveHP_ },
+		{ "medkitCount",	&nsApp::nsData::PlayerStatus::iMedkitCount_ },
+		{ "grenadeCount",	&nsApp::nsData::PlayerStatus::iGrenadeCount_ },
+	};
+
+	/* 歩きと視点移動の揺れの項目。*/
+	const ReadEntry<nsApp::nsData::ViewShakeStatus, float> VIEW_SHAKE_TABLE[] =
+	{
+		{ "swayGain",				&nsApp::nsData::ViewShakeStatus::fSwayGain_ },
+		{ "swayMaxOffset",			&nsApp::nsData::ViewShakeStatus::fSwayMaxOffset_ },
+		{ "swayRecoverRate",		&nsApp::nsData::ViewShakeStatus::fSwayRecoverRate_ },
+		{ "swayRollRate",			&nsApp::nsData::ViewShakeStatus::fSwayRollRate_ },
+		{ "bobWalkSpeed",			&nsApp::nsData::ViewShakeStatus::fBobWalkSpeed_ },
+		{ "bobWalkAmp",				&nsApp::nsData::ViewShakeStatus::fBobWalkAmp_ },
+		{ "bobSprintSpeed",			&nsApp::nsData::ViewShakeStatus::fBobSprintSpeed_ },
+		{ "bobSprintAmp",			&nsApp::nsData::ViewShakeStatus::fBobSprintAmp_ },
+		{ "bobPhaseLag",			&nsApp::nsData::ViewShakeStatus::fBobPhaseLag_ },
+		{ "bobWeaponUpRate",		&nsApp::nsData::ViewShakeStatus::fBobWeaponUpRate_ },
+		{ "bobWeightRate",			&nsApp::nsData::ViewShakeStatus::fBobWeightRate_ },
+		{ "viewBobHeightWalk",		&nsApp::nsData::ViewShakeStatus::fViewBobHeightWalk_ },
+		{ "viewBobHeightSprint",	&nsApp::nsData::ViewShakeStatus::fViewBobHeightSprint_ },
+		{ "viewBobRollWalk",		&nsApp::nsData::ViewShakeStatus::fViewBobRollWalk_ },
+		{ "viewBobRollSprint",		&nsApp::nsData::ViewShakeStatus::fViewBobRollSprint_ },
+		{ "strafeRollAngle",		&nsApp::nsData::ViewShakeStatus::fStrafeRollAngle_ },
+		{ "strafeFollowRate",		&nsApp::nsData::ViewShakeStatus::fStrafeFollowRate_ },
+		{ "adsSuppressRate",		&nsApp::nsData::ViewShakeStatus::fAdsSuppressRate_ },
+	};
+
+	/* リロード演出の項目。*/
+	const ReadEntry<nsApp::nsData::ReloadMotionStatus, float> RELOAD_MOTION_TABLE[] =
+	{
+		{ "lowerDown",		&nsApp::nsData::ReloadMotionStatus::fLowerDown_ },
+		{ "lowerAngle",		&nsApp::nsData::ReloadMotionStatus::fLowerAngle_ },
+		{ "pullBack",		&nsApp::nsData::ReloadMotionStatus::fPullBack_ },
+		{ "pullRight",		&nsApp::nsData::ReloadMotionStatus::fPullRight_ },
+		{ "rollAngle",		&nsApp::nsData::ReloadMotionStatus::fRollAngle_ },
+		{ "insertUp",		&nsApp::nsData::ReloadMotionStatus::fInsertUp_ },
+		{ "insertAngle",	&nsApp::nsData::ReloadMotionStatus::fInsertAngle_ },
+		{ "settleUp",		&nsApp::nsData::ReloadMotionStatus::fSettleUp_ },
+	};
+
+	/**
+	 * @brief 表に並べた小数の項目をまとめて読み込む。
+	 *        項目が無ければ既定値をそのまま渡すので、書かれた項目だけが差し替わる。
+	 * @param stFile   読み込み位置を合わせたJSONファイル。
+	 * @param stOwner  値を入れる構造体。
+	 * @param pTable   キーとメンバの対応表。
+	 * @param iCount   対応表の行数。
+	 */
+	template<class TOwner>
+	void ReadFloatTable(const nsApp::nsData::ParameterFile& stFile, TOwner& stOwner, const ReadEntry<TOwner, float>* pTable, int iCount)
+	{
+		for (int i = 0; i < iCount; i++)
+			stOwner.*(pTable[i].pMember_) = stFile.GetFloat(pTable[i].pKey_, stOwner.*(pTable[i].pMember_));
+	}
+
+	/**
+	 * @brief 表に並べた整数の項目をまとめて読み込む。
+	 * @param stFile  読み込み位置を合わせたJSONファイル。
+	 * @param stOwner 値を入れる構造体。
+	 * @param pTable  キーとメンバの対応表。
+	 * @param iCount  対応表の行数。
+	 */
+	template<class TOwner>
+	void ReadIntTable(const nsApp::nsData::ParameterFile& stFile, TOwner& stOwner, const ReadEntry<TOwner, int>* pTable, int iCount)
+	{
+		for (int i = 0; i < iCount; i++)
+			stOwner.*(pTable[i].pMember_) = stFile.GetInt(pTable[i].pKey_, stOwner.*(pTable[i].pMember_));
+	}
+}
+
+
 namespace nsApp
 {
 	namespace nsData
 	{
-		namespace
-		{
-			const char* sPlayerStatusFilePath_ = "Assets/data/player.json";	//! プレイヤーステータス表のファイルパス。
-
-			PlayerStatus stPlayerStatus_;	//! 読み込んだプレイヤーのパラメータ。
-			bool bIsLoaded_ = false;		//! JSONの読み込みを済ませたか。
-		}
-
-
 		void PlayerStatusTable::Load()
 		{
 			/* まず既定値へ戻す。JSONが無くても、この値でそのまま遊べる。*/
@@ -29,63 +135,24 @@ namespace nsApp
 				return;
 			}
 
-			/* 項目が無ければ既定値をそのまま渡すので、書かれた項目だけが差し替わる。*/
-			stPlayerStatus_.iMaxHP_ = stFile.GetInt("maxHP", stPlayerStatus_.iMaxHP_);
-			stPlayerStatus_.fMoveSpeed_ = stFile.GetFloat("moveSpeed", stPlayerStatus_.fMoveSpeed_);
-			stPlayerStatus_.fSprintRate_ = stFile.GetFloat("sprintRate", stPlayerStatus_.fSprintRate_);
-			stPlayerStatus_.fEyeHeight_ = stFile.GetFloat("eyeHeight", stPlayerStatus_.fEyeHeight_);
-			stPlayerStatus_.fWeaponRange_ = stFile.GetFloat("weaponRange", stPlayerStatus_.fWeaponRange_);
-			stPlayerStatus_.fBodyModelScale_ = stFile.GetFloat("bodyModelScale", stPlayerStatus_.fBodyModelScale_);
+			/* 基本のステータスを表に従って読み込む。*/
+			ReadFloatTable(stFile, stPlayerStatus_, PLAYER_FLOAT_TABLE, _countof(PLAYER_FLOAT_TABLE));
+			ReadIntTable(stFile, stPlayerStatus_, PLAYER_INT_TABLE, _countof(PLAYER_INT_TABLE));
+
+			/* 文字列はこれ1つなので、表にはせず直接読む。*/
 			stPlayerStatus_.sHandBoneName_ = stFile.GetString("handBoneName", stPlayerStatus_.sHandBoneName_.c_str());
 
-			stPlayerStatus_.fBleedOutTime_ = stFile.GetFloat("bleedOutTime", stPlayerStatus_.fBleedOutTime_);
-			stPlayerStatus_.iReviveHP_ = stFile.GetInt("reviveHP", stPlayerStatus_.iReviveHP_);
-
-			stPlayerStatus_.fShoveRange_ = stFile.GetFloat("shoveRange", stPlayerStatus_.fShoveRange_);
-			stPlayerStatus_.fShovePush_ = stFile.GetFloat("shovePush", stPlayerStatus_.fShovePush_);
-			stPlayerStatus_.fShoveFrontDot_ = stFile.GetFloat("shoveFrontDot", stPlayerStatus_.fShoveFrontDot_);
-			stPlayerStatus_.fShoveCooldownTime_ = stFile.GetFloat("shoveCooldownTime", stPlayerStatus_.fShoveCooldownTime_);
-
-			stPlayerStatus_.iMedkitCount_ = stFile.GetInt("medkitCount", stPlayerStatus_.iMedkitCount_);
-			stPlayerStatus_.iGrenadeCount_ = stFile.GetInt("grenadeCount", stPlayerStatus_.iGrenadeCount_);
-
 			/* 歩きと視点移動の揺れ。*/
-			if (stFile.Enter("viewShake"))
+			if (stFile.Enter(sViewShakeNodeName_))
 			{
-				stPlayerStatus_.stViewShake_.fSwayGain_ = stFile.GetFloat("swayGain", stPlayerStatus_.stViewShake_.fSwayGain_);
-				stPlayerStatus_.stViewShake_.fSwayMaxOffset_ = stFile.GetFloat("swayMaxOffset", stPlayerStatus_.stViewShake_.fSwayMaxOffset_);
-				stPlayerStatus_.stViewShake_.fSwayRecoverRate_ = stFile.GetFloat("swayRecoverRate", stPlayerStatus_.stViewShake_.fSwayRecoverRate_);
-				stPlayerStatus_.stViewShake_.fSwayRollRate_ = stFile.GetFloat("swayRollRate", stPlayerStatus_.stViewShake_.fSwayRollRate_);
-				stPlayerStatus_.stViewShake_.fBobWalkSpeed_ = stFile.GetFloat("bobWalkSpeed", stPlayerStatus_.stViewShake_.fBobWalkSpeed_);
-				stPlayerStatus_.stViewShake_.fBobWalkAmp_ = stFile.GetFloat("bobWalkAmp", stPlayerStatus_.stViewShake_.fBobWalkAmp_);
-				stPlayerStatus_.stViewShake_.fBobSprintSpeed_ = stFile.GetFloat("bobSprintSpeed", stPlayerStatus_.stViewShake_.fBobSprintSpeed_);
-				stPlayerStatus_.stViewShake_.fBobSprintAmp_ = stFile.GetFloat("bobSprintAmp", stPlayerStatus_.stViewShake_.fBobSprintAmp_);
-				stPlayerStatus_.stViewShake_.fBobPhaseLag_ = stFile.GetFloat("bobPhaseLag", stPlayerStatus_.stViewShake_.fBobPhaseLag_);
-				stPlayerStatus_.stViewShake_.fBobWeaponUpRate_ = stFile.GetFloat("bobWeaponUpRate", stPlayerStatus_.stViewShake_.fBobWeaponUpRate_);
-				stPlayerStatus_.stViewShake_.fBobWeightRate_ = stFile.GetFloat("bobWeightRate", stPlayerStatus_.stViewShake_.fBobWeightRate_);
-				stPlayerStatus_.stViewShake_.fViewBobHeightWalk_ = stFile.GetFloat("viewBobHeightWalk", stPlayerStatus_.stViewShake_.fViewBobHeightWalk_);
-				stPlayerStatus_.stViewShake_.fViewBobHeightSprint_ = stFile.GetFloat("viewBobHeightSprint", stPlayerStatus_.stViewShake_.fViewBobHeightSprint_);
-				stPlayerStatus_.stViewShake_.fViewBobRollWalk_ = stFile.GetFloat("viewBobRollWalk", stPlayerStatus_.stViewShake_.fViewBobRollWalk_);
-				stPlayerStatus_.stViewShake_.fViewBobRollSprint_ = stFile.GetFloat("viewBobRollSprint", stPlayerStatus_.stViewShake_.fViewBobRollSprint_);
-				stPlayerStatus_.stViewShake_.fStrafeRollAngle_ = stFile.GetFloat("strafeRollAngle", stPlayerStatus_.stViewShake_.fStrafeRollAngle_);
-				stPlayerStatus_.stViewShake_.fStrafeFollowRate_ = stFile.GetFloat("strafeFollowRate", stPlayerStatus_.stViewShake_.fStrafeFollowRate_);
-				stPlayerStatus_.stViewShake_.fAdsSuppressRate_ = stFile.GetFloat("adsSuppressRate", stPlayerStatus_.stViewShake_.fAdsSuppressRate_);
-
+				ReadFloatTable(stFile, stPlayerStatus_.stViewShake_, VIEW_SHAKE_TABLE, _countof(VIEW_SHAKE_TABLE));
 				stFile.Leave();
 			}
 
 			/* リロード演出の振れ幅。*/
-			if (stFile.Enter("reload"))
+			if (stFile.Enter(sReloadNodeName_))
 			{
-				stPlayerStatus_.stReloadMotion_.fLowerDown_ = stFile.GetFloat("lowerDown", stPlayerStatus_.stReloadMotion_.fLowerDown_);
-				stPlayerStatus_.stReloadMotion_.fLowerAngle_ = stFile.GetFloat("lowerAngle", stPlayerStatus_.stReloadMotion_.fLowerAngle_);
-				stPlayerStatus_.stReloadMotion_.fPullBack_ = stFile.GetFloat("pullBack", stPlayerStatus_.stReloadMotion_.fPullBack_);
-				stPlayerStatus_.stReloadMotion_.fPullRight_ = stFile.GetFloat("pullRight", stPlayerStatus_.stReloadMotion_.fPullRight_);
-				stPlayerStatus_.stReloadMotion_.fRollAngle_ = stFile.GetFloat("rollAngle", stPlayerStatus_.stReloadMotion_.fRollAngle_);
-				stPlayerStatus_.stReloadMotion_.fInsertUp_ = stFile.GetFloat("insertUp", stPlayerStatus_.stReloadMotion_.fInsertUp_);
-				stPlayerStatus_.stReloadMotion_.fInsertAngle_ = stFile.GetFloat("insertAngle", stPlayerStatus_.stReloadMotion_.fInsertAngle_);
-				stPlayerStatus_.stReloadMotion_.fSettleUp_ = stFile.GetFloat("settleUp", stPlayerStatus_.stReloadMotion_.fSettleUp_);
-
+				ReadFloatTable(stFile, stPlayerStatus_.stReloadMotion_, RELOAD_MOTION_TABLE, _countof(RELOAD_MOTION_TABLE));
 				stFile.Leave();
 			}
 		}

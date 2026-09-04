@@ -45,6 +45,22 @@ namespace
 	const char* sDamageOverlayPath_ = "Assets/sprite/white.dds";	//! 被弾時に重ねる幕(白い画像を赤く染めて使う)。
 	const float fDamageFlashTime_ = 0.35f;					//! 被弾したときに赤い幕を出す時間(秒)。
 	const float fDamageFlashAlpha_ = 0.45f;					//! 被弾した瞬間の赤い幕の濃さ。
+
+	/* 表示に使う色。RGBA。*/
+	const Vector4 vWhiteColor_ = { 1.0f, 1.0f, 1.0f, 1.0f };		//! 白(クロスヘア・弾数・通常の命中)。
+	const Vector4 vHpColor_ = { 0.6f, 1.0f, 0.6f, 1.0f };			//! HP表示の薄緑。
+	const Vector4 vObjectiveColor_ = { 1.0f, 0.9f, 0.4f, 1.0f };	//! 目標表示の黄。
+	const Vector4 vItemColor_ = { 0.6f, 0.9f, 1.0f, 1.0f };			//! アイテム表示の水色。
+	const Vector4 vStatusColor_ = { 1.0f, 0.3f, 0.3f, 1.0f };		//! ダウン表示の赤。
+	const Vector4 vPauseColor_ = { 1.0f, 0.95f, 0.4f, 1.0f };		//! ポーズ表示の黄。
+	const Vector4 vCriticalMarkerColor_ = { 1.0f, 0.8f, 0.1f, 1.0f };	//! 弱点に当てた印の濃い黄。
+	const Vector4 vCriticalDamageColor_ = { 1.0f, 0.85f, 0.2f, 1.0f };	//! 弱点のダメージ数値の色。
+
+	const float fCrosshairScale_ = 0.7f;				//! クロスヘアの線の大きさ。
+	const float fOverlayWidth_ = 1920.0f;				//! 被弾の幕の幅(画面いっぱいに広げる)。
+	const float fOverlayHeight_ = 1080.0f;				//! 被弾の幕の高さ。
+	const float fPulseCenter_ = 0.5f;					//! sin波(-1〜1)を0〜1へ均すための中心と振れ幅。
+	const Vector3 vOverlayColor_ = { 1.0f, 0.0f, 0.0f };	//! 被弾の幕の色(赤)。濃さは別に掛ける。
 	const float fLowHpRate_ = 0.35f;						//! この割合を下回ると画面が脈打ち始める。
 	const float fLowHpPulseSpeed_ = 4.0f;					//! 脈打つ速さ。
 	const float fLowHpMaxAlpha_ = 0.30f;					//! 脈打つときの赤の濃さの上限。
@@ -66,50 +82,50 @@ namespace nsApp
 			const wchar_t* aCrosshairText[4] = { L"|", L"|", L"-", L"-" };
 			for (int i = 0; i < 4; i++)
 			{
-				aCrosshair_[i].SetScale(0.7f);
-				aCrosshair_[i].SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+				aCrosshair_[i].SetScale(fCrosshairScale_);
+				aCrosshair_[i].SetColor(vWhiteColor_);
 				aCrosshair_[i].SetText(aCrosshairText[i]);
 			}
 
 			/* HP(左下・緑寄り)。*/
 			stHpText_.SetPosition(vHpPos_);
 			stHpText_.SetScale(fHudFontScale_);
-			stHpText_.SetColor(0.6f, 1.0f, 0.6f, 1.0f);
+			stHpText_.SetColor(vHpColor_);
 			stHpText_.SetText(wcHp_);
 
 			/* 弾数(右下)。*/
 			stAmmoText_.SetPosition(vAmmoPos_);
 			stAmmoText_.SetScale(fHudFontScale_);
-			stAmmoText_.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+			stAmmoText_.SetColor(vWhiteColor_);
 			stAmmoText_.SetText(wcAmmo_);
 
 			/* 目標(上・固定文言)。*/
 			stObjective_.SetPosition(vObjectivePos_);
 			stObjective_.SetScale(fHudFontScale_);
-			stObjective_.SetColor(1.0f, 0.9f, 0.4f, 1.0f);
+			stObjective_.SetColor(vObjectiveColor_);
 			stObjective_.SetText(L"OBJECTIVE: REACH THE SAFE ROOM");
 
 			/* アイテム所持数(下・中央)。*/
 			stItemText_.SetPosition(vItemPos_);
 			stItemText_.SetScale(fHudFontScale_);
-			stItemText_.SetColor(0.6f, 0.9f, 1.0f, 1.0f);
+			stItemText_.SetColor(vItemColor_);
 			stItemText_.SetText(wcItem_);
 
 			/* 状態(ダウン等。通常時は空・赤)。*/
 			stStatusText_.SetPosition(vStatusPos_);
 			stStatusText_.SetScale(fStatusFontScale_);
-			stStatusText_.SetColor(1.0f, 0.3f, 0.3f, 1.0f);
+			stStatusText_.SetColor(vStatusColor_);
 			stStatusText_.SetText(wcStatus_);
 
 			/* ポーズ表示(中央・通常時は空)。*/
 			stPauseText_.SetPosition(vPausePos_);
 			stPauseText_.SetScale(fPauseFontScale_);
-			stPauseText_.SetColor(1.0f, 0.95f, 0.4f, 1.0f);
+			stPauseText_.SetColor(vPauseColor_);
 			stPauseText_.SetText(L"");
 
 			/* 被弾したときに画面へ重ねる赤い幕。最初は透明にしておく。*/
-			stDamageOverlay_.Init(sDamageOverlayPath_, 1920.0f, 1080.0f);
-			stDamageOverlay_.SetMulColor({ 1.0f, 0.0f, 0.0f, 0.0f });
+			stDamageOverlay_.Init(sDamageOverlayPath_, fOverlayWidth_, fOverlayHeight_);
+			stDamageOverlay_.SetMulColor({ vOverlayColor_.x, vOverlayColor_.y, vOverlayColor_.z, 0.0f });
 			stDamageOverlay_.Update();
 
 			/* ヒットマーカー(通常時は空)。*/
@@ -229,14 +245,14 @@ namespace nsApp
 				{
 					/* HPが低いほど濃く、sin波で明滅させる。*/
 					const float fDanger = 1.0f - (fHpRate / fLowHpRate_);
-					const float fPulse = (sinf(fLowHpPulse_) * 0.5f + 0.5f);
+					const float fPulse = (sinf(fLowHpPulse_) * fPulseCenter_ + fPulseCenter_);
 					const float fLowHpAlpha = fLowHpMaxAlpha_ * fDanger * fPulse;
 					if (fLowHpAlpha > fOverlayAlpha)
 						fOverlayAlpha = fLowHpAlpha;
 				}
 			}
 
-			stDamageOverlay_.SetMulColor({ 1.0f, 0.0f, 0.0f, fOverlayAlpha });
+			stDamageOverlay_.SetMulColor({ vOverlayColor_.x, vOverlayColor_.y, vOverlayColor_.z, fOverlayAlpha });
 			stDamageOverlay_.Update();
 
 			/* 命中の手応えを時間で消す。*/
@@ -258,14 +274,14 @@ namespace nsApp
 					stHitMarker_.SetText(sCriticalMarkerText_);
 					stHitMarker_.SetPosition(vCriticalMarkerPos_);
 					stHitMarker_.SetScale(fCriticalMarkerScale_);
-					stHitMarker_.SetColor(1.0f, 0.8f, 0.1f, 1.0f);
+					stHitMarker_.SetColor(vCriticalMarkerColor_);
 				}
 				else
 				{
 					stHitMarker_.SetText(sHitMarkerText_);
 					stHitMarker_.SetPosition(vHitMarkerPos_);
 					stHitMarker_.SetScale(fHitMarkerScale_);
-					stHitMarker_.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+					stHitMarker_.SetColor(vWhiteColor_);
 				}
 			}
 			else
@@ -315,9 +331,9 @@ namespace nsApp
 
 			/* 弱点なら数値の色も変える。*/
 			if (stEvent.bIsCritical_)
-				stDamageText_.SetColor(1.0f, 0.85f, 0.2f, 1.0f);
+				stDamageText_.SetColor(vCriticalDamageColor_);
 			else
-				stDamageText_.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+				stDamageText_.SetColor(vWhiteColor_);
 		}
 
 

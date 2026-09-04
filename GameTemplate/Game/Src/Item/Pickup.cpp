@@ -42,10 +42,12 @@ namespace nsApp
 			stModel_.Init(sPickupModelPath_, nullptr, 0, enModelUpAxisY);
 			stModel_.SetScale(Vector3(fScale, fScale, fScale));
 
+			/* 地面に埋まって見えなくならないよう、少し浮かせた位置へ置く。*/
 			Vector3 vViewPos = vPosition_;
 			vViewPos.y += kPickupHeight;
 			stModel_.SetPosition(vViewPos);
 			stModel_.Update();
+
 			return true;
 		}
 
@@ -59,6 +61,7 @@ namespace nsApp
 			/* 落ちているのが分かるよう、その場で回し続ける。*/
 			fSpinAngle_ += kSpinSpeed * g_gameTime->GetFrameDeltaTime();
 
+			/* 進めた角度をモデルへ反映する。*/
 			Quaternion qRotation;
 			qRotation.SetRotationY(fSpinAngle_);
 			stModel_.SetRotation(qRotation);
@@ -68,6 +71,7 @@ namespace nsApp
 
 		void Pickup::Render(RenderContext& rc)
 		{
+			/* 落ちている物資を描画する。*/
 			stModel_.Draw(rc);
 		}
 
@@ -77,6 +81,8 @@ namespace nsApp
 			/* 高さは見ずに、水平の距離だけで判定する。*/
 			Vector3 vDiff = vPosition_ - vPlayerPosition;
 			vDiff.y = 0.0f;
+
+			/* 拾える距離の内側にいるかを返す。*/
 			return vDiff.Length() <= kPickupRange;
 		}
 	}
