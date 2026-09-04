@@ -26,10 +26,41 @@ namespace
 	const float fHitMarkerScale_ = 1.4f;					//! ヒットマーカーの大きさ。
 	const float fDamageScale_ = 1.0f;						//! ダメージ数値の大きさ。
 	const float fHitMarkerLifeTime_ = 0.12f;				//! ヒットマーカーの表示時間(秒)。
+
+	/*
+	 * 弱点(頭)に当てたときは、普通の命中とはっきり差をつける。
+	 * 数値は出さない方針なので、印の大きさ・形・色・残る長さで伝える。
+	 */
+	const wchar_t* sHitMarkerText_ = L"X";					//! 命中の印。
+	/*
+	 * 弱点に当てた印。普通の命中と形で区別する。
+	 * ※フォントに無い文字を渡すと SpriteFont が例外を投げて落ちる。
+	 *   新しい記号を使うときは、すでに画面に出ている文字に寄せること。
+	 */
+	const wchar_t* sCriticalMarkerText_ = L"[X]";				//! 弱点に当てた印。
+	const Vector3 vCriticalMarkerPos_ = { -46.0f, 22.0f, 0.0f };	//! 弱点の印の位置(大きくなるぶん左へずらして中央に合わせる)。
+	const float fCriticalMarkerScale_ = 2.1f;				//! 弱点の印の大きさ。
+	const float fCriticalMarkerLifeTime_ = 0.35f;			//! 弱点の印の表示時間(秒)。普通の命中より長く残す。
 	const float fDamageLifeTime_ = 0.6f;					//! ダメージ数値の表示時間(秒)。
 	const char* sDamageOverlayPath_ = "Assets/sprite/white.dds";	//! 被弾時に重ねる幕(白い画像を赤く染めて使う)。
 	const float fDamageFlashTime_ = 0.35f;					//! 被弾したときに赤い幕を出す時間(秒)。
 	const float fDamageFlashAlpha_ = 0.45f;					//! 被弾した瞬間の赤い幕の濃さ。
+
+	/* 表示に使う色。RGBA。*/
+	const Vector4 vWhiteColor_ = { 1.0f, 1.0f, 1.0f, 1.0f };		//! 白(クロスヘア・弾数・通常の命中)。
+	const Vector4 vHpColor_ = { 0.6f, 1.0f, 0.6f, 1.0f };			//! HP表示の薄緑。
+	const Vector4 vObjectiveColor_ = { 1.0f, 0.9f, 0.4f, 1.0f };	//! 目標表示の黄。
+	const Vector4 vItemColor_ = { 0.6f, 0.9f, 1.0f, 1.0f };			//! アイテム表示の水色。
+	const Vector4 vStatusColor_ = { 1.0f, 0.3f, 0.3f, 1.0f };		//! ダウン表示の赤。
+	const Vector4 vPauseColor_ = { 1.0f, 0.95f, 0.4f, 1.0f };		//! ポーズ表示の黄。
+	const Vector4 vCriticalMarkerColor_ = { 1.0f, 0.8f, 0.1f, 1.0f };	//! 弱点に当てた印の濃い黄。
+	const Vector4 vCriticalDamageColor_ = { 1.0f, 0.85f, 0.2f, 1.0f };	//! 弱点のダメージ数値の色。
+
+	const float fCrosshairScale_ = 0.7f;				//! クロスヘアの線の大きさ。
+	const float fOverlayWidth_ = 1920.0f;				//! 被弾の幕の幅(画面いっぱいに広げる)。
+	const float fOverlayHeight_ = 1080.0f;				//! 被弾の幕の高さ。
+	const float fPulseCenter_ = 0.5f;					//! sin波(-1〜1)を0〜1へ均すための中心と振れ幅。
+	const Vector3 vOverlayColor_ = { 1.0f, 0.0f, 0.0f };	//! 被弾の幕の色(赤)。濃さは別に掛ける。
 	const float fLowHpRate_ = 0.35f;						//! この割合を下回ると画面が脈打ち始める。
 	const float fLowHpPulseSpeed_ = 4.0f;					//! 脈打つ速さ。
 	const float fLowHpMaxAlpha_ = 0.30f;					//! 脈打つときの赤の濃さの上限。
@@ -51,50 +82,50 @@ namespace nsApp
 			const wchar_t* aCrosshairText[4] = { L"|", L"|", L"-", L"-" };
 			for (int i = 0; i < 4; i++)
 			{
-				aCrosshair_[i].SetScale(0.7f);
-				aCrosshair_[i].SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+				aCrosshair_[i].SetScale(fCrosshairScale_);
+				aCrosshair_[i].SetColor(vWhiteColor_);
 				aCrosshair_[i].SetText(aCrosshairText[i]);
 			}
 
 			/* HP(左下・緑寄り)。*/
 			stHpText_.SetPosition(vHpPos_);
 			stHpText_.SetScale(fHudFontScale_);
-			stHpText_.SetColor(0.6f, 1.0f, 0.6f, 1.0f);
+			stHpText_.SetColor(vHpColor_);
 			stHpText_.SetText(wcHp_);
 
 			/* 弾数(右下)。*/
 			stAmmoText_.SetPosition(vAmmoPos_);
 			stAmmoText_.SetScale(fHudFontScale_);
-			stAmmoText_.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+			stAmmoText_.SetColor(vWhiteColor_);
 			stAmmoText_.SetText(wcAmmo_);
 
 			/* 目標(上・固定文言)。*/
 			stObjective_.SetPosition(vObjectivePos_);
 			stObjective_.SetScale(fHudFontScale_);
-			stObjective_.SetColor(1.0f, 0.9f, 0.4f, 1.0f);
+			stObjective_.SetColor(vObjectiveColor_);
 			stObjective_.SetText(L"OBJECTIVE: REACH THE SAFE ROOM");
 
 			/* アイテム所持数(下・中央)。*/
 			stItemText_.SetPosition(vItemPos_);
 			stItemText_.SetScale(fHudFontScale_);
-			stItemText_.SetColor(0.6f, 0.9f, 1.0f, 1.0f);
+			stItemText_.SetColor(vItemColor_);
 			stItemText_.SetText(wcItem_);
 
 			/* 状態(ダウン等。通常時は空・赤)。*/
 			stStatusText_.SetPosition(vStatusPos_);
 			stStatusText_.SetScale(fStatusFontScale_);
-			stStatusText_.SetColor(1.0f, 0.3f, 0.3f, 1.0f);
+			stStatusText_.SetColor(vStatusColor_);
 			stStatusText_.SetText(wcStatus_);
 
 			/* ポーズ表示(中央・通常時は空)。*/
 			stPauseText_.SetPosition(vPausePos_);
 			stPauseText_.SetScale(fPauseFontScale_);
-			stPauseText_.SetColor(1.0f, 0.95f, 0.4f, 1.0f);
+			stPauseText_.SetColor(vPauseColor_);
 			stPauseText_.SetText(L"");
 
 			/* 被弾したときに画面へ重ねる赤い幕。最初は透明にしておく。*/
-			stDamageOverlay_.Init(sDamageOverlayPath_, 1920.0f, 1080.0f);
-			stDamageOverlay_.SetMulColor({ 1.0f, 0.0f, 0.0f, 0.0f });
+			stDamageOverlay_.Init(sDamageOverlayPath_, fOverlayWidth_, fOverlayHeight_);
+			stDamageOverlay_.SetMulColor({ vOverlayColor_.x, vOverlayColor_.y, vOverlayColor_.z, 0.0f });
 			stDamageOverlay_.Update();
 
 			/* ヒットマーカー(通常時は空)。*/
@@ -214,14 +245,14 @@ namespace nsApp
 				{
 					/* HPが低いほど濃く、sin波で明滅させる。*/
 					const float fDanger = 1.0f - (fHpRate / fLowHpRate_);
-					const float fPulse = (sinf(fLowHpPulse_) * 0.5f + 0.5f);
+					const float fPulse = (sinf(fLowHpPulse_) * fPulseCenter_ + fPulseCenter_);
 					const float fLowHpAlpha = fLowHpMaxAlpha_ * fDanger * fPulse;
 					if (fLowHpAlpha > fOverlayAlpha)
 						fOverlayAlpha = fLowHpAlpha;
 				}
 			}
 
-			stDamageOverlay_.SetMulColor({ 1.0f, 0.0f, 0.0f, fOverlayAlpha });
+			stDamageOverlay_.SetMulColor({ vOverlayColor_.x, vOverlayColor_.y, vOverlayColor_.z, fOverlayAlpha });
 			stDamageOverlay_.Update();
 
 			/* 命中の手応えを時間で消す。*/
@@ -231,14 +262,27 @@ namespace nsApp
 			if (fDamageTimer_ > 0.0f)
 				fDamageTimer_ -= fDeltaTime;
 
-			/* 表示中だけ印と数値を出す。弱点なら色を変える。*/
+			/*
+			 * 表示中だけ命中の印を出す。
+			 * 弱点(頭)は、形・大きさ・色・残る長さの4つを変えて普通の命中と区別する。
+			 * 色だけだと一瞬すぎて気づけないため。
+			 */
 			if (fHitMarkerTimer_ > 0.0f)
 			{
-				stHitMarker_.SetText(L"X");
 				if (bLastHitCritical_)
-					stHitMarker_.SetColor(1.0f, 0.85f, 0.2f, 1.0f);
+				{
+					stHitMarker_.SetText(sCriticalMarkerText_);
+					stHitMarker_.SetPosition(vCriticalMarkerPos_);
+					stHitMarker_.SetScale(fCriticalMarkerScale_);
+					stHitMarker_.SetColor(vCriticalMarkerColor_);
+				}
 				else
-					stHitMarker_.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+				{
+					stHitMarker_.SetText(sHitMarkerText_);
+					stHitMarker_.SetPosition(vHitMarkerPos_);
+					stHitMarker_.SetScale(fHitMarkerScale_);
+					stHitMarker_.SetColor(vWhiteColor_);
+				}
 			}
 			else
 			{
@@ -272,8 +316,10 @@ namespace nsApp
 				return;
 
 			/* 印を出し、弱点かどうかを覚えておく。*/
-			fHitMarkerTimer_ = fHitMarkerLifeTime_;
 			bLastHitCritical_ = stEvent.bIsCritical_;
+
+			/* 弱点は気づけるよう長めに残す。*/
+			fHitMarkerTimer_ = bLastHitCritical_ ? fCriticalMarkerLifeTime_ : fHitMarkerLifeTime_;
 
 			/* ダメージ量が乗っていれば数値も出す(表示しない方針のときは何もしない)。*/
 			if (!bShowDamageNumber_ || stEvent.iParam_ <= 0)
@@ -285,9 +331,9 @@ namespace nsApp
 
 			/* 弱点なら数値の色も変える。*/
 			if (stEvent.bIsCritical_)
-				stDamageText_.SetColor(1.0f, 0.85f, 0.2f, 1.0f);
+				stDamageText_.SetColor(vCriticalDamageColor_);
 			else
-				stDamageText_.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+				stDamageText_.SetColor(vWhiteColor_);
 		}
 
 

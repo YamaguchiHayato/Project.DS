@@ -33,6 +33,7 @@ namespace nsApp
 			GrenadeExploded,		//! グレネードが爆発した。
 			PlayerHealed,			//! プレイヤーが回復した。
 			PlayerDamaged,			//! プレイヤーが攻撃を受けた。
+			ItemPickedUp,			//! 落ちている物資を拾った。
 		};
 
 		/**

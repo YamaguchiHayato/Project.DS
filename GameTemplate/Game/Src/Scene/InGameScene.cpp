@@ -14,7 +14,38 @@
 namespace
 {
 	const float fDefaultViewAngle_ = 0.0f;	//! 通常時の画角(0のときは起動時の値を使う)。
-	const float fEyeHeight_ = 160.0f;								//! 目(カメラ)の高さ。Player側の kEyeHeight と合わせる。
+	const Vector3 vPlayerStartPos_ = Vector3::Zero;			//! プレイヤーの開始位置。
+	const int iViewModeKey_ = 'T';				//! 一人称/三人称を切り替えるキー(デバッグ用)。
+
+	/*
+	 * 三人称カメラの寄り引きは、モデルの実際の表示サイズに対する倍率で決める。
+	 * 固定の距離にすると、モデルを差し替えて大きさが変わったとき画面から外れてしまうため。
+	 */
+	const float fThirdPersonBackRate_ = 2.2f;		//! カメラを後ろへ引く距離(モデルの大きさに対する倍率)。
+	const float fThirdPersonUpRate_ = 0.5f;			//! カメラを持ち上げる高さ(同上)。
+	const float fThirdPersonLookRate_ = 0.55f;		//! 注視点の高さ(同上。胸のあたり)。
+	const float fThirdPersonMinSize_ = 50.0f;		//! モデルを測れなかったときに使う大きさ。
+
+	/**
+	 * @brief 視線を軸にして「上」を回し、傾けたカメラの上方向を作る。
+	 * @param vLook 視線方向(正規化済み)。
+	 * @param fRoll 傾ける角度(ラジアン)。
+	 * @return 傾けた上方向。
+	 */
+	Vector3 MakeCameraUp(const Vector3& vLook, float fRoll)
+	{
+		Vector3 vUp = Vector3::AxisY;
+
+		/* 傾きが無ければ真上のまま返す。*/
+		if (fRoll == 0.0f)
+			return vUp;
+
+		Quaternion qRoll;
+		qRoll.SetRotation(vLook, fRoll);
+		qRoll.Apply(vUp);
+
+		return vUp;
+	}
 	const char* sGroundModelPath_ = "Assets/modelData/ground.tkm";	//! 地面モデル。
 	const float fGroundScale_ = 200.0f;								//! 地面の拡大率。
 	const char* sGoalBeaconModelPath_ = "Assets/modelData/preset/VolumePointLight.tkm";	//! ゴール目印(発光球)。
@@ -28,6 +59,9 @@ namespace nsApp
 	{
 		InGameScene::~InGameScene()
 		{
+			/* カメラの傾きを戻す(g_camera3Dは他のシーンと共用なので傾いたままにしない)。*/
+			g_camera3D->SetUp(Vector3::AxisY);
+
 			/* エフェクトを片付け、リストを無効化する。*/
 			nsEffect::EffectList::SetActiveList(nullptr);
 			stEffectList_.Clear();
@@ -63,6 +97,10 @@ namespace nsApp
 			/* エフェクト再生係の購読を解除する。*/
 			if (pEventBus_ != nullptr)
 				pEventBus_->Unsubscribe(&stEffectListener_);
+
+			/* 戦績を数えるための購読も解除する。*/
+			if (pEventBus_ != nullptr)
+				pEventBus_->Unsubscribe(this);
 
 			/* ルールをバスから購読解除してから、ルール・バスを破棄する(解放後アクセス防止)。*/
 			if (pEventBus_ != nullptr && pGameRule_ != nullptr)
@@ -113,14 +151,20 @@ namespace nsApp
 			stEffectListener_.Initialize(&stEffectList_);
 			pEventBus_->Subscribe(&stEffectListener_);
 
+			/* 戦績を数えるため、シーン自身も通知を購読する。*/
+			pEventBus_->Subscribe(this);
+
 			/* 地面を読み込んで大きく敷く。*/
 			stGroundModel_.Init(sGroundModelPath_, nullptr, 0, enModelUpAxisY);
 			stGroundModel_.SetScale(Vector3(fGroundScale_, fGroundScale_, fGroundScale_));
 			stGroundModel_.SetPosition(Vector3(0.0f, 0.0f, 0.0f));
 			stGroundModel_.Update();
 
-			/* 地面の静的コライダを作る。これが無いとキャラクターが接地できない。*/
-			stGroundCollider_.CreateFromModel(stGroundModel_.GetModel(), stGroundModel_.GetModel().GetWorldMatrix());
+			/*
+			 * 地面の当たり判定は、床のあるステージが入ってから用意する。
+			 * 重力を使わない今は接地させる必要がなく、地面モデルから作った当たり判定が
+			 * キャラクターと重なって見えない壁になってしまうため、ここでは作らない。
+			 */
 
 			/* ゴール(セーフルーム)の目印を置く。ここへ到達で勝利。発光球を目線高さに浮かせて視認性を確保する。*/
 			stSafeRoomModel_.Init(sGoalBeaconModelPath_, nullptr, 0, enModelUpAxisY);
@@ -134,6 +178,9 @@ namespace nsApp
 
 			/* プレイヤーを生成する。*/
 			pPlayer_ = NewGO<nsActor::Player>(0, "player");
+
+			/* 地面に埋まった状態から始まらないよう、少し上に置く。*/
+			pPlayer_->SetPosition(vPlayerStartPos_);
 
 			/* 敵の湧き係(EnemyDirector)を生成する。時間・同時数上限に応じて雑魚敵を湧かせ続ける。*/
 			pEnemyDirector_ = NewGO<nsDirector::EnemyDirector>(0, "enemyDirector");
@@ -164,14 +211,30 @@ namespace nsApp
 				return;
 			}
 
+			/* 遊んでいる時間を数える(戦績に使う)。*/
+			fPlayTime_ += g_gameTime->GetFrameDeltaTime();
+
 			/* 再生中エフェクトの寿命を進める。*/
 			stEffectList_.Update(g_gameTime->GetFrameDeltaTime());
 
-			/* 一人称カメラをプレイヤーへ追従させる。*/
+			/* 一人称と三人称を切り替える(デバッグ用)。*/
+			UpdateViewModeSwitch();
+
+			/* カメラをプレイヤーへ追従させる。*/
 			UpdateCamera();
 
 			/* 勝敗判定(到達=勝ち/死亡=負け)。*/
 			UpdateResultJudge();
+		}
+
+
+		void InGameScene::OnGameEvent(const nsEvent::GameEvent& stEvent)
+		{
+			/* 敵を倒した通知だけ数える。*/
+			if (stEvent.enType_ != nsEvent::EnGameEvent::EnemyKilled)
+				return;
+
+			iKillCount_++;
 		}
 
 
@@ -196,24 +259,73 @@ namespace nsApp
 		}
 
 
+		void InGameScene::UpdateViewModeSwitch()
+		{
+			/* プレイヤーが無ければ切り替えられない。*/
+			if (pPlayer_ == nullptr)
+				return;
+
+			const bool bPressViewKey = (GetAsyncKeyState(iViewModeKey_) & 0x8000) != 0;
+
+			/* 押した瞬間だけ切り替える。*/
+			if (bPressViewKey && !bPrevViewKey_)
+			{
+				bIsThirdPersonView_ = !bIsThirdPersonView_;
+
+				/* 三人称にすると体が描かれ、銃が右手のボーンへ移る。*/
+				pPlayer_->SetViewMode(bIsThirdPersonView_
+					? nsActor::EnViewMode::ThirdPerson
+					: nsActor::EnViewMode::FirstPerson);
+			}
+
+			/* 次フレーム判定用に今の状態を残す。*/
+			bPrevViewKey_ = bPressViewKey;
+		}
+
+
 		void InGameScene::UpdateCamera()
 		{
 			/* プレイヤーが無ければ何もしない。*/
 			if (pPlayer_ == nullptr)
 				return;
 
-			/* プレイヤーの旋回角と位置から、目の位置と視線方向を決める(一人称)。*/
-			const Vector3& vPlayerPos = pPlayer_->GetPosition();
-
-			/* 目の位置(プレイヤー座標＋目線の高さ)。*/
-			Vector3 vEyePos = vPlayerPos;
-			vEyePos.y += fEyeHeight_;
+			/* 目の位置(歩きの上下動を含む)。射撃の起点と同じ値をプレイヤーから受け取る。*/
+			const Vector3 vEyePos = pPlayer_->GetEyePosition();
 
 			/* 視線方向(旋回角の水平前方)。*/
 			const Vector3 vLook = pPlayer_->GetLookDirection();
 
-			g_camera3D->SetPosition(vEyePos);
-			g_camera3D->SetTarget(vEyePos + vLook * 100.0f);
+			if (bIsThirdPersonView_)
+			{
+				/*
+				 * 他人から見た姿を確認するため、後ろへ引いて胸のあたりを見る。
+				 * 距離はモデルの実際の大きさから決めるので、モデルを差し替えても画面に収まる。
+				 */
+				float fBodySize = pPlayer_->GetBodyModelSize();
+				if (fBodySize <= 0.0f)
+					fBodySize = fThirdPersonMinSize_;
+
+				Vector3 vLookPos = pPlayer_->GetPosition();
+				vLookPos.y += fBodySize * fThirdPersonLookRate_;
+
+				/* 上下を向いてもカメラが地面へ潜らないよう、引く向きは水平だけにする。*/
+				Vector3 vBack = { vLook.x, 0.0f, vLook.z };
+				vBack.Normalize();
+
+				Vector3 vCameraPos = vLookPos - vBack * (fBodySize * fThirdPersonBackRate_);
+				vCameraPos.y += fBodySize * fThirdPersonUpRate_;
+
+				g_camera3D->SetPosition(vCameraPos);
+				g_camera3D->SetTarget(vLookPos);
+			}
+			else
+			{
+				g_camera3D->SetPosition(vEyePos);
+				g_camera3D->SetTarget(vEyePos + vLook * 100.0f);
+			}
+
+			/* 歩きと横移動に合わせてカメラをわずかに傾ける。*/
+			g_camera3D->SetUp(MakeCameraUp(vLook, pPlayer_->GetViewRoll()));
 
 			/* 覗き込むほど画角を狭めて、拡大されたように見せる。*/
 			const float fAdsRate = pPlayer_->GetAdsRate();
@@ -255,6 +367,7 @@ namespace nsApp
 			if (!bResultRequested_ && pGameRule_ != nullptr && pGameRule_->IsOver() && pGameFlow_ != nullptr)
 			{
 				pGameFlow_->SetMatchWon(pGameRule_->IsWin());
+				pGameFlow_->SetMatchRecord(iKillCount_, fPlayTime_);
 				pGameFlow_->ChangeScene(EnSceneID::Result);
 				bResultRequested_ = true;
 			}
