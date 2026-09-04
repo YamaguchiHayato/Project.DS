@@ -28,7 +28,11 @@ namespace
 
 		return vUp;
 	}
-	const char* sStageModelPath_ = "Assets/modelData/stage/DebugStage/demoStage.tkm";
+	
+
+	const float fEyeHeight_ = 160.0f;
+	const char* sStageModelPath_ = "Assets/modelData/stage/FirstStage/firstStage.tkm";
+  
 	const Vector3 vHintFontPos_ = { -450.0f, 450.0f, 0.0f };
 	const int iViewModeKey_ = 'T';				//! 一人称/三人称を切り替えるキー。
 	/*
