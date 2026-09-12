@@ -45,8 +45,19 @@ namespace nsApp
 		enum class EnLifeState : uint8_t
 		{
 			Alive,	//! 生存(通常行動可能)。
-			Down,	//! ダウン(行動不能・出血中。救助されれば復帰)。
+			Down,	//! ダウン(移動不能・出血中。サブ武器だけ撃てる。救助されれば復帰)。
 			Dead,	//! 死亡。
+		};
+
+		/**
+		 * @enum  EnQuickItem
+		 * @brief 即効アイテム(本家の5番スロット)。どちらか1つだけ持てる。
+		 */
+		enum class EnQuickItem : uint8_t
+		{
+			None,		//! 持っていない。
+			Pills,		//! 鎮痛剤。一時体力を大きく増やす。
+			Adrenaline,	//! アドレナリン。一時体力を少し増やし、しばらく速く動ける。
 		};
 
 		/**
@@ -72,6 +83,15 @@ namespace nsApp
 			virtual bool Start() override;
 			virtual void Update() override;
 			virtual void Render(RenderContext& rc) override;
+
+			/**
+			 * @brief ダメージを受ける(L4D2式)。
+			 *        一時体力から先に削り、残りを恒久HPから引く。
+			 *        恒久HPが尽きるとダウンし、白黒(復帰回数を使い切った状態)ならそのまま死亡する。
+			 *        ダウン中に受けたダメージは出血時間を縮める。
+			 * @param iDamage ダメージ量。
+			 */
+			virtual void ApplyDamage(int iDamage) override;
 
 		/* セッター。*/
 		public:
@@ -152,7 +172,7 @@ namespace nsApp
 			inline Vector3 GetEyePosition() const
 			{
 				Vector3 vEyePosition = vPosition_;
-				vEyePosition.y += stPlayerStatus_.fEyeHeight_ + fViewBobHeight_;
+				vEyePosition.y += fEyeHeight_ + fViewBobHeight_;
 
 				return vEyePosition;
 			}
@@ -231,6 +251,57 @@ namespace nsApp
 			}
 
 			/**
+			 * @brief 一時体力を取得する(UI表示用)。時間で減っていくぶん。
+			 * @return 一時体力(切り捨て)。
+			 */
+			inline int GetTempHP() const
+			{
+				return static_cast<int>(fTempHP_);
+			}
+
+			/**
+			 * @brief 恒久HPと一時体力の合計を取得する。負傷歩行やUIの数字はこの合計で見る。
+			 * @return 合計HP。
+			 */
+			inline int GetTotalHP() const
+			{
+				return GetCurrentHP() + GetTempHP();
+			}
+
+			/**
+			 * @brief 白黒(復帰回数を使い切り、次にダウンしたら死亡する状態)か。
+			 * @return 白黒なら true。
+			 */
+			inline bool IsBlackAndWhite() const
+			{
+				return iReviveCount_ >= stPlayerStatus_.stHealthRule_.iMaxReviveCount_;
+			}
+
+			/**
+			 * @brief 足を引きずっている(合計HPが少なくて遅い)か。アドレナリン中は引きずらない。
+			 * @return 引きずっていれば true。
+			 */
+			bool IsLimping() const;
+
+			//! メディキットの使用の進み具合(0=使っていない, 1=使い切る直前)。UIの進行バーに使う。
+			inline float GetHealProgress() const { return fMedkitProgress_; }
+
+			//! メディキットを使っている途中か。
+			inline bool IsHealing() const { return bIsHealing_; }
+
+			//! アドレナリンの効果の残り時間(秒)。効いていなければ0。
+			inline float GetAdrenalineRemain() const { return fAdrenalineTimer_; }
+
+			//! アドレナリンが効いているか。
+			inline bool IsAdrenalineActive() const { return fAdrenalineTimer_ > 0.0f; }
+
+			//! 持っている即効アイテム(鎮痛剤/アドレナリン/無し)。
+			inline EnQuickItem GetQuickItem() const { return enQuickItem_; }
+
+			//! メディキットを使わずに復帰した回数(UI表示用)。
+			inline int GetReviveCount() const { return iReviveCount_; }
+
+			/**
 			 * @brief 現在装備中の武器を取得する(UI表示用。無ければnullptr)。
 			 * @return 現在の武器。
 			 */
@@ -266,6 +337,12 @@ namespace nsApp
 			 */
 			void Revive();
 
+			/**
+			 * @brief デバッグ用。メディキット・投擲・鎮痛剤を1つずつ持たせる。
+			 *        射撃場で体力ルールを試し直すためのもので、本編からは呼ばない。
+			 */
+			void DebugRestockItems();
+
 
 		private:
 			/**
@@ -274,10 +351,67 @@ namespace nsApp
 			void InitModel();
 
 			/**
+			 * @brief マウスの移動量で視点(ヨー・ピッチ)を回す。ダウン中でも視点だけは動かせる。
+			 */
+			void UpdateLook();
+
+			/**
 			 * @brief 入力結果を見て移動する。
 			 * @param fDeltaTime 1フレームの経過時間(秒)。
 			 */
 			void UpdateMove(float fDeltaTime);
+
+			/**
+			 * @brief いまの体の状態から移動速度の倍率を求める(負傷歩行・瀕死・アドレナリン)。
+			 * @return 歩きの速度に掛ける倍率。
+			 */
+			float GetMoveSpeedRate() const;
+
+			/**
+			 * @brief 手の動き(リロード・回復)の速さの倍率を求める(アドレナリン中は速い)。
+			 * @return 倍率。通常は1。
+			 */
+			float GetActionSpeedRate() const;
+
+			/**
+			 * @brief 体力まわりの時間経過を進める(一時体力の減少、アドレナリンの残り時間)。
+			 * @param fDeltaTime 1フレームの経過時間(秒)。
+			 */
+			void UpdateHealth(float fDeltaTime);
+
+			/**
+			 * @brief 目の高さを状態に合わせて動かす(ダウン中は低く、復帰すると戻る)。
+			 * @param fDeltaTime 1フレームの経過時間(秒)。
+			 */
+			void UpdateEyeHeight(float fDeltaTime);
+
+			/**
+			 * @brief メディキットの使用を進める。押し続けると進み、離す・動く・撃つと最初からになる。
+			 *        使い切ると失った恒久HPの一定割合を回復し、一時体力と復帰回数はリセットされる。
+			 * @param fDeltaTime 1フレームの経過時間(秒)。
+			 */
+			void UpdateMedkit(float fDeltaTime);
+
+			/**
+			 * @brief 持っている即効アイテム(鎮痛剤/アドレナリン)を使う。
+			 */
+			void UseQuickItem();
+
+			/**
+			 * @brief 一時体力を足す。合計が最大HPを超えないよう切り詰める。
+			 * @param iAmount 足す量。
+			 */
+			void AddTempHP(int iAmount);
+
+			/**
+			 * @brief ダウン状態へ移る。恒久HPを1に留め、出血を始め、サブ武器へ持ち替える。
+			 */
+			void EnterDown();
+
+			/**
+			 * @brief 死亡状態へ移る。
+			 */
+			void EnterDead();
 
 			/**
 			 * @brief 入力結果を見て武器の更新・発射・切り替えを行う。
@@ -291,15 +425,21 @@ namespace nsApp
 			void UpdateAction();
 
 			/**
+			 * @brief 手持ちのライトを目線の位置から視線の先へ向ける。倒れていても点いたままなので毎フレーム呼ぶ。
+			 */
+			void UpdateFlashLight();
+
+			/**
 			 * @brief 突き飛ばし(近接)入力を処理する。前方近距離の敵を押し返す。
 			 * @param fDeltaTime 1フレームの経過時間(秒)。
 			 */
 			void UpdateShove(float fDeltaTime);
 
 			/**
-			 * @brief アイテム(回復/投擲)の入力を処理する。
+			 * @brief アイテム(メディキット/即効アイテム/投擲)の入力を処理する。
+			 * @param fDeltaTime 1フレームの経過時間(秒)。
 			 */
-			void UpdateItems();
+			void UpdateItems(float fDeltaTime);
 
 			/**
 			 * @brief 足元に落ちている物資を拾う。
@@ -463,8 +603,8 @@ namespace nsApp
 			float fWeaponKickBack_ = 0.0f;			//! 射撃で銃が手前へ下がっている距離。時間で0へ戻る。
 			float fAdsRate_ = 0.0f;					//! 覗き込みの度合い(0=腰だめ, 1=完全に覗き込み)。
 			float fSpreadShot_ = 0.0f;				//! 連射で増えた拡散角(ラジアン)。時間で0へ戻る。
-			int iPrevHP_ = 0;						//! 前フレームのHP(減っていれば被弾とみなす)。
-			float fLowerRate_ = 0.0f;				//! 銃を下げている度合い(0=構え, 1=完全に下げる)。走ると1へ近づく。
+			float fLowerRate_ = 0.0f;				//! 銃を下げている度合い(0=構え, 1=完全に下げる)。走る・回復すると1へ近づく。
+			float fEyeHeight_ = 0.0f;				//! いまの目の高さ(立ち/ダウンの目標へ滑らかに寄せる)。
 
 			nsData::PlayerStatus stPlayerStatus_;	//! 調整用のステータス(player.jsonから読み込む)。
 			bool bIsMoving_ = false;					//! 移動中か。
@@ -482,6 +622,12 @@ namespace nsApp
 
 			EnLifeState enLifeState_ = EnLifeState::Alive;	//! 生命状態(生存/ダウン/死亡)。
 			float fBleedOutTimer_ = 0.0f;				//! ダウン中の出血残り時間(秒)。0で死亡。
+			float fTempHP_ = 0.0f;					//! 一時体力。時間で減るので小数で持つ(表示は切り捨て)。
+			int iReviveCount_ = 0;					//! メディキットを使わずに復帰した回数。上限に達すると白黒。
+			float fMedkitProgress_ = 0.0f;			//! メディキットの使用の進み具合(0〜1)。
+			bool bIsHealing_ = false;				//! メディキットを使っている途中か。
+			EnQuickItem enQuickItem_ = EnQuickItem::None;	//! 持っている即効アイテム。
+			float fAdrenalineTimer_ = 0.0f;			//! アドレナリンの効果の残り時間(秒)。
 			float fShoveCooldown_ = 0.0f;				//! 突き飛ばしのクールダウン残り(秒)。
 			int iMedkitCount_ = 0;					//! 所持回復アイテム数(開始時の数はステータス表から入れる)。
 			int iGrenadeCount_ = 0;					//! 所持投擲アイテム数(開始時の数はステータス表から入れる)。

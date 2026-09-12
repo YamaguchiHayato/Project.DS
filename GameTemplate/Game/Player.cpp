@@ -62,6 +62,11 @@ namespace
 	const float kMaxPitch = 1.4f;				//! カメラピッチの上下限(rad, ≈±80度)。真上/真下での破綻防止。
 	const float kCapsuleRadius = 25.0f;		//! 移動用カプセルの半径(壁との押し戻しに使う)。
 	const float kCapsuleHeight = 120.0f;	//! 移動用カプセルの高さ。
+	const float kHealEffectHeight = 80.0f;	//! 回復の演出を出す高さ(胸のあたり)。
+
+	/* 即効アイテムの名前(player.json の startQuickItem に書く文字列)。*/
+	const char* sQuickItemPillsName_ = "Pills";				//! 鎮痛剤。
+	const char* sQuickItemAdrenalineName_ = "Adrenaline";	//! アドレナリン。
 
 
 
@@ -123,6 +128,23 @@ namespace
 
 		return sinf(kPi * (fValue - fStart) / (fEnd - fStart));
 	}
+
+
+	/**
+	 * @brief 即効アイテムの名前を種類へ変換する。
+	 * @param sName 名前("Pills" / "Adrenaline")。
+	 * @return 種類。どれでもなければ None。
+	 */
+	nsApp::nsActor::EnQuickItem ParseQuickItem(const std::string& sName)
+	{
+		if (sName == sQuickItemPillsName_)
+			return nsApp::nsActor::EnQuickItem::Pills;
+
+		if (sName == sQuickItemAdrenalineName_)
+			return nsApp::nsActor::EnQuickItem::Adrenaline;
+
+		return nsApp::nsActor::EnQuickItem::None;
+	}
 }
 
 namespace nsApp
@@ -164,9 +186,10 @@ namespace nsApp
 			stCharacterStatus_.stHp_.iMaxHP_ = stPlayerStatus_.iMaxHP_;
 			iMedkitCount_ = stPlayerStatus_.iMedkitCount_;
 			iGrenadeCount_ = stPlayerStatus_.iGrenadeCount_;
+			enQuickItem_ = ParseQuickItem(stPlayerStatus_.sStartQuickItem_);
 
-			/* 被弾を見つけるため、開始時のHPを覚えておく。*/
-			iPrevHP_ = GetCurrentHP();
+			/* 目の高さは立ち姿から始める(ダウンすると低くなる)。*/
+			fEyeHeight_ = stPlayerStatus_.fEyeHeight_;
 
 			/* イベント発行先(勝敗管理などが購読)を取得する。デバッグシーン等、無い場合は発行しない。*/
 			pEventBus_ = FindGO<nsEvent::EventBus>("eventBus");
@@ -201,25 +224,22 @@ namespace nsApp
 				return;
 			}
 
-			/* HPが減っていれば攻撃を受けたとみなして通知する。*/
-			const int iNowHP = GetCurrentHP();
-			if (iNowHP < iPrevHP_)
-				PublishGameEvent(nsEvent::EnGameEvent::PlayerDamaged, vPosition_, Vector3::Zero, iPrevHP_ - iNowHP);
+			/* 2.視点を回す。倒れていても首は回せる(ダウン中にピストルで狙うため)。*/
+			UpdateLook();
 
-			iPrevHP_ = iNowHP;
-
-			/* 2.覗き込みの度合いと弾の拡散を更新する。*/
+			/* 3.覗き込みと拡散、反動、体力の時間経過、目の高さを進める。*/
 			UpdateAds(fDeltaTime);
-
-			/* 3.射撃の反動を時間で元へ戻す。*/
 			UpdateRecoil(fDeltaTime);
+			UpdateHealth(fDeltaTime);
+			UpdateEyeHeight(fDeltaTime);
 
-			/* 4.生命状態を更新する(HP0でダウン→出血タイマー切れで死亡)。*/
+			/* 4.生命状態を更新する(ダウン中は出血が進み、尽きると死亡)。*/
 			UpdateLifeState(fDeltaTime);
 
-			/* 5.生存しているときだけ移動・武器・アクションを処理する(ダウン/死亡中は行動不能)。*/
-			if (enLifeState_ == EnLifeState::Alive)
+			/* 5.生命状態ごとにできることが違う。*/
+			switch (enLifeState_)
 			{
+			case EnLifeState::Alive:
 				UpdateMove(fDeltaTime);
 
 				/* 移動の結果から揺れを作る。射撃の起点(目の位置)にも効くので武器より先に更新する。*/
@@ -227,19 +247,29 @@ namespace nsApp
 
 				UpdateWeapon(fDeltaTime);
 				UpdateShove(fDeltaTime);
-				UpdateItems();
+				UpdateItems(fDeltaTime);
 				UpdateAction();
-			}
-			else
-			{
-				/* 行動不能中も武器のクールダウン等は進め、移動フラグは倒しておく。*/
-				stWeaponInventory_.Update(fDeltaTime);
+				break;
+
+			case EnLifeState::Down:
+				/* 倒れているので動けないが、本家と同じくサブ武器(ピストル)でなら撃てる。*/
 				bIsMoving_ = false;
 				bIsSprinting_ = false;
-
-				/* 動けないので揺れは収まっていく。*/
 				UpdateViewSway(fDeltaTime);
+				UpdateWeapon(fDeltaTime);
+				break;
+
+			case EnLifeState::Dead:
+				/* 何もできない。武器のクールダウン等だけ進め、揺れは収まっていく。*/
+				bIsMoving_ = false;
+				bIsSprinting_ = false;
+				stWeaponInventory_.Update(fDeltaTime);
+				UpdateViewSway(fDeltaTime);
+				break;
 			}
+
+			/* ライトは倒れていても点いたままなので、状態に関わらず向きを更新する。*/
+			UpdateFlashLight();
 
 			/* 6.移動状態をモデル(位置・回転・アニメーション)へ反映する。*/
 			UpdateModel();
@@ -306,7 +336,7 @@ namespace nsApp
 		}
 
 
-		void Player::UpdateMove(float fDeltaTime)
+		void Player::UpdateLook()
 		{
 			/*
 			 * マウスの横移動量でカメラの旋回角を更新する(原神風の旋回カメラ)。
@@ -324,7 +354,11 @@ namespace nsApp
 				fCameraPitch_ = kMaxPitch;
 			else if (fCameraPitch_ < -kMaxPitch)
 				fCameraPitch_ = -kMaxPitch;
+		}
 
+
+		void Player::UpdateMove(float fDeltaTime)
+		{
 			/* カメラの旋回角から、地面基準の前方・右方向ベクトルを作る。*/
 			const Vector3 vCameraForward = { sinf(fCameraYaw_), 0.0f, cosf(fCameraYaw_) };
 			const Vector3 vCameraRight = { vCameraForward.z, 0.0f, -vCameraForward.x };
@@ -350,6 +384,9 @@ namespace nsApp
 			/* スプリント(Shift)中は移動速度を上げて進む。*/
 			bIsSprinting_ = stIntent_.bSprintPress_;
 			float fSpeed = bIsSprinting_ ? (stPlayerStatus_.fMoveSpeed_ * stPlayerStatus_.fSprintRate_) : stPlayerStatus_.fMoveSpeed_;
+
+			/* 体力が少ないと足を引きずり、アドレナリンが効いていれば速くなる。*/
+			fSpeed *= GetMoveSpeedRate();
 
 			/* 覗き込み中はゆっくり歩く。*/
 			nsWeapon::Weapon* pAdsWeapon = stWeaponInventory_.GetCurrentWeapon();
@@ -400,7 +437,8 @@ namespace nsApp
 			if (fLowerRate > 1.0f)
 				fLowerRate = 1.0f;
 
-			const float fLowerTarget = (bIsSprinting_ && bIsMoving_) ? 1.0f : 0.0f;
+			/* 走っている間と、メディキットを使っている間は銃を下げる(両手が塞がっている)。*/
+			const float fLowerTarget = ((bIsSprinting_ && bIsMoving_) || bIsHealing_) ? 1.0f : 0.0f;
 			fLowerRate_ += (fLowerTarget - fLowerRate_) * fLowerRate;
 
 			/* 連射で広がった拡散を時間で収める。*/
@@ -624,8 +662,12 @@ namespace nsApp
 
 		void Player::UpdateWeapon(float fDeltaTime)
 		{
-			/* 武器のクールタイム・リロード等を進める。*/
-			stWeaponInventory_.Update(fDeltaTime);
+			/* 武器のクールタイム・リロード等を進める。アドレナリン中は手が速い。*/
+			stWeaponInventory_.Update(fDeltaTime, GetActionSpeedRate());
+
+			/* メディキットを使っている間は両手が塞がっている。撃つ・リロード・持ち替えはできない。*/
+			if (bIsHealing_)
+				return;
 
 			/* リロード。*/
 			if (stIntent_.bReloadTrigger_)
@@ -718,6 +760,10 @@ namespace nsApp
 				}
 			}
 
+			/* ダウン中はサブ武器で固定。持ち替えられるのは立っているときだけ。*/
+			if (enLifeState_ != EnLifeState::Alive)
+				return;
+
 			/* 数字キーでの直接持ち替え(ホイールより優先する)。*/
 			if (stIntent_.bMainWeaponTrigger_)
 				stWeaponInventory_.SwitchToSlot(nsWeapon::EnWeaponSlot::Main);
@@ -742,12 +788,6 @@ namespace nsApp
 			if (stIntent_.bLightTrigger_)
 				bIsLightOn_ = !bIsLightOn_;
 
-			/*
-			 * 手持ちのライトを目線の位置から視線の先へ向ける。
-			 * 消えているときは届く距離を0にして、光が出ないようにする。
-			 */
-			g_renderingEngine->SetSpotLight(kFlashLightIndex, GetEyePosition(), { 1.0f, 0.95f, 0.85f }, bIsLightOn_ ? kFlashLightRange : 0.0f, GetLookDirection(), kFlashLightAngle);
-
 			/* メニュー・ポーズ画面。*/
 			if (stIntent_.bPauseTrigger_)
 			{
@@ -765,6 +805,10 @@ namespace nsApp
 
 			/* 突き飛ばし入力が無い、またはクールダウン中なら何もしない。*/
 			if (!stIntent_.bShoveTrigger_ || fShoveCooldown_ > 0.0f)
+				return;
+
+			/* メディキットを使っている間は両手が塞がっていて押せない。*/
+			if (bIsHealing_)
 				return;
 
 			/* クールダウンを設定する。*/
@@ -863,18 +907,28 @@ namespace nsApp
 		}
 
 
-		void Player::UpdateItems()
+		void Player::UpdateFlashLight()
 		{
-			/* 回復(メディキット): HPが減っていれば1個消費して全回復。*/
-			if (stIntent_.bHealTrigger_ && iMedkitCount_ > 0 && GetCurrentHP() < GetMaxHP())
-			{
-				iMedkitCount_--;
-				stCharacterStatus_.stHp_.iCurrentHP_ = GetMaxHP();
+			/*
+			 * 手持ちのライトを目線の位置から視線の先へ向ける。
+			 * 消えているときは届く距離を0にして、光が出ないようにする。
+			 */
+			g_renderingEngine->SetSpotLight(kFlashLightIndex, GetEyePosition(), { 1.0f, 0.95f, 0.85f }, bIsLightOn_ ? kFlashLightRange : 0.0f, GetLookDirection(), kFlashLightAngle);
+		}
 
-				Vector3 vHealPos = vPosition_;
-				vHealPos.y += 80.0f;
-				PublishGameEvent(nsEvent::EnGameEvent::PlayerHealed, vHealPos);
-			}
+
+		void Player::UpdateItems(float fDeltaTime)
+		{
+			/* メディキット(4/H長押し)。*/
+			UpdateMedkit(fDeltaTime);
+
+			/* メディキットを使っている間は他のアイテムに手が回らない。*/
+			if (bIsHealing_)
+				return;
+
+			/* 即効アイテム(5): 鎮痛剤・アドレナリンはその場で効く。*/
+			if (stIntent_.bQuickItemTrigger_)
+				UseQuickItem();
 
 			/* 投擲(グレネード): 1個消費して視線方向へ投げる。*/
 			if (stIntent_.bThrowTrigger_ && iGrenadeCount_ > 0)
@@ -1200,12 +1254,13 @@ namespace nsApp
 			switch (enLifeState_)
 			{
 			case EnLifeState::Alive:
-				/* HPが尽きたらダウンへ移行する(まだ死亡ではない)。*/
+				/* 通常は ApplyDamage の中でダウンへ移るが、別の経路でHPが0になった場合もここで拾う。*/
 				if (IsDead())
 				{
-					enLifeState_ = EnLifeState::Down;
-					fBleedOutTimer_ = stPlayerStatus_.fBleedOutTime_;
-					PublishGameEvent(nsEvent::EnGameEvent::PlayerDowned);
+					if (IsBlackAndWhite())
+						EnterDead();
+					else
+						EnterDown();
 				}
 				break;
 
@@ -1213,11 +1268,7 @@ namespace nsApp
 				/* 出血で残り時間が減り、尽きたら死亡する(ソロは救助者がいないので通常ここへ至る)。*/
 				fBleedOutTimer_ -= fDeltaTime;
 				if (fBleedOutTimer_ <= 0.0f)
-				{
-					fBleedOutTimer_ = 0.0f;
-					enLifeState_ = EnLifeState::Dead;
-					PublishGameEvent(nsEvent::EnGameEvent::PlayerDead);
-				}
+					EnterDead();
 				break;
 
 			case EnLifeState::Dead:
@@ -1227,16 +1278,284 @@ namespace nsApp
 		}
 
 
+		void Player::EnterDown()
+		{
+			/*
+			 * 恒久HPは1に留める。0にすると敵が「倒した」と見なして攻撃をやめてしまい、
+			 * 倒れているところを殴られ続ける本家の緊張感が出ないため。
+			 */
+			stCharacterStatus_.stHp_.iCurrentHP_ = 1;
+			fTempHP_ = 0.0f;
+
+			enLifeState_ = EnLifeState::Down;
+			fBleedOutTimer_ = stPlayerStatus_.fBleedOutTime_;
+
+			/* 途中だった回復は無かったことになる。*/
+			bIsHealing_ = false;
+			fMedkitProgress_ = 0.0f;
+			bIsMoving_ = false;
+			bIsSprinting_ = false;
+
+			/* 倒れているあいだはサブ武器(ピストル)しか撃てない。*/
+			stWeaponInventory_.SwitchToSlot(nsWeapon::EnWeaponSlot::Sub);
+
+			PublishGameEvent(nsEvent::EnGameEvent::PlayerDowned);
+		}
+
+
+		void Player::EnterDead()
+		{
+			stCharacterStatus_.stHp_.iCurrentHP_ = 0;
+			fTempHP_ = 0.0f;
+			fBleedOutTimer_ = 0.0f;
+			bIsHealing_ = false;
+			fMedkitProgress_ = 0.0f;
+			enLifeState_ = EnLifeState::Dead;
+
+			PublishGameEvent(nsEvent::EnGameEvent::PlayerDead);
+		}
+
+
 		void Player::Revive()
 		{
-			/* ダウン中のみ救助可能。既定HPで生存へ戻す(将来の味方/BOTが呼ぶ想定)。*/
+			/* ダウン中のみ救助可能(将来の味方/BOTが呼ぶ想定)。*/
 			if (enLifeState_ != EnLifeState::Down)
 				return;
 
+			/*
+			 * 本家と同じく、恒久HPはわずかに戻るだけで、残りは時間で減る一時体力で補う。
+			 * メディキットを使わずに復帰した回数を数え、上限に達すると白黒(次のダウンで死亡)になる。
+			 */
 			stCharacterStatus_.stHp_.iCurrentHP_ = stPlayerStatus_.iReviveHP_;
+			fTempHP_ = 0.0f;
+			AddTempHP(stPlayerStatus_.stHealthRule_.iReviveTempHP_);
+			iReviveCount_++;
+
 			enLifeState_ = EnLifeState::Alive;
 			fBleedOutTimer_ = 0.0f;
 			PublishGameEvent(nsEvent::EnGameEvent::PlayerRevived);
+		}
+
+
+		void Player::DebugRestockItems()
+		{
+			iMedkitCount_++;
+			iGrenadeCount_++;
+
+			/* 即効アイテムは1つしか持てないので、空いていれば鎮痛剤を入れる。*/
+			if (enQuickItem_ == EnQuickItem::None)
+				enQuickItem_ = EnQuickItem::Pills;
+		}
+
+
+		void Player::ApplyDamage(int iDamage)
+		{
+			/* 死んでいれば何も起きない。0以下のダメージも無視する。*/
+			if (enLifeState_ == EnLifeState::Dead || iDamage <= 0)
+				return;
+
+			/* 攻撃を受けたことを通知する(画面の赤い幕など)。一時体力で受け止めた場合も痛みは伝える。*/
+			PublishGameEvent(nsEvent::EnGameEvent::PlayerDamaged, vPosition_, Vector3::Zero, iDamage);
+
+			/* 回復の途中で殴られると手が止まり、やり直しになる。*/
+			bIsHealing_ = false;
+			fMedkitProgress_ = 0.0f;
+
+			/* ダウン中は体力ではなく出血時間が削られる。尽きたときの死亡は UpdateLifeState が拾う。*/
+			if (enLifeState_ == EnLifeState::Down)
+			{
+				fBleedOutTimer_ -= static_cast<float>(iDamage) * stPlayerStatus_.stHealthRule_.fDownDamageTimeRate_;
+				return;
+			}
+
+			/* 一時体力から先に削る。*/
+			float fRemain = static_cast<float>(iDamage);
+			if (fTempHP_ > 0.0f)
+			{
+				const float fAbsorb = (fTempHP_ < fRemain) ? fTempHP_ : fRemain;
+				fTempHP_ -= fAbsorb;
+				fRemain -= fAbsorb;
+			}
+
+			/* 残りを恒久HPから引く。端数は切り上げて、受け止め切れなかったぶんは必ず届くようにする。*/
+			const int iPermanentDamage = static_cast<int>(ceilf(fRemain));
+			if (iPermanentDamage <= 0)
+				return;
+
+			ICharacter::ApplyDamage(iPermanentDamage);
+
+			/* 恒久HPが尽きたらダウン。白黒なら救助の余地が無いのでそのまま死亡する。*/
+			if (IsDead())
+			{
+				if (IsBlackAndWhite())
+					EnterDead();
+				else
+					EnterDown();
+			}
+		}
+
+
+		void Player::UpdateHealth(float fDeltaTime)
+		{
+			const nsData::HealthRuleStatus& stRule = stPlayerStatus_.stHealthRule_;
+
+			/* 一時体力は時間で減っていく(鎮痛剤の効き目が切れていく)。*/
+			if (fTempHP_ > 0.0f)
+			{
+				fTempHP_ -= stRule.fTempHPDecayRate_ * fDeltaTime;
+				if (fTempHP_ < 0.0f)
+					fTempHP_ = 0.0f;
+			}
+
+			/* アドレナリンの効果時間。*/
+			if (fAdrenalineTimer_ > 0.0f)
+			{
+				fAdrenalineTimer_ -= fDeltaTime;
+				if (fAdrenalineTimer_ < 0.0f)
+					fAdrenalineTimer_ = 0.0f;
+			}
+		}
+
+
+		void Player::UpdateEyeHeight(float fDeltaTime)
+		{
+			const nsData::HealthRuleStatus& stRule = stPlayerStatus_.stHealthRule_;
+
+			/* 倒れている(死んでいる)ときは低く、立っているときは通常の高さ。*/
+			const float fTarget = (enLifeState_ == EnLifeState::Alive) ? stPlayerStatus_.fEyeHeight_ : stRule.fDownEyeHeight_;
+
+			/* 目標へ滑らかに寄せる。倒れ込む・起き上がる動きに見える。*/
+			float fRate = fDeltaTime * stRule.fEyeHeightFollowRate_;
+			if (fRate > 1.0f)
+				fRate = 1.0f;
+
+			fEyeHeight_ += (fTarget - fEyeHeight_) * fRate;
+		}
+
+
+		void Player::UpdateMedkit(float fDeltaTime)
+		{
+			const nsData::HealthRuleStatus& stRule = stPlayerStatus_.stHealthRule_;
+
+			/* 使える条件: 持っていて、恒久HPが減っている。*/
+			const bool bCanHeal = (iMedkitCount_ > 0) && (GetCurrentHP() < GetMaxHP());
+
+			/* 使う条件: 押し続けていて、動いておらず、撃ってもいない(手を離す・動く・撃つと中断)。*/
+			const bool bWantHeal = stIntent_.bHealPress_ && !bIsMoving_ && !stIntent_.bFirePress_;
+
+			if (!bCanHeal || !bWantHeal)
+			{
+				bIsHealing_ = false;
+				fMedkitProgress_ = 0.0f;
+				return;
+			}
+
+			/* 包帯を巻いている途中。アドレナリン中は手が速い。*/
+			bIsHealing_ = true;
+			fMedkitProgress_ += fDeltaTime * GetActionSpeedRate() / stRule.fMedkitUseTime_;
+			if (fMedkitProgress_ < 1.0f)
+				return;
+
+			/* 使い切った。失った恒久HPの一定割合を戻す(本家と同じ80%)。*/
+			const int iMissing = GetMaxHP() - GetCurrentHP();
+			int iHeal = static_cast<int>(static_cast<float>(iMissing) * stRule.fMedkitHealRate_ + 0.5f);
+			if (iHeal < 1)
+				iHeal = 1;
+
+			stCharacterStatus_.stHp_.iCurrentHP_ += iHeal;
+
+			/* 恒久HPが戻ったので一時体力は消え、復帰回数も数え直す(白黒が治る)。*/
+			fTempHP_ = 0.0f;
+			iReviveCount_ = 0;
+
+			iMedkitCount_--;
+			bIsHealing_ = false;
+			fMedkitProgress_ = 0.0f;
+
+			Vector3 vHealPos = vPosition_;
+			vHealPos.y += kHealEffectHeight;
+			PublishGameEvent(nsEvent::EnGameEvent::PlayerHealed, vHealPos, Vector3::Zero, iHeal);
+		}
+
+
+		void Player::UseQuickItem()
+		{
+			const nsData::HealthRuleStatus& stRule = stPlayerStatus_.stHealthRule_;
+
+			int iGain = 0;
+			switch (enQuickItem_)
+			{
+			case EnQuickItem::Pills:
+				/* 満タンのときに飲んでも無駄になるだけなので、手元に残す。*/
+				if (GetTotalHP() >= GetMaxHP())
+					return;
+
+				iGain = stRule.iPillsTempHP_;
+				break;
+
+			case EnQuickItem::Adrenaline:
+				/* 体力が満タンでも足の速さの効果があるので、いつでも使える。*/
+				iGain = stRule.iAdrenalineTempHP_;
+				fAdrenalineTimer_ = stRule.fAdrenalineTime_;
+				break;
+
+			default:
+				/* 何も持っていない。*/
+				return;
+			}
+
+			AddTempHP(iGain);
+			enQuickItem_ = EnQuickItem::None;
+
+			Vector3 vHealPos = vPosition_;
+			vHealPos.y += kHealEffectHeight;
+			PublishGameEvent(nsEvent::EnGameEvent::PlayerHealed, vHealPos, Vector3::Zero, iGain);
+		}
+
+
+		void Player::AddTempHP(int iAmount)
+		{
+			fTempHP_ += static_cast<float>(iAmount);
+
+			/* 合計が最大HPを超えないよう切り詰める。*/
+			const float fMaxTemp = static_cast<float>(GetMaxHP() - GetCurrentHP());
+			if (fTempHP_ > fMaxTemp)
+				fTempHP_ = fMaxTemp;
+
+			if (fTempHP_ < 0.0f)
+				fTempHP_ = 0.0f;
+		}
+
+
+		float Player::GetMoveSpeedRate() const
+		{
+			const nsData::HealthRuleStatus& stRule = stPlayerStatus_.stHealthRule_;
+
+			/* アドレナリンが効いていれば痛みを忘れて速く動ける。*/
+			if (IsAdrenalineActive())
+				return stRule.fAdrenalineSpeedRate_;
+
+			/* 合計HPが少ないほど足が遅くなる(瀕死→負傷歩行→通常)。*/
+			const int iTotalHP = GetTotalHP();
+			if (iTotalHP <= stRule.iCriticalHP_)
+				return stRule.fCriticalSpeedRate_;
+
+			if (iTotalHP < stRule.iLimpHP_)
+				return stRule.fLimpSpeedRate_;
+
+			return 1.0f;
+		}
+
+
+		float Player::GetActionSpeedRate() const
+		{
+			return IsAdrenalineActive() ? stPlayerStatus_.stHealthRule_.fAdrenalineActionRate_ : 1.0f;
+		}
+
+
+		bool Player::IsLimping() const
+		{
+			return !IsAdrenalineActive() && (GetTotalHP() < stPlayerStatus_.stHealthRule_.iLimpHP_);
 		}
 
 

@@ -57,6 +57,38 @@ namespace nsApp
 		};
 
 		/**
+		 * @struct HealthRuleStatus
+		 * @brief  L4D2式の体力ルールの調整値。
+		 *         体力は「恒久HP」と、時間で減っていく「一時体力」の2階建て。
+		 *         メディキットは恒久HPを、鎮痛剤・アドレナリンは一時体力を増やす。
+		 */
+		struct HealthRuleStatus
+		{
+			/* 一時体力。*/
+			float	fTempHPDecayRate_ = 0.5f;		//! 一時体力が1秒あたりに減る量。
+			/* メディキット。*/
+			float	fMedkitUseTime_ = 3.0f;			//! 使い切るまでに押し続ける時間(秒)。途中で動くと最初からになる。
+			float	fMedkitHealRate_ = 0.8f;		//! 失った恒久HPのうち回復する割合(L4D2と同じ80%)。
+			/* 鎮痛剤とアドレナリン(どちらか1つだけ持てる)。*/
+			int		iPillsTempHP_ = 50;				//! 鎮痛剤で増える一時体力。
+			int		iAdrenalineTempHP_ = 25;		//! アドレナリンで増える一時体力。
+			float	fAdrenalineTime_ = 15.0f;		//! アドレナリンの効果時間(秒)。
+			float	fAdrenalineSpeedRate_ = 1.3f;	//! 効果中の移動速度の倍率。負傷歩行も無視する。
+			float	fAdrenalineActionRate_ = 1.5f;	//! 効果中のリロード・回復の速さの倍率。
+			/* 負傷歩行。合計HP(恒久＋一時)で判定する。*/
+			int		iLimpHP_ = 40;					//! 合計HPがこれ未満で足を引きずる。
+			float	fLimpSpeedRate_ = 0.68f;		//! 足を引きずるときの移動速度の倍率。
+			int		iCriticalHP_ = 10;				//! 合計HPがこれ以下で瀕死。さらに遅くなる。
+			float	fCriticalSpeedRate_ = 0.4f;		//! 瀕死のときの移動速度の倍率。
+			/* 白黒(サードストライク)と、ダウン中の扱い。*/
+			int		iMaxReviveCount_ = 2;			//! メディキットを使わずに復帰できる回数。使い切ると白黒になり、次のダウンで死亡する。
+			int		iReviveTempHP_ = 30;			//! 復帰したときに得る一時体力。
+			float	fDownEyeHeight_ = 60.0f;		//! ダウン中の目の高さ。倒れているので低くなる。
+			float	fDownDamageTimeRate_ = 0.15f;	//! ダウン中に受けたダメージ1あたりに縮む出血時間(秒)。殴られ続けると早く死ぬ。
+			float	fEyeHeightFollowRate_ = 10.0f;	//! 目の高さが目標(立ち/ダウン)へ移る速さ。
+		};
+
+		/**
 		 * @struct PlayerStatus
 		 * @brief  プレイヤー(サバイバー)の調整用パラメータ。
 		 *         ここに書いた値が Assets/data/player.json が無いときの既定値になる。
@@ -80,7 +112,7 @@ namespace nsApp
 
 			/* ダウンと救助。*/
 			float	fBleedOutTime_ = 15.0f;			//! ダウンしてから死亡するまでの出血時間(秒)。
-			int		iReviveHP_ = 30;				//! 救助で復帰したときのHP。
+			int		iReviveHP_ = 1;					//! 救助で復帰したときの恒久HP。残りは一時体力(health.reviveTempHP)で補う。
 
 			/* 突き飛ばし(近接)。*/
 			float	fShoveRange_ = 180.0f;			//! 突き飛ばしが届く距離。
@@ -91,6 +123,10 @@ namespace nsApp
 			/* 開始時の所持品。*/
 			int		iMedkitCount_ = 1;				//! 開始時に持っている回復アイテムの数。
 			int		iGrenadeCount_ = 2;				//! 開始時に持っている投擲アイテムの数。
+			std::string sStartQuickItem_ = "Pills";	//! 開始時に持っている即効アイテム("Pills" / "Adrenaline" / "None")。
+
+			/* 体力のルール。*/
+			HealthRuleStatus	stHealthRule_;		//! L4D2式の体力(一時体力・メディキット・負傷歩行・白黒)。
 
 			/* 見た目の調整値。まとまりごとに別の構造体へ分けている。*/
 			ViewShakeStatus		stViewShake_;		//! 歩きと視点移動の揺れ。

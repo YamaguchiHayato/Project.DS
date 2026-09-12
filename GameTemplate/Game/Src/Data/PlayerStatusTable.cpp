@@ -7,6 +7,7 @@ namespace
 	const char* sPlayerStatusFilePath_ = "Assets/data/player.json";	//! プレイヤーステータス表のファイルパス。
 	const char* sViewShakeNodeName_ = "viewShake";					//! 揺れの調整値が入っているノード名。
 	const char* sReloadNodeName_ = "reload";						//! リロード演出の調整値が入っているノード名。
+	const char* sHealthNodeName_ = "health";						//! 体力ルールの調整値が入っているノード名。
 
 	nsApp::nsData::PlayerStatus stPlayerStatus_;	//! 読み込んだプレイヤーのパラメータ。
 	bool bIsLoaded_ = false;						//! JSONの読み込みを済ませたか。
@@ -71,6 +72,33 @@ namespace
 		{ "strafeRollAngle",		&nsApp::nsData::ViewShakeStatus::fStrafeRollAngle_ },
 		{ "strafeFollowRate",		&nsApp::nsData::ViewShakeStatus::fStrafeFollowRate_ },
 		{ "adsSuppressRate",		&nsApp::nsData::ViewShakeStatus::fAdsSuppressRate_ },
+	};
+
+	/* 体力ルールの小数の項目。*/
+	const ReadEntry<nsApp::nsData::HealthRuleStatus, float> HEALTH_FLOAT_TABLE[] =
+	{
+		{ "tempHPDecayRate",		&nsApp::nsData::HealthRuleStatus::fTempHPDecayRate_ },
+		{ "medkitUseTime",			&nsApp::nsData::HealthRuleStatus::fMedkitUseTime_ },
+		{ "medkitHealRate",			&nsApp::nsData::HealthRuleStatus::fMedkitHealRate_ },
+		{ "adrenalineTime",			&nsApp::nsData::HealthRuleStatus::fAdrenalineTime_ },
+		{ "adrenalineSpeedRate",	&nsApp::nsData::HealthRuleStatus::fAdrenalineSpeedRate_ },
+		{ "adrenalineActionRate",	&nsApp::nsData::HealthRuleStatus::fAdrenalineActionRate_ },
+		{ "limpSpeedRate",			&nsApp::nsData::HealthRuleStatus::fLimpSpeedRate_ },
+		{ "criticalSpeedRate",		&nsApp::nsData::HealthRuleStatus::fCriticalSpeedRate_ },
+		{ "downEyeHeight",			&nsApp::nsData::HealthRuleStatus::fDownEyeHeight_ },
+		{ "downDamageTimeRate",		&nsApp::nsData::HealthRuleStatus::fDownDamageTimeRate_ },
+		{ "eyeHeightFollowRate",	&nsApp::nsData::HealthRuleStatus::fEyeHeightFollowRate_ },
+	};
+
+	/* 体力ルールの整数の項目。*/
+	const ReadEntry<nsApp::nsData::HealthRuleStatus, int> HEALTH_INT_TABLE[] =
+	{
+		{ "pillsTempHP",		&nsApp::nsData::HealthRuleStatus::iPillsTempHP_ },
+		{ "adrenalineTempHP",	&nsApp::nsData::HealthRuleStatus::iAdrenalineTempHP_ },
+		{ "limpHP",				&nsApp::nsData::HealthRuleStatus::iLimpHP_ },
+		{ "criticalHP",			&nsApp::nsData::HealthRuleStatus::iCriticalHP_ },
+		{ "maxReviveCount",		&nsApp::nsData::HealthRuleStatus::iMaxReviveCount_ },
+		{ "reviveTempHP",		&nsApp::nsData::HealthRuleStatus::iReviveTempHP_ },
 	};
 
 	/* リロード演出の項目。*/
@@ -139,8 +167,9 @@ namespace nsApp
 			ReadFloatTable(stFile, stPlayerStatus_, PLAYER_FLOAT_TABLE, _countof(PLAYER_FLOAT_TABLE));
 			ReadIntTable(stFile, stPlayerStatus_, PLAYER_INT_TABLE, _countof(PLAYER_INT_TABLE));
 
-			/* 文字列はこれ1つなので、表にはせず直接読む。*/
+			/* 文字列は2つだけなので、表にはせず直接読む。*/
 			stPlayerStatus_.sHandBoneName_ = stFile.GetString("handBoneName", stPlayerStatus_.sHandBoneName_.c_str());
+			stPlayerStatus_.sStartQuickItem_ = stFile.GetString("startQuickItem", stPlayerStatus_.sStartQuickItem_.c_str());
 
 			/* 歩きと視点移動の揺れ。*/
 			if (stFile.Enter(sViewShakeNodeName_))
@@ -153,6 +182,14 @@ namespace nsApp
 			if (stFile.Enter(sReloadNodeName_))
 			{
 				ReadFloatTable(stFile, stPlayerStatus_.stReloadMotion_, RELOAD_MOTION_TABLE, _countof(RELOAD_MOTION_TABLE));
+				stFile.Leave();
+			}
+
+			/* 体力のルール。*/
+			if (stFile.Enter(sHealthNodeName_))
+			{
+				ReadFloatTable(stFile, stPlayerStatus_.stHealthRule_, HEALTH_FLOAT_TABLE, _countof(HEALTH_FLOAT_TABLE));
+				ReadIntTable(stFile, stPlayerStatus_.stHealthRule_, HEALTH_INT_TABLE, _countof(HEALTH_INT_TABLE));
 				stFile.Leave();
 			}
 		}

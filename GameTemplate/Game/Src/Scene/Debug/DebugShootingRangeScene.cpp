@@ -3,6 +3,8 @@
 #include "Src/Scene/GameFlow.h"
 #include "Player.h"
 #include "Src/Actor/Character/Enemy/CommonEnemy.h"
+#include "Src/Event/EventBus.h"
+#include "Src/UI/InGameHud.h"
 
 namespace
 {
@@ -35,6 +37,10 @@ namespace
   
 	const Vector3 vHintFontPos_ = { -450.0f, 450.0f, 0.0f };
 	const int iViewModeKey_ = 'T';				//! 一人称/三人称を切り替えるキー。
+	const int iReviveKey_ = VK_F5;				//! ダウンから復帰させるキー(ソロでは救助されないので手で起こす)。
+	const int iDamageKey_ = VK_F6;				//! 自分に30ダメージを与えるキー(一時体力・負傷歩行・ダウンの確認用)。
+	const int iRestockKey_ = VK_F7;				//! アイテムを補充するキー(メディキット・鎮痛剤を試し直す)。
+	const int iDebugDamage_ = 30;				//! F6で受けるダメージ。
 	/*
 	 * 三人称カメラの寄り引きは、モデルの実際の表示サイズに対する倍率で決める。
 	 * 固定の距離にすると、モデルを差し替えて大きさが変わったとき画面から外れてしまうため。
@@ -92,6 +98,19 @@ namespace nsApp
 				DeleteGO(pPlayer_);
 				pPlayer_ = nullptr;
 			}
+
+			/* HUDは通知の購読を解除してから、配達役を消す。*/
+			if (pHud_ != nullptr)
+			{
+				DeleteGO(pHud_);
+				pHud_ = nullptr;
+			}
+
+			if (pEventBus_ != nullptr)
+			{
+				DeleteGO(pEventBus_);
+				pEventBus_ = nullptr;
+			}
 		}
 
 
@@ -110,9 +129,15 @@ namespace nsApp
 			stGroundCollider_.Release();
 			stGroundCollider_.CreateFromModel(stGroundModel_.GetModel(),stGroundModel_.GetModel().GetWorldMatrix());
 
+			/* 通知の配達役。プレイヤーが FindGO で見つけて命中・被弾を流し、HUDが受け取る。*/
+			pEventBus_ = NewGO<nsEvent::EventBus>(0, "eventBus");
+
 			/* プレイヤーを生成する。 */
 			pPlayer_ = NewGO<nsActor::Player>(0, "player");
 			pPlayer_->SetPosition(vPlayerSpawn_);
+
+			/* 本番と同じHUD。体力バー・アイテムスロット・ダウン表示を射撃場で確かめられる。*/
+			pHud_ = NewGO<nsUI::InGameHud>(0, "inGameHud");
 
 			/* 的役の敵を奥に配置する。 */
 			SpawnTargetEnemies();
@@ -121,11 +146,14 @@ namespace nsApp
 			stHintFont_.SetPosition(vHintFontPos_);
 			stHintFont_.SetScale(1.0f);
 			stHintFont_.SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-			stHintFont_.SetText(L"SHOOTING RANGE  ESC BACK  T VIEW(1st/3rd)");
+			stHintFont_.SetText(L"SHOOTING RANGE  ESC BACK  T VIEW(1st/3rd)  F5 REVIVE  F6 DAMAGE  F7 RESTOCK");
 
-			/* 前フレームのESC状態を取る。 */
+			/* 前フレームのキー状態を取る。 */
 			bWasPressEsc_ = (GetAsyncKeyState(VK_ESCAPE) & 0x8000) != 0;
 			bWasPressViewKey_ = (GetAsyncKeyState(iViewModeKey_) & 0x8000) != 0;
+			bWasPressReviveKey_ = (GetAsyncKeyState(iReviveKey_) & 0x8000) != 0;
+			bWasPressDamageKey_ = (GetAsyncKeyState(iDamageKey_) & 0x8000) != 0;
+			bWasPressRestockKey_ = (GetAsyncKeyState(iRestockKey_) & 0x8000) != 0;
 			UpdateCamera();
 			return true;
 		}
@@ -148,7 +176,37 @@ namespace nsApp
 
 			/* デバッグ用の処理はまとめてここで回す。*/
 			UpdateViewModeSwitch();
+			UpdateDebugHealthCommand();
 			UpdateDebugHint();
+		}
+
+
+		void DebugShootingRangeScene::UpdateDebugHealthCommand()
+		{
+			/* プレイヤーが無ければ何もできない。*/
+			if (pPlayer_ == nullptr)
+				return;
+
+			const bool bPressRevive = (GetAsyncKeyState(iReviveKey_) & 0x8000) != 0;
+			const bool bPressDamage = (GetAsyncKeyState(iDamageKey_) & 0x8000) != 0;
+			const bool bPressRestock = (GetAsyncKeyState(iRestockKey_) & 0x8000) != 0;
+
+			/* F5: ダウンから復帰させる(味方に起こしてもらった扱い)。*/
+			if (bPressRevive && !bWasPressReviveKey_)
+				pPlayer_->Revive();
+
+			/* F6: 自分に一定のダメージ。一時体力から先に削られ、恒久HPが尽きるとダウンする。*/
+			if (bPressDamage && !bWasPressDamageKey_)
+				pPlayer_->ApplyDamage(iDebugDamage_);
+
+			/* F7: 落ちている物資の代わりに、メディキットと鎮痛剤を手に入れる。*/
+			if (bPressRestock && !bWasPressRestockKey_)
+				pPlayer_->DebugRestockItems();
+
+			/* 次フレーム判定用に今の状態を残す。*/
+			bWasPressReviveKey_ = bPressRevive;
+			bWasPressDamageKey_ = bPressDamage;
+			bWasPressRestockKey_ = bPressRestock;
 		}
 
 
@@ -189,11 +247,10 @@ namespace nsApp
 			const Vector3& vGunPos = pPlayer_->GetWeaponViewPosition();
 			const Vector3& vPlayerPos = pPlayer_->GetPosition();
 
-			swprintf_s(wcHint_, L"T VIEW=%s  size=%.1f eye=%.1f  hand=%s  gun(%.0f,%.0f,%.0f) ply(%.0f,%.0f,%.0f)",
+			swprintf_s(wcHint_, L"T VIEW=%s  eye=%.1f  F5 REVIVE  F6 DMG  F7 ITEM  revive=%d  gun(%.0f,%.0f,%.0f) ply(%.0f,%.0f,%.0f)",
 				bIsThirdPersonView_ ? L"3rd" : L"1st",
-				pPlayer_->GetBodyModelSize(),
 				pPlayer_->GetEyePosition().y - vPlayerPos.y,
-				pPlayer_->IsHandBoneFound() ? L"OK" : L"NG",
+				pPlayer_->GetReviveCount(),
 				vGunPos.x, vGunPos.y, vGunPos.z,
 				vPlayerPos.x, vPlayerPos.y, vPlayerPos.z);
 

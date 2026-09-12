@@ -14,12 +14,12 @@ namespace nsApp
 		}
 
 
-		void WeaponInventory::Update(float fDeltaTime)
+		void WeaponInventory::Update(float fDeltaTime, float fActionSpeedRate)
 		{
 			/* 現在の武器だけ更新する。*/
 			Weapon* pCurrent = GetCurrentWeapon();
 			if (pCurrent != nullptr)
-				pCurrent->Update(fDeltaTime);
+				pCurrent->Update(fDeltaTime, fActionSpeedRate);
 		}
 
 

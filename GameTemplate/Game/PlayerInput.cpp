@@ -52,9 +52,12 @@ namespace nsApp
 			bInteractTrigger_ = CheckTrigger('E', bPrevInteractPress_);
 			bLightTrigger_ = CheckTrigger('F', bPrevLightPress_);
 			bPauseTrigger_ = CheckTrigger(VK_ESCAPE, bPrevPausePress_);
-			bHealTrigger_ = CheckTrigger('H', bPrevHealPress_);
-			bThrowTrigger_ = CheckTrigger('G', bPrevThrowPress_);
-			bSprintPress_ = (GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0;
+			/* アイテム。数字キーは本家(L4D2)のスロット順(3=投擲, 4=メディキット, 5=鎮痛剤)。*/
+			bHealPress_ = IsKeyPress('H') || IsKeyPress('4');
+			bThrowTrigger_ = CheckTriggerFromPress(IsKeyPress('G') || IsKeyPress('3'), bPrevThrowPress_);
+			bQuickItemTrigger_ = CheckTrigger('5', bPrevQuickItemPress_);
+			bSprintPress_ = IsKeyPress(VK_SHIFT);
+			bCrouchPress_ = IsKeyPress(VK_CONTROL);
 			bShoveTrigger_ = CheckTrigger('V', bPrevShovePress_);
 			bMainWeaponTrigger_ = CheckTrigger('1', bPrevMainWeaponPress_);
 			bSubWeaponTrigger_ = CheckTrigger('2', bPrevSubWeaponPress_);
@@ -99,10 +102,20 @@ namespace nsApp
 			SetCursorPos(center.x, center.y);
 		}
 
+		bool PlayerInput::IsKeyPress(int iVKey) const
+		{
+			return (GetAsyncKeyState(iVKey) & 0x8000) != 0;
+		}
+
 		bool PlayerInput::CheckTrigger(int iVKey, bool& bPrevPress)
 		{
-			bool bIsPress = (GetAsyncKeyState(iVKey) & 0x8000) != 0;
-			bool bIsTrigger = bIsPress && !bPrevPress;
+			return CheckTriggerFromPress(IsKeyPress(iVKey), bPrevPress);
+		}
+
+		bool PlayerInput::CheckTriggerFromPress(bool bIsPress, bool& bPrevPress)
+		{
+			/* 前回押されておらず、今回押されていれば「押した瞬間」。*/
+			const bool bIsTrigger = bIsPress && !bPrevPress;
 			bPrevPress = bIsPress;
 			return bIsTrigger;
 		}

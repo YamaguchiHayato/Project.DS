@@ -31,9 +31,10 @@ namespace nsApp
 
 			/**
 			 * @brief 毎フレーム呼ぶ更新処理(現在武器のクールタイム等を進める)。
-			 * @param fDeltaTime 1フレームの経過時間(秒)。
+			 * @param fDeltaTime       1フレームの経過時間(秒)。
+			 * @param fActionSpeedRate リロードと構えの速さの倍率(アドレナリン中は1より大きくなる)。
 			 */
-			void Update(float fDeltaTime);
+			void Update(float fDeltaTime, float fActionSpeedRate = 1.0f);
 
 			/**
 			 * @brief 現在の武器で発射を試みる。

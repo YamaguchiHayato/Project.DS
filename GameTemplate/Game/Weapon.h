@@ -106,9 +106,10 @@ namespace nsApp
 
 			/**
 			 * @brief 毎フレームの更新処理(発射クールタイム・リロードの経過)。
-			 * @param fDeltaTime 1フレームの経過時間(秒)。
+			 * @param fDeltaTime       1フレームの経過時間(秒)。
+			 * @param fActionSpeedRate リロードと構えの速さの倍率(アドレナリン中は1より大きくなる。発射間隔には掛けない)。
 			 */
-			void Update(float fDeltaTime);
+			void Update(float fDeltaTime, float fActionSpeedRate = 1.0f);
 
 			/**
 			 * @brief 発射を試みる。

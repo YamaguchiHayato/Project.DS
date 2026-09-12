@@ -34,10 +34,12 @@ namespace nsApp
 			bool bLightTrigger_ = false;		//! ライトON/OFF(押した瞬間)。
 			bool bPauseTrigger_ = false;		//! ポーズ・メニュー(押した瞬間)。
 
-			bool bHealTrigger_ = false;		//! 回復アイテム使用(押した瞬間)。
+			bool bHealPress_ = false;		//! メディキット使用(押しっぱなし。使い切るまで押し続ける)。
 			bool bThrowTrigger_ = false;		//! 投擲アイテム(押した瞬間)。
+			bool bQuickItemTrigger_ = false;	//! 即効アイテム(鎮痛剤・アドレナリン。押した瞬間)。
 
 			bool bSprintPress_ = false;		//! スプリント(Shift押しっぱなし)。
+			bool bCrouchPress_ = false;		//! しゃがみ(Ctrl押しっぱなし)。
 		};
 	}
 }

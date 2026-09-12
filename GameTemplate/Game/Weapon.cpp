@@ -23,11 +23,14 @@ namespace nsApp
 		}
 
 
-		void Weapon::Update(float fDeltaTime)
+		void Weapon::Update(float fDeltaTime, float fActionSpeedRate)
 		{
+			/* 手の動き(構え・リロード)だけ倍率を掛ける。銃の連射速度は薬だけでは変わらない。*/
+			const float fActionDelta = fDeltaTime * fActionSpeedRate;
+
 			/* 構え終わるまでの時間を進める。*/
 			if (fDeployTimer_ > 0.0f)
-				fDeployTimer_ -= fDeltaTime;
+				fDeployTimer_ -= fActionDelta;
 
 			/* 発射クールタイムを進める。*/
 			if (fFireTimer_ > 0.0f)
@@ -41,7 +44,7 @@ namespace nsApp
 			/* リロード中ならリロードタイマーを進める。*/
 			if (bIsReloading_)
 			{
-				fReloadTimer_ -= fDeltaTime;
+				fReloadTimer_ -= fActionDelta;
 
 				/* リロード完了で弾を満タンにする。*/
 				if (fReloadTimer_ <= 0.0f)
