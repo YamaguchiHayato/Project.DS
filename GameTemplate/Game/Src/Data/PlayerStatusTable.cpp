@@ -8,6 +8,7 @@ namespace
 	const char* sViewShakeNodeName_ = "viewShake";					//! 揺れの調整値が入っているノード名。
 	const char* sReloadNodeName_ = "reload";						//! リロード演出の調整値が入っているノード名。
 	const char* sHealthNodeName_ = "health";						//! 体力ルールの調整値が入っているノード名。
+	const char* sAccuracyNodeName_ = "accuracy";					//! 拡散の調整値が入っているノード名。
 
 	nsApp::nsData::PlayerStatus stPlayerStatus_;	//! 読み込んだプレイヤーのパラメータ。
 	bool bIsLoaded_ = false;						//! JSONの読み込みを済ませたか。
@@ -40,6 +41,13 @@ namespace
 		{ "shovePush",			&nsApp::nsData::PlayerStatus::fShovePush_ },
 		{ "shoveFrontDot",		&nsApp::nsData::PlayerStatus::fShoveFrontDot_ },
 		{ "shoveCooldownTime",	&nsApp::nsData::PlayerStatus::fShoveCooldownTime_ },
+		{ "shoveFatigueCooldownTime",	&nsApp::nsData::PlayerStatus::fShoveFatigueCooldownTime_ },
+		{ "shoveFatigueRecoverTime",	&nsApp::nsData::PlayerStatus::fShoveFatigueRecoverTime_ },
+		{ "shoveMotionForward",	&nsApp::nsData::PlayerStatus::fShoveMotionForward_ },
+		{ "shoveMotionUp",		&nsApp::nsData::PlayerStatus::fShoveMotionUp_ },
+		{ "shoveMotionRecoverRate",	&nsApp::nsData::PlayerStatus::fShoveMotionRecoverRate_ },
+		{ "crouchEyeHeight",	&nsApp::nsData::PlayerStatus::fCrouchEyeHeight_ },
+		{ "crouchSpeedRate",	&nsApp::nsData::PlayerStatus::fCrouchSpeedRate_ },
 	};
 
 	/* プレイヤーの整数の項目。*/
@@ -49,6 +57,16 @@ namespace
 		{ "reviveHP",		&nsApp::nsData::PlayerStatus::iReviveHP_ },
 		{ "medkitCount",	&nsApp::nsData::PlayerStatus::iMedkitCount_ },
 		{ "grenadeCount",	&nsApp::nsData::PlayerStatus::iGrenadeCount_ },
+		{ "shoveFatigueCount",	&nsApp::nsData::PlayerStatus::iShoveFatigueCount_ },
+	};
+
+	/* 姿勢と移動による拡散の項目。*/
+	const ReadEntry<nsApp::nsData::AccuracyStatus, float> ACCURACY_TABLE[] =
+	{
+		{ "moveSpreadRate",		&nsApp::nsData::AccuracyStatus::fMoveSpreadRate_ },
+		{ "sprintSpreadRate",	&nsApp::nsData::AccuracyStatus::fSprintSpreadRate_ },
+		{ "crouchSpreadRate",	&nsApp::nsData::AccuracyStatus::fCrouchSpreadRate_ },
+		{ "spreadFollowRate",	&nsApp::nsData::AccuracyStatus::fSpreadFollowRate_ },
 	};
 
 	/* 歩きと視点移動の揺れの項目。*/
@@ -190,6 +208,13 @@ namespace nsApp
 			{
 				ReadFloatTable(stFile, stPlayerStatus_.stHealthRule_, HEALTH_FLOAT_TABLE, _countof(HEALTH_FLOAT_TABLE));
 				ReadIntTable(stFile, stPlayerStatus_.stHealthRule_, HEALTH_INT_TABLE, _countof(HEALTH_INT_TABLE));
+				stFile.Leave();
+			}
+
+			/* 姿勢と移動による拡散。*/
+			if (stFile.Enter(sAccuracyNodeName_))
+			{
+				ReadFloatTable(stFile, stPlayerStatus_.stAccuracy_, ACCURACY_TABLE, _countof(ACCURACY_TABLE));
 				stFile.Leave();
 			}
 		}

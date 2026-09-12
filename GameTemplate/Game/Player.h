@@ -301,6 +301,12 @@ namespace nsApp
 			//! メディキットを使わずに復帰した回数(UI表示用)。
 			inline int GetReviveCount() const { return iReviveCount_; }
 
+			//! しゃがんでいるか。
+			inline bool IsCrouching() const { return bIsCrouching_; }
+
+			//! 押し返しの疲労(続けて押した回数)。上限に達すると次までの間が長くなる。
+			inline int GetShoveFatigue() const { return iShoveStack_; }
+
 			/**
 			 * @brief 現在装備中の武器を取得する(UI表示用。無ければnullptr)。
 			 * @return 現在の武器。
@@ -453,6 +459,12 @@ namespace nsApp
 			void UpdateAds(float fDeltaTime);
 
 			/**
+			 * @brief 姿勢(しゃがみ)と移動(歩き/走り)で決まる拡散の倍率を、目標へ滑らかに寄せる。
+			 * @param fDeltaTime 1フレームの経過時間(秒)。
+			 */
+			void UpdateStanceSpread(float fDeltaTime);
+
+			/**
 			 * @brief 歩きと視点移動から生まれる揺れを更新する。
 			 *        ・視点を振ったときに銃が遅れてついてくるずれ(sway)。
 			 *        ・歩きに合わせたカメラの上下動と傾き。
@@ -603,6 +615,8 @@ namespace nsApp
 			float fWeaponKickBack_ = 0.0f;			//! 射撃で銃が手前へ下がっている距離。時間で0へ戻る。
 			float fAdsRate_ = 0.0f;					//! 覗き込みの度合い(0=腰だめ, 1=完全に覗き込み)。
 			float fSpreadShot_ = 0.0f;				//! 連射で増えた拡散角(ラジアン)。時間で0へ戻る。
+			float fStanceSpreadRate_ = 1.0f;		//! 姿勢と移動で決まる拡散の倍率(しゃがみで締まり、動くと広がる)。
+			bool bIsCrouching_ = false;				//! しゃがんでいるか。
 			float fLowerRate_ = 0.0f;				//! 銃を下げている度合い(0=構え, 1=完全に下げる)。走る・回復すると1へ近づく。
 			float fEyeHeight_ = 0.0f;				//! いまの目の高さ(立ち/ダウンの目標へ滑らかに寄せる)。
 
@@ -629,6 +643,9 @@ namespace nsApp
 			EnQuickItem enQuickItem_ = EnQuickItem::None;	//! 持っている即効アイテム。
 			float fAdrenalineTimer_ = 0.0f;			//! アドレナリンの効果の残り時間(秒)。
 			float fShoveCooldown_ = 0.0f;				//! 突き飛ばしのクールダウン残り(秒)。
+			int iShoveStack_ = 0;						//! 続けて押した回数(疲労)。押さずにいると抜けていく。
+			float fShoveRestTimer_ = 0.0f;			//! 最後に押してからの経過時間(秒)。疲労の回復に使う。
+			float fShoveMotion_ = 0.0f;				//! 押したときに銃を突き出している度合い(1→0へ戻る)。
 			int iMedkitCount_ = 0;					//! 所持回復アイテム数(開始時の数はステータス表から入れる)。
 			int iGrenadeCount_ = 0;					//! 所持投擲アイテム数(開始時の数はステータス表から入れる)。
 			nsEvent::EventBus* pEventBus_ = nullptr;				//! イベント発行先(生成時にFindGOで取得。無ければ発行しない)。

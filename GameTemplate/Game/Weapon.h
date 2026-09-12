@@ -130,6 +130,11 @@ namespace nsApp
 			 */
 			void Deploy();
 
+			/**
+			 * @brief リロードを中断する(突き飛ばしなど、手を使う動作をしたとき)。装填はされない。
+			 */
+			void CancelReload();
+
 
 		/* ゲッター。*/
 		public:

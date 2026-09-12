@@ -129,11 +129,17 @@ namespace nsApp
 		}
 
 
+		void Weapon::CancelReload()
+		{
+			bIsReloading_ = false;
+			fReloadTimer_ = 0.0f;
+		}
+
+
 		void Weapon::Deploy()
 		{
 			/* 持ち替えたのでリロードは中断する。*/
-			bIsReloading_ = false;
-			fReloadTimer_ = 0.0f;
+			CancelReload();
 
 			/* 構え終わるまで撃てない時間を設定する。*/
 			fDeployTimer_ = stStatus_.fDeployTime_;

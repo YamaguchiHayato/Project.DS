@@ -10,9 +10,11 @@ namespace nsApp
 		 */
 		enum class EnPickupType : uint8_t
 		{
-			Ammo,		//! 予備弾薬。
+			Ammo,		//! 弾薬の山。予備弾を満タンにする。触れても無くならない。
 			Medkit,		//! 回復アイテム。
 			Grenade,	//! 投擲アイテム。
+			Pills,		//! 鎮痛剤(即効アイテム)。
+			Adrenaline,	//! アドレナリン(即効アイテム)。
 		};
 
 		/**

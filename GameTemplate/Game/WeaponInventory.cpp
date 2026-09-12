@@ -43,6 +43,15 @@ namespace nsApp
 		}
 
 
+		void WeaponInventory::CancelReload()
+		{
+			/* 現在の武器のリロードを止める。*/
+			Weapon* pCurrent = GetCurrentWeapon();
+			if (pCurrent != nullptr)
+				pCurrent->CancelReload();
+		}
+
+
 		void WeaponInventory::SwitchNext()
 		{
 			/* 未所持なら何もしない。*/
@@ -106,6 +115,21 @@ namespace nsApp
 			}
 
 			/* どれにも入らなければ、物資はその場に残してもらう。*/
+			return bAdded;
+		}
+
+
+		bool WeaponInventory::RefillReserveAmmoToAll()
+		{
+			bool bAdded = false;
+
+			/* 上限までのぶんをそのまま足せば満タンになる。満タンの武器と無限のサブ武器は0が返る。*/
+			for (Weapon& weapon : vecWeapons_)
+			{
+				if (weapon.AddReserveAmmo(weapon.GetMaxReserveAmmo()) > 0)
+					bAdded = true;
+			}
+
 			return bAdded;
 		}
 

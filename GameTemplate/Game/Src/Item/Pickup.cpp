@@ -25,6 +25,11 @@ namespace
 		case nsApp::nsItem::EnPickupType::Grenade:
 			return 20.0f;
 
+		case nsApp::nsItem::EnPickupType::Pills:
+		case nsApp::nsItem::EnPickupType::Adrenaline:
+			/* 瓶や注射器なので小さめ。*/
+			return 16.0f;
+
 		default:
 			return 22.0f;
 		}

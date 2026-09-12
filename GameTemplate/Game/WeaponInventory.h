@@ -50,6 +50,11 @@ namespace nsApp
 			void Reload();
 
 			/**
+			 * @brief 現在の武器のリロードを中断する(突き飛ばしなどで手を使ったとき)。
+			 */
+			void CancelReload();
+
+			/**
 			 * @brief 次の武器に切り替える(リスト末尾なら先頭に戻る)。
 			 */
 			void SwitchNext();
@@ -72,6 +77,12 @@ namespace nsApp
 			 * @return 1発でも補給できたら true。
 			 */
 			bool AddReserveAmmoToAll(int iAmount);
+
+			/**
+			 * @brief 所持している武器の予備弾を全て上限まで満たす(弾薬の山に触れたとき。本家と同じく満タンになる)。
+			 * @return 1発でも補給できたら true。
+			 */
+			bool RefillReserveAmmoToAll();
 
 
 		/* ゲッター。*/

@@ -57,6 +57,19 @@ namespace nsApp
 		};
 
 		/**
+		 * @struct AccuracyStatus
+		 * @brief  姿勢と移動で弾の拡散がどれだけ変わるかの調整値。
+		 *         本家(L4D2)は動きながら撃つと大きくばらつき、しゃがむと締まる。その感触を出すためのもの。
+		 */
+		struct AccuracyStatus
+		{
+			float	fMoveSpreadRate_ = 1.8f;		//! 歩きながら撃つときの拡散の倍率。
+			float	fSprintSpreadRate_ = 2.6f;		//! 走りながら撃つときの拡散の倍率。
+			float	fCrouchSpreadRate_ = 0.55f;		//! しゃがんで撃つときの拡散の倍率(1より小さいと締まる)。
+			float	fSpreadFollowRate_ = 10.0f;		//! 倍率が切り替わる速さ。クロスヘアが一瞬で跳ねないように鈍らせる。
+		};
+
+		/**
 		 * @struct HealthRuleStatus
 		 * @brief  L4D2式の体力ルールの調整値。
 		 *         体力は「恒久HP」と、時間で減っていく「一時体力」の2階建て。
@@ -114,11 +127,21 @@ namespace nsApp
 			float	fBleedOutTime_ = 15.0f;			//! ダウンしてから死亡するまでの出血時間(秒)。
 			int		iReviveHP_ = 1;					//! 救助で復帰したときの恒久HP。残りは一時体力(health.reviveTempHP)で補う。
 
+			/* しゃがみ。*/
+			float	fCrouchEyeHeight_ = 100.0f;		//! しゃがんだときの目の高さ。
+			float	fCrouchSpeedRate_ = 0.5f;		//! しゃがみ中の移動速度の倍率。
+
 			/* 突き飛ばし(近接)。*/
 			float	fShoveRange_ = 180.0f;			//! 突き飛ばしが届く距離。
 			float	fShovePush_ = 120.0f;			//! 突き飛ばしで敵を押し返す距離。
 			float	fShoveFrontDot_ = 0.5f;			//! 正面判定のしきい値(0.5=正面±60度)。
 			float	fShoveCooldownTime_ = 0.7f;		//! 突き飛ばしのクールダウン(秒)。
+			int		iShoveFatigueCount_ = 5;		//! 続けて押せる回数。これを超えると疲れて間が長くなる(本家の押し返し疲労)。
+			float	fShoveFatigueCooldownTime_ = 1.8f;	//! 疲れているときのクールダウン(秒)。
+			float	fShoveFatigueRecoverTime_ = 2.0f;	//! 押さずにいると疲労が1回ぶん抜けるまでの時間(秒)。
+			float	fShoveMotionForward_ = 16.0f;	//! 押したときに銃を前へ突き出す距離(見た目)。
+			float	fShoveMotionUp_ = 6.0f;			//! 押したときに銃を上へ振る距離(見た目)。
+			float	fShoveMotionRecoverRate_ = 7.0f;	//! 突き出した銃が戻る速さ。
 
 			/* 開始時の所持品。*/
 			int		iMedkitCount_ = 1;				//! 開始時に持っている回復アイテムの数。
@@ -127,6 +150,9 @@ namespace nsApp
 
 			/* 体力のルール。*/
 			HealthRuleStatus	stHealthRule_;		//! L4D2式の体力(一時体力・メディキット・負傷歩行・白黒)。
+
+			/* 弾の拡散。*/
+			AccuracyStatus		stAccuracy_;		//! 姿勢と移動による拡散の変化。
 
 			/* 見た目の調整値。まとまりごとに別の構造体へ分けている。*/
 			ViewShakeStatus		stViewShake_;		//! 歩きと視点移動の揺れ。

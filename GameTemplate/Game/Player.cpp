@@ -47,7 +47,7 @@ namespace
 	const float kReloadSettleStart = 0.90f;	//! ここから戻りの行き過ぎが出る。
 	const float kEnemyCenterHeightForShove = 85.0f;	//! 突き飛ばしの手応えを出す高さ(敵の体の中心)。
 	const int kShoveDamage = 10;			//! 突き飛ばしで与えるダメージ。押し返しが主で、削るのはおまけ。
-	const int kPickupAmmoAmount = 60;		//! 弾薬をひとつ拾ったときに補給される予備弾数。
+	const float kShoveMotionAngle = 0.25f;	//! 押したときに銃口が上を向く角度(ラジアン)。
 	const int kFlashLightIndex = 0;			//! 手持ちライトに使うスポットライトの番号。
 	const float kFlashLightRange = 900.0f;	//! ライトが届く距離。
 	const float kFlashLightAngle = 0.5f;	//! ライトの広がり(ラジアン)。
@@ -229,6 +229,7 @@ namespace nsApp
 
 			/* 3.覗き込みと拡散、反動、体力の時間経過、目の高さを進める。*/
 			UpdateAds(fDeltaTime);
+			UpdateStanceSpread(fDeltaTime);
 			UpdateRecoil(fDeltaTime);
 			UpdateHealth(fDeltaTime);
 			UpdateEyeHeight(fDeltaTime);
@@ -255,6 +256,7 @@ namespace nsApp
 				/* 倒れているので動けないが、本家と同じくサブ武器(ピストル)でなら撃てる。*/
 				bIsMoving_ = false;
 				bIsSprinting_ = false;
+				bIsCrouching_ = false;
 				UpdateViewSway(fDeltaTime);
 				UpdateWeapon(fDeltaTime);
 				break;
@@ -263,6 +265,7 @@ namespace nsApp
 				/* 何もできない。武器のクールダウン等だけ進め、揺れは収まっていく。*/
 				bIsMoving_ = false;
 				bIsSprinting_ = false;
+				bIsCrouching_ = false;
 				stWeaponInventory_.Update(fDeltaTime);
 				UpdateViewSway(fDeltaTime);
 				break;
@@ -365,6 +368,9 @@ namespace nsApp
 
 			const Vector3& vMoveAxis = stIntent_.vMoveAxis_;
 
+			/* しゃがみ(Ctrl)。止まっていても姿勢は変わるので、移動入力より先に見る。*/
+			bIsCrouching_ = stIntent_.bCrouchPress_;
+
 			/* 移動入力が無ければ座標も向きも変えない(向きは維持してアイドルへ)。*/
 			if (vMoveAxis.x == 0.0f && vMoveAxis.z == 0.0f)
 			{
@@ -381,9 +387,13 @@ namespace nsApp
 			vMoveDir.y = 0.0f;
 			vMoveDir.Normalize();
 
-			/* スプリント(Shift)中は移動速度を上げて進む。*/
-			bIsSprinting_ = stIntent_.bSprintPress_;
+			/* スプリント(Shift)中は移動速度を上げて進む。しゃがんだままでは走れない。*/
+			bIsSprinting_ = stIntent_.bSprintPress_ && !bIsCrouching_;
 			float fSpeed = bIsSprinting_ ? (stPlayerStatus_.fMoveSpeed_ * stPlayerStatus_.fSprintRate_) : stPlayerStatus_.fMoveSpeed_;
+
+			/* しゃがみ歩きはゆっくり。*/
+			if (bIsCrouching_)
+				fSpeed *= stPlayerStatus_.fCrouchSpeedRate_;
 
 			/* 体力が少ないと足を引きずり、アドレナリンが効いていれば速くなる。*/
 			fSpeed *= GetMoveSpeedRate();
@@ -450,6 +460,28 @@ namespace nsApp
 		}
 
 
+		void Player::UpdateStanceSpread(float fDeltaTime)
+		{
+			const nsData::AccuracyStatus& stAccuracy = stPlayerStatus_.stAccuracy_;
+
+			/* いまの姿勢と移動から目標の倍率を決める。しゃがみ＞走り＞歩き＞立ち止まりの優先で見る。*/
+			float fTarget = 1.0f;
+			if (bIsCrouching_)
+				fTarget = stAccuracy.fCrouchSpreadRate_;
+			else if (bIsMoving_ && bIsSprinting_)
+				fTarget = stAccuracy.fSprintSpreadRate_;
+			else if (bIsMoving_)
+				fTarget = stAccuracy.fMoveSpreadRate_;
+
+			/* 目標へ滑らかに寄せる(クロスヘアがカクッと跳ねないように)。*/
+			float fRate = fDeltaTime * stAccuracy.fSpreadFollowRate_;
+			if (fRate > 1.0f)
+				fRate = 1.0f;
+
+			fStanceSpreadRate_ += (fTarget - fStanceSpreadRate_) * fRate;
+		}
+
+
 		float Player::GetAdsZoomRate()
 		{
 			/* 武器が無ければ画角を変えない。*/
@@ -468,9 +500,9 @@ namespace nsApp
 			if (pWeapon == nullptr)
 				return 0.0f;
 
-			/* 覗き込みの度合いで腰だめとADSの拡散を混ぜ、連射ぶんを足す。*/
+			/* 覗き込みの度合いで腰だめとADSの拡散を混ぜ、姿勢と移動の倍率を掛け、連射ぶんを足す。*/
 			const float fBase = pWeapon->GetSpreadHip() + (pWeapon->GetSpreadAds() - pWeapon->GetSpreadHip()) * fAdsRate_;
-			return fBase + fSpreadShot_;
+			return fBase * fStanceSpreadRate_ + fSpreadShot_;
 		}
 
 
@@ -803,6 +835,21 @@ namespace nsApp
 			if (fShoveCooldown_ > 0.0f)
 				fShoveCooldown_ -= fDeltaTime;
 
+			/* 押さずにいた時間で疲労が1回ぶんずつ抜けていく。*/
+			fShoveRestTimer_ += fDeltaTime;
+			while (iShoveStack_ > 0 && fShoveRestTimer_ >= stPlayerStatus_.fShoveFatigueRecoverTime_)
+			{
+				iShoveStack_--;
+				fShoveRestTimer_ -= stPlayerStatus_.fShoveFatigueRecoverTime_;
+			}
+
+			/* 突き出した銃を戻す。*/
+			float fMotionRate = fDeltaTime * stPlayerStatus_.fShoveMotionRecoverRate_;
+			if (fMotionRate > 1.0f)
+				fMotionRate = 1.0f;
+
+			fShoveMotion_ -= fShoveMotion_ * fMotionRate;
+
 			/* 突き飛ばし入力が無い、またはクールダウン中なら何もしない。*/
 			if (!stIntent_.bShoveTrigger_ || fShoveCooldown_ > 0.0f)
 				return;
@@ -811,8 +858,20 @@ namespace nsApp
 			if (bIsHealing_)
 				return;
 
-			/* クールダウンを設定する。*/
-			fShoveCooldown_ = stPlayerStatus_.fShoveCooldownTime_;
+			/*
+			 * 続けて押すと疲れて、次までの間が長くなる(本家の押し返し疲労)。
+			 * 押し続けるだけで安全にならないようにするため。アドレナリン中は疲れない。
+			 */
+			iShoveStack_++;
+			fShoveRestTimer_ = 0.0f;
+			const bool bIsFatigued = !IsAdrenalineActive() && (iShoveStack_ >= stPlayerStatus_.iShoveFatigueCount_);
+			fShoveCooldown_ = bIsFatigued ? stPlayerStatus_.fShoveFatigueCooldownTime_ : stPlayerStatus_.fShoveCooldownTime_;
+
+			/* 銃を前へ突き出す見た目。*/
+			fShoveMotion_ = 1.0f;
+
+			/* 手を使うので、途中だったリロードは中断される(本家と同じ)。*/
+			stWeaponInventory_.CancelReload();
 
 			/* 正面(水平)方向。*/
 			const Vector3 vAimDir = { sinf(fCameraYaw_), 0.0f, cosf(fCameraYaw_) };
@@ -872,15 +931,23 @@ namespace nsApp
 				if (pPickup == nullptr || !pPickup->IsInRange(vPosition_))
 					continue;
 
-				/* 種類に応じて補給する。満たされていて拾えない場合は次を探す。*/
+				/*
+				 * 弾薬の山は無くならない(本家と同じ)。所持している武器の予備弾を上限まで満たし、
+				 * 補給できたら通知だけ出して終わる。満タンで補給できなければ次を探す。
+				 */
+				if (pPickup->GetType() == nsItem::EnPickupType::Ammo)
+				{
+					if (!stWeaponInventory_.RefillReserveAmmoToAll())
+						continue;
+
+					PublishGameEvent(nsEvent::EnGameEvent::ItemPickedUp, pPickup->GetPosition());
+					return;
+				}
+
+				/* 種類に応じて手に入れる。満たされていて拾えない場合は次を探す。*/
 				bool bPickedUp = false;
 				switch (pPickup->GetType())
 				{
-				case nsItem::EnPickupType::Ammo:
-					/* 所持している武器の予備弾を補給する。*/
-					bPickedUp = stWeaponInventory_.AddReserveAmmoToAll(kPickupAmmoAmount);
-					break;
-
 				case nsItem::EnPickupType::Medkit:
 					iMedkitCount_++;
 					bPickedUp = true;
@@ -888,6 +955,17 @@ namespace nsApp
 
 				case nsItem::EnPickupType::Grenade:
 					iGrenadeCount_++;
+					bPickedUp = true;
+					break;
+
+				case nsItem::EnPickupType::Pills:
+					/* 即効アイテムは1つしか持てない。本家と同じく、持っているものと入れ替わる。*/
+					enQuickItem_ = EnQuickItem::Pills;
+					bPickedUp = true;
+					break;
+
+				case nsItem::EnPickupType::Adrenaline:
+					enQuickItem_ = EnQuickItem::Adrenaline;
 					bPickedUp = true;
 					break;
 
@@ -1041,6 +1119,10 @@ namespace nsApp
 
 			vGunPos -= vLook * fWeaponKickBack_;			// 撃った直後は手前へ下がる
 
+			/* 突き飛ばしは銃を前へ突き出して見せる。*/
+			vGunPos += vLook * (stPlayerStatus_.fShoveMotionForward_ * fShoveMotion_);
+			vGunPos.y += stPlayerStatus_.fShoveMotionUp_ * fShoveMotion_;
+
 			/* 視点を振ったときの遅れ。腕が視点に引きずられているように見せる。*/
 			vGunPos += vRight * fSwayRight_;
 			vGunPos.y += fSwayUp_;
@@ -1074,6 +1156,7 @@ namespace nsApp
 			qGun.AddRotationZ(stReload.fRollAngle_ * fReloadLower);	// 差込口が見えるよう銃を傾ける。
 			qGun.AddRotationX(-stReload.fInsertAngle_ * fReloadInsert);	// 挿し込む瞬間だけ銃口が持ち上がる。
 			qGun.AddRotationZ(fSwayRight_ * stShake.fSwayRollRate_);		// 視点を振った遅れのぶん傾ける。
+			qGun.AddRotationX(-kShoveMotionAngle * fShoveMotion_);		// 突き飛ばした瞬間は銃口が上を向く。
 
 			PlaceWeaponModel(iType, vGunPos, qBase, qGun, fScale);
 		}
@@ -1421,8 +1504,10 @@ namespace nsApp
 		{
 			const nsData::HealthRuleStatus& stRule = stPlayerStatus_.stHealthRule_;
 
-			/* 倒れている(死んでいる)ときは低く、立っているときは通常の高さ。*/
-			const float fTarget = (enLifeState_ == EnLifeState::Alive) ? stPlayerStatus_.fEyeHeight_ : stRule.fDownEyeHeight_;
+			/* 倒れている(死んでいる)ときは低く、しゃがんでいれば中くらい、立っていれば通常の高さ。*/
+			float fTarget = stRule.fDownEyeHeight_;
+			if (enLifeState_ == EnLifeState::Alive)
+				fTarget = bIsCrouching_ ? stPlayerStatus_.fCrouchEyeHeight_ : stPlayerStatus_.fEyeHeight_;
 
 			/* 目標へ滑らかに寄せる。倒れ込む・起き上がる動きに見える。*/
 			float fRate = fDeltaTime * stRule.fEyeHeightFollowRate_;

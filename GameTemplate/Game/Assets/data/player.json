@@ -23,11 +23,21 @@
 	"bleedOutTime": 15.0,                               //! ダウンしてから死亡するまでの出血時間。
 	"reviveHP": 1,                                      //! 救助で復帰したときの恒久HP。残りは一時体力(health.reviveTempHP)で補う。
 
+	/* しゃがみ(Ctrl)。*/
+	"crouchEyeHeight": 100.0,                           //! しゃがんだときの目の高さ。
+	"crouchSpeedRate": 0.5,                             //! しゃがみ中の移動速度の倍率。
+
 	/* 突き飛ばし(近接)。*/
 	"shoveRange": 180.0,                                //! 突き飛ばしが届く距離。
 	"shovePush": 120.0,                                 //! 突き飛ばしで敵を押し返す距離。
 	"shoveFrontDot": 0.5,                               //! 正面判定のしきい値(0.5=正面±60度)。
 	"shoveCooldownTime": 0.7,                           //! 突き飛ばしのクールダウン。
+	"shoveFatigueCount": 5,                             //! 続けて押せる回数。これを超えると疲れて間が長くなる(本家の押し返し疲労)。
+	"shoveFatigueCooldownTime": 1.8,                    //! 疲れているときのクールダウン。
+	"shoveFatigueRecoverTime": 2.0,                     //! 押さずにいると疲労が1回ぶん抜けるまでの時間。
+	"shoveMotionForward": 16.0,                         //! 押したときに銃を前へ突き出す距離(見た目)。
+	"shoveMotionUp": 6.0,                               //! 押したときに銃を上へ振る距離(見た目)。
+	"shoveMotionRecoverRate": 7.0,                      //! 突き出した銃が戻る速さ。
 
 	/* 開始時の所持品。*/
 	"medkitCount": 1,                                   //! 開始時に持っている回復アイテムの数。
@@ -61,6 +71,17 @@
 		"downEyeHeight": 60.0,                          //! ダウン中の目の高さ。倒れているので低くなる。
 		"downDamageTimeRate": 0.15,                     //! ダウン中に受けたダメージ1あたりに縮む出血時間(秒)。殴られ続けると早く死ぬ。
 		"eyeHeightFollowRate": 10.0                     //! 目の高さが目標(立ち/ダウン)へ移る速さ。
+	},
+
+	/**
+	 * @brief 姿勢と移動で弾の拡散がどれだけ変わるか。
+	 *        本家は動きながら撃つと大きくばらつき、しゃがむと締まる。腰だめでも止まって撃てば当たる、という感触を作る。
+	 */
+	"accuracy": {
+		"moveSpreadRate": 1.8,                          //! 歩きながら撃つときの拡散の倍率。
+		"sprintSpreadRate": 2.6,                        //! 走りながら撃つときの拡散の倍率。
+		"crouchSpreadRate": 0.55,                       //! しゃがんで撃つときの拡散の倍率(1より小さいと締まる)。
+		"spreadFollowRate": 10.0                        //! 倍率が切り替わる速さ。クロスヘアが一瞬で跳ねないように鈍らせる。
 	},
 
 	/**
