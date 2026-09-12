@@ -293,8 +293,8 @@ namespace nsApp
 			stAmmoText_.SetText(wcAmmo_);
 
 			/* アイテムスロット。本家の並び(3投擲/4メディキット/5即効)で出す。*/
-			swprintf_s(wcItem_, L"[3] GRENADE x%d    [4] MEDKIT x%d    [5] %s",
-				pPlayer->GetGrenadeCount(), pPlayer->GetMedkitCount(), GetQuickItemName(pPlayer->GetQuickItem()));
+			swprintf_s(wcItem_, L"[3] PIPE BOMB x%d    [4] MEDKIT x%d    [5] %s",
+				pPlayer->GetPipeBombCount(), pPlayer->GetMedkitCount(), GetQuickItemName(pPlayer->GetQuickItem()));
 			stItemText_.SetText(wcItem_);
 
 			/* クロスヘア。*/

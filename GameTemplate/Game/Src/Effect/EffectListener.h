@@ -11,7 +11,7 @@ namespace nsApp
 		 * @file   EffectListener.h
 		 * @brief  ゲーム内の通知を購読し、その出来事に応じたエフェクトを再生するリスナー(Observer)。
 		 *         「何が起きたか」だけを受け取り、何をどう見せるかはこのクラスが決める。
-		 *         発行元(Player/Grenadeなど)は演出を知らなくてよい。
+		 *         発行元(Player/PipeBombなど)は演出を知らなくてよい。
 		 *         SEを実装するときは、同じ通知を購読する SoundListener を並べて追加する。
 		 * @author Izumida Kiryu
 		 * @date   2026/08/21

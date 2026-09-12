@@ -30,7 +30,7 @@ namespace nsApp
 			/* 戦闘中の出来事。*/
 			WeaponFired,			//! 武器を発射した。
 			BulletHit,				//! 弾が命中した。
-			GrenadeExploded,		//! グレネードが爆発した。
+			BombExploded,			//! パイプ爆弾が爆発した。
 			PlayerHealed,			//! プレイヤーが回復した。
 			PlayerDamaged,			//! プレイヤーが攻撃を受けた。
 			ItemPickedUp,			//! 落ちている物資を拾った。

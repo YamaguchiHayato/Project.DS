@@ -335,8 +335,8 @@ namespace nsApp
 			//! ライトが点いているか(UI表示用)。
 			inline bool IsLightOn() const { return bIsLightOn_; }
 
-			//! 所持している投擲アイテム数(UI表示用)。
-			inline int GetGrenadeCount() const { return iGrenadeCount_; }
+			//! 所持しているパイプ爆弾の数(UI表示用)。
+			inline int GetPipeBombCount() const { return iPipeBombCount_; }
 
 			/**
 			 * @brief ダウン中のプレイヤーを救助して復帰させる(将来の味方/BOT用)。
@@ -345,7 +345,7 @@ namespace nsApp
 			void Revive();
 
 			/**
-			 * @brief デバッグ用。メディキット・投擲・鎮痛剤を1つずつ持たせる。
+			 * @brief デバッグ用。メディキット・パイプ爆弾・鎮痛剤を1つずつ持たせる。
 			 *        射撃場で体力ルールを試し直すためのもので、本編からは呼ばない。
 			 */
 			void DebugRestockItems();
@@ -685,7 +685,7 @@ namespace nsApp
 			float fShoveRestTimer_ = 0.0f;			//! 最後に押してからの経過時間(秒)。疲労の回復に使う。
 			float fShoveMotion_ = 0.0f;				//! 押したときに銃を突き出している度合い(1→0へ戻る)。
 			int iMedkitCount_ = 0;					//! 所持回復アイテム数(開始時の数はステータス表から入れる)。
-			int iGrenadeCount_ = 0;					//! 所持投擲アイテム数(開始時の数はステータス表から入れる)。
+			int iPipeBombCount_ = 0;				//! 所持しているパイプ爆弾の数(開始時の数はステータス表から入れる)。
 			nsEvent::EventBus* pEventBus_ = nullptr;				//! イベント発行先(生成時にFindGOで取得。無ければ発行しない)。
 		};
 	}

@@ -19,7 +19,7 @@ namespace
 			{ nsApp::nsEffect::EnEffectID::Hit, 10.0f, 0.5f, true } },
 
 		/* 爆発: 爆心地に出す。*/
-		{ static_cast<uint8_t>(nsApp::nsEvent::EnGameEvent::GrenadeExploded),
+		{ static_cast<uint8_t>(nsApp::nsEvent::EnGameEvent::BombExploded),
 			{ nsApp::nsEffect::EnEffectID::Explosion, 25.0f, 2.0f, false } },
 
 		/* 回復: プレイヤーの位置に出す。*/

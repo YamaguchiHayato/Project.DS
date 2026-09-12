@@ -145,7 +145,7 @@ namespace nsApp
 
 			/* 開始時の所持品。*/
 			int		iMedkitCount_ = 1;				//! 開始時に持っている回復アイテムの数。
-			int		iGrenadeCount_ = 2;				//! 開始時に持っている投擲アイテムの数。
+			int		iPipeBombCount_ = 2;			//! 開始時に持っているパイプ爆弾の数。
 			std::string sStartQuickItem_ = "Pills";	//! 開始時に持っている即効アイテム("Pills" / "Adrenaline" / "None")。
 
 			/* 体力のルール。*/

@@ -24,7 +24,7 @@ namespace
 		case nsApp::nsItem::EnPickupType::Medkit:
 			return 26.0f;
 
-		case nsApp::nsItem::EnPickupType::Grenade:
+		case nsApp::nsItem::EnPickupType::PipeBomb:
 			return 20.0f;
 
 		case nsApp::nsItem::EnPickupType::Pills:

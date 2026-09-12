@@ -6,7 +6,7 @@
 #include "Src/Actor/Character/Enemy/CommonEnemy.h"
 #include "Src/Event/EventBus.h"
 #include "Src/System/GamePause.h"
-#include "Src/Item/Grenade.h"
+#include "Src/Item/PipeBomb.h"
 #include "Src/Item/Pickup.h"
 #include "Src/Data/PlayerStatusTable.h"
 #include "Src/Data/WeaponStatusTable.h"
@@ -192,7 +192,7 @@ namespace nsApp
 			stCharacterStatus_.stHp_.iCurrentHP_ = stPlayerStatus_.iMaxHP_;
 			stCharacterStatus_.stHp_.iMaxHP_ = stPlayerStatus_.iMaxHP_;
 			iMedkitCount_ = stPlayerStatus_.iMedkitCount_;
-			iGrenadeCount_ = stPlayerStatus_.iGrenadeCount_;
+			iPipeBombCount_ = stPlayerStatus_.iPipeBombCount_;
 			enQuickItem_ = ParseQuickItem(stPlayerStatus_.sStartQuickItem_);
 
 			/* 目の高さは立ち姿から始める(ダウンすると低くなる)。*/
@@ -986,8 +986,8 @@ namespace nsApp
 					bPickedUp = true;
 					break;
 
-				case nsItem::EnPickupType::Grenade:
-					iGrenadeCount_++;
+				case nsItem::EnPickupType::PipeBomb:
+					iPipeBombCount_++;
 					bPickedUp = true;
 					break;
 
@@ -1063,16 +1063,16 @@ namespace nsApp
 			if (stIntent_.bQuickItemTrigger_)
 				UseQuickItem();
 
-			/* 投擲(グレネード): 1個消費して視線方向へ投げる。*/
-			if (stIntent_.bThrowTrigger_ && iGrenadeCount_ > 0)
+			/* 投擲(パイプ爆弾): 1個消費して視線方向へ投げる。着地して敵を引き寄せてから爆発する。*/
+			if (stIntent_.bThrowTrigger_ && iPipeBombCount_ > 0)
 			{
-				iGrenadeCount_--;
+				iPipeBombCount_--;
 
 				const Vector3 vLook = GetLookDirection();
 				Vector3 vThrowPos = GetEyePosition();
 				vThrowPos += vLook * kMuzzleForward;
-				nsItem::Grenade* pGrenade = NewGO<nsItem::Grenade>(0, "grenade");
-				pGrenade->Setup(vThrowPos, vLook);
+				nsItem::PipeBomb* pPipeBomb = NewGO<nsItem::PipeBomb>(0, "pipeBomb");
+				pPipeBomb->Setup(vThrowPos, vLook);
 			}
 		}
 
@@ -1433,7 +1433,7 @@ namespace nsApp
 		void Player::DebugRestockItems()
 		{
 			iMedkitCount_++;
-			iGrenadeCount_++;
+			iPipeBombCount_++;
 
 			/* 即効アイテムは1つしか持てないので、空いていれば鎮痛剤を入れる。*/
 			if (enQuickItem_ == EnQuickItem::None)

@@ -6,6 +6,7 @@
 #include "Src/Event/EventBus.h"
 #include "Src/UI/InGameHud.h"
 #include "Src/Item/Pickup.h"
+#include "Src/Item/PipeBomb.h"
 
 namespace
 {
@@ -96,9 +97,11 @@ namespace nsApp
 			for (nsActor::CommonEnemy* pEnemy : FindGOs<nsActor::CommonEnemy>("commonEnemy"))
 				DeleteGO(pEnemy);
 
-			/* 拾われずに残っている物資(入れ替えで落とした銃も含む)を消す。*/
+			/* 拾われずに残っている物資(入れ替えで落とした銃も含む)と、投げたパイプ爆弾を消す。*/
 			for (nsItem::Pickup* pPickup : FindGOs<nsItem::Pickup>("pickup"))
 				DeleteGO(pPickup);
+			for (nsItem::PipeBomb* pPipeBomb : FindGOs<nsItem::PipeBomb>("pipeBomb"))
+				DeleteGO(pPipeBomb);
 
 			for (int i = 0; i < iTargetEnemyCount_; ++i)
 				aTargetEnemies_[i] = nullptr;
@@ -354,7 +357,7 @@ namespace nsApp
 			{
 				nsItem::EnPickupType::Ammo,
 				nsItem::EnPickupType::Medkit,
-				nsItem::EnPickupType::Grenade,
+				nsItem::EnPickupType::PipeBomb,
 				nsItem::EnPickupType::Pills,
 				nsItem::EnPickupType::Adrenaline,
 			};

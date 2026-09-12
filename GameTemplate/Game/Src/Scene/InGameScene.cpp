@@ -9,7 +9,7 @@
 #include "Src/Director/EnemyDirector.h"
 #include "Src/System/GamePause.h"
 #include "Tracer.h"
-#include "Src/Item/Grenade.h"
+#include "Src/Item/PipeBomb.h"
 
 namespace
 {
@@ -116,11 +116,14 @@ namespace nsApp
 				pEventBus_ = nullptr;
 			}
 
-			/* シーンをまたいで残らないよう、撃った弾筋と投げたグレネードも片付ける。*/
+			/*
+			 * シーンをまたいで残らないよう、撃った弾筋と投げたパイプ爆弾も片付ける。
+			 * 爆弾は敵の追跡対象になっているが、敵も一緒に消しているので指され続けることはない。
+			 */
 			for (nsWeapon::Tracer* pTracer : FindGOs<nsWeapon::Tracer>("tracer"))
 				DeleteGO(pTracer);
-			for (nsItem::Grenade* pGrenade : FindGOs<nsItem::Grenade>("grenade"))
-				DeleteGO(pGrenade);
+			for (nsItem::PipeBomb* pPipeBomb : FindGOs<nsItem::PipeBomb>("pipeBomb"))
+				DeleteGO(pPipeBomb);
 
 			/*
 			 * 地面のコライダを物理ワールドから取り除く。

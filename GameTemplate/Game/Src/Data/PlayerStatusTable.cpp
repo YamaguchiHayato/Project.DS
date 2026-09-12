@@ -56,7 +56,7 @@ namespace
 		{ "maxHP",			&nsApp::nsData::PlayerStatus::iMaxHP_ },
 		{ "reviveHP",		&nsApp::nsData::PlayerStatus::iReviveHP_ },
 		{ "medkitCount",	&nsApp::nsData::PlayerStatus::iMedkitCount_ },
-		{ "grenadeCount",	&nsApp::nsData::PlayerStatus::iGrenadeCount_ },
+		{ "pipeBombCount",	&nsApp::nsData::PlayerStatus::iPipeBombCount_ },
 		{ "shoveFatigueCount",	&nsApp::nsData::PlayerStatus::iShoveFatigueCount_ },
 	};
 

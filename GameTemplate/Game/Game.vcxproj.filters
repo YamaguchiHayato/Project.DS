@@ -151,7 +151,7 @@
     <ClCompile Include="Src\System\ModelBounds.cpp">
       <Filter>Src\System</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Item\Grenade.cpp">
+    <ClCompile Include="Src\Item\PipeBomb.cpp">
       <Filter>Src\Item</Filter>
     </ClCompile>
     <ClCompile Include="Src\Item\Pickup.cpp">
@@ -306,7 +306,7 @@
     <ClInclude Include="Src\System\ModelBounds.h">
       <Filter>Src\System</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Item\Grenade.h">
+    <ClInclude Include="Src\Item\PipeBomb.h">
       <Filter>Src\Item</Filter>
     </ClInclude>
     <ClInclude Include="Src\Item\Pickup.h">

@@ -41,7 +41,7 @@
 
 	/* 開始時の所持品。*/
 	"medkitCount": 1,                                   //! 開始時に持っている回復アイテムの数。
-	"grenadeCount": 2,                                  //! 開始時に持っている投擲アイテムの数。
+	"pipeBombCount": 2,                                 //! 開始時に持っているパイプ爆弾の数。
 	"startQuickItem": "Pills",                          //! 開始時に持っている即効アイテム。"Pills"(鎮痛剤) / "Adrenaline"(アドレナリン) / "None"。
 
 	/**
