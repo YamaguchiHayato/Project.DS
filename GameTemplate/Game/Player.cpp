@@ -9,7 +9,10 @@
 #include "Src/Item/Grenade.h"
 #include "Src/Item/Pickup.h"
 #include "Src/Data/PlayerStatusTable.h"
+#include "Src/Data/WeaponStatusTable.h"
 #include "Src/Combat/HitBoxSet.h"
+#include "Src/System/ModelBounds.h"
+#include <algorithm>
 
 namespace
 {
@@ -152,7 +155,11 @@ namespace nsApp
 	namespace nsActor
 	{
 		Player::Player()
-		{}
+		{
+			/* 武器モデルの中心は読み込むまで分からないので、ゼロで始めておく。*/
+			for (Vector3& vCenter : aWeaponModelCenter_)
+				vCenter = Vector3::Zero;
+		}
 
 		Player::~Player()
 		{
@@ -661,34 +668,97 @@ namespace nsApp
 		}
 
 
-		CommonEnemy* Player::FindHitEnemy(const Vector3& vRayStart, const Vector3& vRayDirection, nsCombat::HitResult& stOutResult)
+		void Player::FindHitEnemies(const Vector3& vRayStart, const Vector3& vRayDirection, int iMaxCount, std::vector<HitEnemy>& vecOutHits)
 		{
-			stOutResult = nsCombat::HitResult();
+			vecOutHits.clear();
 
 			/* 敵の部位別当たり判定(形とダメージ倍率)を取り出す。*/
 			const nsCombat::HitBoxSet& stHitBoxSet = nsCombat::HitBoxSet::GetShared(CharacterModelType::Infected);
 
-			CommonEnemy* pHitEnemy = nullptr;
-
-			/* 当たった敵が見つかるたびに射程を縮め、より手前の敵だけを残す。*/
-			float fNearest = stPlayerStatus_.fWeaponRange_;
-
+			/* 射程内で弾道に触れる敵を全部集める。*/
 			for (CommonEnemy* pEnemy : FindGOs<CommonEnemy>("commonEnemy"))
 			{
 				if (pEnemy == nullptr)
 					continue;
 
 				/* 敵1体ぶんの部位別判定。足元の座標を基準に頭・胴・脚を並べて判定する。*/
-				nsCombat::HitResult stResult;
-				if (!stHitBoxSet.FindHitPart(vRayStart, vRayDirection, fNearest, pEnemy->GetPosition(), stResult))
+				HitEnemy stHit;
+				if (!stHitBoxSet.FindHitPart(vRayStart, vRayDirection, stPlayerStatus_.fWeaponRange_, pEnemy->GetPosition(), stHit.stResult_))
 					continue;
 
-				fNearest = stResult.fDistance_;
-				pHitEnemy = pEnemy;
-				stOutResult = stResult;
+				stHit.pEnemy_ = pEnemy;
+				vecOutHits.push_back(stHit);
 			}
 
-			return pHitEnemy;
+			/* 手前から順に並べ、貫通できる数だけ残す。*/
+			std::sort(vecOutHits.begin(), vecOutHits.end(),
+				[](const HitEnemy& stA, const HitEnemy& stB)
+				{
+					return stA.stResult_.fDistance_ < stB.stResult_.fDistance_;
+				});
+
+			if (iMaxCount < 1)
+				iMaxCount = 1;
+
+			if (static_cast<int>(vecOutHits.size()) > iMaxCount)
+				vecOutHits.resize(iMaxCount);
+		}
+
+
+		void Player::DealBulletDamage(CommonEnemy* pEnemy, int iDamage, const Vector3& vHitPoint, const Vector3& vShotDir, bool bHeadShot)
+		{
+			/* 倍率が小さくても、当てたのに0ダメージにはしない。*/
+			if (iDamage < 1)
+				iDamage = 1;
+
+			pEnemy->ApplyDamage(iDamage);
+
+			/* 命中の演出(当たった位置に出す)。*/
+			PublishGameEvent(nsEvent::EnGameEvent::BulletHit, vHitPoint, vShotDir, iDamage, bHeadShot);
+
+			/* 倒したら撃破エフェクト＋撃破イベントを出して退場させる。*/
+			if (!pEnemy->IsDead())
+				return;
+
+			/* 撃破の閃光は胸のあたり(身長の半分)に出す。*/
+			Vector3 vKillPos = pEnemy->GetPosition();
+			vKillPos.y += nsCombat::HitBoxSet::GetShared(CharacterModelType::Infected).GetHeight() * 0.5f;
+			PublishGameEvent(nsEvent::EnGameEvent::EnemyKilled, vKillPos);
+
+			DeleteGO(pEnemy);
+		}
+
+
+		void Player::FireHitScan(nsWeapon::Weapon* pWeapon, const Vector3& vEyePos, const Vector3& vMuzzlePos, const Vector3& vAimDir)
+		{
+			/* 拡散のぶんだけ照準をばらつかせた、実際の弾道。*/
+			const Vector3 vShotDir = MakeSpreadDirection(vAimDir);
+
+			/* レイの終点(最大射程)。命中したら一番奥の命中点に置き換える。*/
+			Vector3 vHitPoint = vEyePos + vShotDir * stPlayerStatus_.fWeaponRange_;
+
+			/* 弾道に触れる敵を手前から拾う。貫通しない武器は1体、貫通する武器はその数だけ奥まで。*/
+			std::vector<HitEnemy> vecHits;
+			FindHitEnemies(vEyePos, vShotDir, pWeapon->GetPenetrateCount() + 1, vecHits);
+
+			for (const HitEnemy& stHit : vecHits)
+			{
+				const nsCombat::HitResult& stResult = stHit.stResult_;
+				vHitPoint = stResult.vHitPoint_;
+
+				/* 当たった部位の倍率(頭なら大ダメージ、脚なら効きが悪い)と、距離による減衰を掛ける。*/
+				const float fRate = stResult.fDamageRate_ * pWeapon->CalcFalloffRate(stResult.fDistance_);
+				const int iDamage = static_cast<int>(static_cast<float>(pWeapon->GetAttackPower()) * fRate);
+
+				/* 頭に当たったかはUIと演出で使う。*/
+				const bool bHeadShot = (stResult.enPart_ == nsCombat::EnHitPart::Head);
+
+				DealBulletDamage(stHit.pEnemy_, iDamage, vHitPoint, vShotDir, bHeadShot);
+			}
+
+			/* 見せるためのトレーサー(曳光弾)を一瞬だけ表示する。貫通したときは一番奥の敵まで伸びる。*/
+			nsWeapon::Tracer* pTracer = NewGO<nsWeapon::Tracer>(0, "tracer");
+			pTracer->Setup(vMuzzlePos, vHitPoint);
 		}
 
 
@@ -712,9 +782,13 @@ namespace nsApp
 			nsWeapon::Weapon* pWeapon = stWeaponInventory_.GetCurrentWeapon();
 			if (pWeapon != nullptr)
 			{
-				const bool bWantFire = pWeapon->IsFullAuto()
+				bool bWantFire = pWeapon->IsFullAuto()
 					? stIntent_.bFirePress_
 					: stIntent_.bFireTrigger_;
+
+				/* 点射の残りは、引き金を離していても撃ち切る。*/
+				if (pWeapon->IsBurstPending())
+					bWantFire = true;
 
 				if (bWantFire)
 				{
@@ -743,51 +817,10 @@ namespace nsApp
 						/* 発射したことを通知する(演出は購読側が担当する)。*/
 						PublishGameEvent(nsEvent::EnGameEvent::WeaponFired, vMuzzlePos, vAimDir);
 
-						/* 拡散のぶんだけ照準をばらつかせた、実際の弾道。*/
-						const Vector3 vShotDir = MakeSpreadDirection(vAimDir);
-
-						/* レイの終点(最大射程)。命中したらここを命中点に置き換える。*/
-						Vector3 vHitPoint = vEyePos + vShotDir * stPlayerStatus_.fWeaponRange_;
-
-						/* ヒットスキャン命中判定: 目線から弾の向きへレイを飛ばし、当たった敵と部位を求める。*/
-						nsCombat::HitResult stHitResult;
-						nsActor::CommonEnemy* pHitEnemy = FindHitEnemy(vEyePos, vShotDir, stHitResult);
-
-						/* 命中していたら、トレーサーを命中点で止めてダメージを与える。*/
-						if (pHitEnemy != nullptr)
-						{
-							vHitPoint = stHitResult.vHitPoint_;
-
-							/* 当たった部位の倍率でダメージを増減する(頭なら大ダメージ、脚なら効きが悪い)。*/
-							int iDamage = static_cast<int>(pWeapon->GetAttackPower() * stHitResult.fDamageRate_);
-
-							/* 倍率が小さくても、当てたのに0ダメージにはしない。*/
-							if (iDamage < 1)
-								iDamage = 1;
-
-							/* 頭に当たったかはUIと演出で使う。*/
-							const bool bHeadShot = (stHitResult.enPart_ == nsCombat::EnHitPart::Head);
-
-							pHitEnemy->ApplyDamage(iDamage);
-
-							/* 命中の演出(当たった位置に出す)。*/
-							PublishGameEvent(nsEvent::EnGameEvent::BulletHit, vHitPoint, vShotDir, iDamage, bHeadShot);
-
-							/* 倒したら撃破エフェクト＋撃破イベントを出して退場させる。*/
-							if (pHitEnemy->IsDead())
-							{
-								/* 撃破の閃光は胸のあたり(身長の半分)に出す。*/
-								Vector3 vKillPos = pHitEnemy->GetPosition();
-								vKillPos.y += nsCombat::HitBoxSet::GetShared(CharacterModelType::Infected).GetHeight() * 0.5f;
-								PublishGameEvent(nsEvent::EnGameEvent::EnemyKilled, vKillPos);
-
-								DeleteGO(pHitEnemy);
-							}
-						}
-
-						/* 見せるためのトレーサー(曳光弾)を一瞬だけ表示する。*/
-						nsWeapon::Tracer* pTracer = NewGO<nsWeapon::Tracer>(0, "tracer");
-						pTracer->Setup(vMuzzlePos, vHitPoint);
+						/* 弾を飛ばす。散弾は1発で複数の粒が別々の向きへ飛ぶので、粒の数だけ判定する。*/
+						const int iPelletCount = pWeapon->GetPelletCount();
+						for (int i = 0; i < iPelletCount; i++)
+							FireHitScan(pWeapon, vEyePos, vMuzzlePos, vAimDir);
 					}
 				}
 			}
@@ -969,6 +1002,10 @@ namespace nsApp
 					bPickedUp = true;
 					break;
 
+				case nsItem::EnPickupType::Weapon:
+					bPickedUp = SwapWeaponWithPickup(pPickup);
+					break;
+
 				default:
 					break;
 				}
@@ -982,6 +1019,24 @@ namespace nsApp
 				DeleteGO(pPickup);
 				return;
 			}
+		}
+
+
+		bool Player::SwapWeaponWithPickup(nsItem::Pickup* pPickup)
+		{
+			/* 同じ区分の武器と入れ替える。すでに同じ銃を持っていれば何もしない。*/
+			nsWeapon::EnWeaponType enOldType = nsWeapon::EnWeaponType::Handgun;
+			if (!stWeaponInventory_.ReplaceWeapon(pPickup->GetWeaponType(), enOldType))
+				return false;
+
+			/*
+			 * 手放した銃はその場に落とす(本家と同じく、拾った場所で入れ替わる)。
+			 * 落とした銃は元の物資と同じ位置に置くので、拾い直せば元に戻せる。
+			 */
+			nsItem::Pickup* pDropped = NewGO<nsItem::Pickup>(0, "pickup");
+			pDropped->SetupWeapon(enOldType, pPickup->GetPosition());
+
+			return true;
 		}
 
 
@@ -1230,94 +1285,49 @@ namespace nsApp
 
 		void Player::CalcBodyModelSize()
 		{
-			/* 全メッシュの全頂点を走査してローカルAABB(最小・最大)を求める。*/
-			Vector3 vMin = { 1e30f, 1e30f, 1e30f };
-			Vector3 vMax = { -1e30f, -1e30f, -1e30f };
-
-			stModelRender_.GetModel().GetTkmFile().QueryMeshParts(
-				[&](const TkmFile::SMesh& mesh)
-				{
-					for (const auto& vertex : mesh.vertexBuffer)
-					{
-						const Vector3& p = vertex.pos;
-						if (p.x < vMin.x) vMin.x = p.x;
-						if (p.y < vMin.y) vMin.y = p.y;
-						if (p.z < vMin.z) vMin.z = p.z;
-						if (p.x > vMax.x) vMax.x = p.x;
-						if (p.y > vMax.y) vMax.y = p.y;
-						if (p.z > vMax.z) vMax.z = p.z;
-					}
-				});
-
-			/* 頂点が取れなければ測れない。*/
-			if (vMax.x < vMin.x)
+			/* 頂点から実際の大きさを測る。取れなければ測れない。*/
+			const nsSystem::ModelBounds stBounds = nsSystem::MeasureModelBounds(stModelRender_.GetModel());
+			if (!stBounds.bIsValid_)
 			{
 				fBodyModelSize_ = 0.0f;
 				return;
 			}
 
 			/* 一番長い辺を大きさとする(モデルの上向き軸に依存しないようにするため)。*/
-			const Vector3 vSize = vMax - vMin;
-			float fLongest = vSize.x;
-			if (vSize.y > fLongest) fLongest = vSize.y;
-			if (vSize.z > fLongest) fLongest = vSize.z;
-
-			fBodyModelSize_ = fLongest * stPlayerStatus_.fBodyModelScale_;
+			fBodyModelSize_ = stBounds.GetLongestEdge() * stPlayerStatus_.fBodyModelScale_;
 
 			/* デバッグ: 想定の身長(目線の高さ等)と実物の大きさが合っているか確認する。*/
-			DebugPrintW(L"[Player] body AABB min(%.1f,%.1f,%.1f) max(%.1f,%.1f,%.1f) size(%.1f,%.1f,%.1f) -> 表示サイズ %.1f (目線の高さ %.1f)\n",
-				vMin.x, vMin.y, vMin.z, vMax.x, vMax.y, vMax.z,
+			const Vector3 vSize = stBounds.GetSize();
+			DebugPrintW(L"[Player] body size(%.1f,%.1f,%.1f) -> 表示サイズ %.1f (目線の高さ %.1f)\n",
 				vSize.x, vSize.y, vSize.z, fBodyModelSize_, stPlayerStatus_.fEyeHeight_);
 		}
 
 
 		void Player::CalcWeaponModelFit(int iType)
 		{
-			/* 全メッシュの全頂点を走査してローカルAABB(最小・最大)を求める。*/
-			Vector3 vMin = { 1e30f, 1e30f, 1e30f };
-			Vector3 vMax = { -1e30f, -1e30f, -1e30f };
-
-			aWeaponModels_[iType].GetModel().GetTkmFile().QueryMeshParts(
-				[&](const TkmFile::SMesh& mesh)
-				{
-					for (const auto& vertex : mesh.vertexBuffer)
-					{
-						const Vector3& p = vertex.pos;
-						if (p.x < vMin.x) vMin.x = p.x;
-						if (p.y < vMin.y) vMin.y = p.y;
-						if (p.z < vMin.z) vMin.z = p.z;
-						if (p.x > vMax.x) vMax.x = p.x;
-						if (p.y > vMax.y) vMax.y = p.y;
-						if (p.z > vMax.z) vMax.z = p.z;
-					}
-				});
-
-			/* 頂点が取れなかった場合は無補正(中心0・スケール1)にする。*/
-			if (vMax.x < vMin.x)
+			/* 頂点から実際の大きさを測る。取れなかった場合は無補正(中心0・スケール1)にする。*/
+			const nsSystem::ModelBounds stBounds = nsSystem::MeasureModelBounds(aWeaponModels_[iType].GetModel());
+			if (!stBounds.bIsValid_)
 			{
-				aWeaponModelCenter_[iType] = Vector3(0.0f, 0.0f, 0.0f);
+				aWeaponModelCenter_[iType] = Vector3::Zero;
 				aWeaponModelAutoScale_[iType] = 1.0f;
 				aWeaponModelLongestEdge_[iType] = 0.0f;
 				return;
 			}
 
-			/* 中心 = (最小+最大)/2。*/
-			Vector3 vCenter = vMin + vMax;
-			vCenter *= 0.5f;
-			aWeaponModelCenter_[iType] = vCenter;
+			/* 中心は原点ズレの打ち消しに使う。*/
+			aWeaponModelCenter_[iType] = stBounds.GetCenter();
 
 			/* 一番長い辺を kTargetGunSize に合わせる自動スケール。*/
-			Vector3 vSize = vMax - vMin;
-			float fLongest = vSize.x;
-			if (vSize.y > fLongest) fLongest = vSize.y;
-			if (vSize.z > fLongest) fLongest = vSize.z;
+			const float fLongest = stBounds.GetLongestEdge();
 			aWeaponModelAutoScale_[iType] = (fLongest > 0.0001f) ? (kTargetGunSize / fLongest) : 1.0f;
 			aWeaponModelLongestEdge_[iType] = fLongest;
 
 			/* デバッグ: AABBに余分なジオメトリが混じっていないか確認する。*/
-			DebugPrintW(L"[Player] weapon%d AABB min(%.1f,%.1f,%.1f) max(%.1f,%.1f,%.1f) size(%.1f,%.1f,%.1f) center(%.1f,%.1f,%.1f) autoScale=%.4f\n",
-				iType, vMin.x, vMin.y, vMin.z, vMax.x, vMax.y, vMax.z,
-				vSize.x, vSize.y, vSize.z, vCenter.x, vCenter.y, vCenter.z, aWeaponModelAutoScale_[iType]);
+			const Vector3 vSize = stBounds.GetSize();
+			const Vector3 vCenter = stBounds.GetCenter();
+			DebugPrintW(L"[Player] weapon%d size(%.1f,%.1f,%.1f) center(%.1f,%.1f,%.1f) autoScale=%.4f\n",
+				iType, vSize.x, vSize.y, vSize.z, vCenter.x, vCenter.y, vCenter.z, aWeaponModelAutoScale_[iType]);
 		}
 
 

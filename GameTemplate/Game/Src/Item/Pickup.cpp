@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "Pickup.h"
 #include "Src/System/GamePause.h"
+#include "Src/System/ModelBounds.h"
+#include "Src/Data/WeaponStatusTable.h"
 
 namespace
 {
@@ -42,18 +44,64 @@ namespace nsApp
 	{
 		bool Pickup::Start()
 		{
-			/* 仮モデルを、少し浮かせた位置に置く。*/
+			if (enType_ == EnPickupType::Weapon)
+				InitWeaponModel();
+			else
+				InitItemModel();
+
+			/* 地面に埋まって見えなくならないよう、少し浮かせた位置へ置く。*/
+			ApplyModelTransform();
+
+			return true;
+		}
+
+
+		void Pickup::InitItemModel()
+		{
+			/* 仮モデル(発光球)。種類で大きさだけ変える。*/
 			const float fScale = GetPickupScale(enType_);
 			stModel_.Init(sPickupModelPath_, nullptr, 0, enModelUpAxisY);
 			stModel_.SetScale(Vector3(fScale, fScale, fScale));
+			vModelOffset_ = Vector3::Zero;
+		}
 
-			/* 地面に埋まって見えなくならないよう、少し浮かせた位置へ置く。*/
+
+		void Pickup::InitWeaponModel()
+		{
+			/* 落ちている銃は、その銃のモデルをそのまま使う(手に持たせるときと同じ実寸)。*/
+			const nsWeapon::WeaponStatus& stStatus = nsData::WeaponStatusTable::Get(enWeaponType_);
+			stModel_.Init(stStatus.pModelPath_, nullptr, 0, enModelUpAxisZ);
+
+			/*
+			 * 銃のモデルは原点が中心に無く、基準の大きさも銃ごとに違う。
+			 * 頂点から測って、手に持たせたときの長さ(handLength)に合わせ、中心が置き場所に来るようにする。
+			 */
+			const nsSystem::ModelBounds stBounds = nsSystem::MeasureModelBounds(stModel_.GetModel());
+			const float fLongest = stBounds.GetLongestEdge();
+			const float fScale = (fLongest > 0.0001f) ? (stStatus.fHandLength_ / fLongest) : 1.0f;
+
+			stModel_.SetScale(Vector3(fScale, fScale, fScale));
+			vModelOffset_ = stBounds.GetCenter() * fScale;
+		}
+
+
+		void Pickup::ApplyModelTransform()
+		{
+			/* 回転は落ちているのが分かるよう、その場で回し続けているぶん。*/
+			Quaternion qRotation;
+			qRotation.SetRotationY(fSpinAngle_);
+
+			/* 原点のズレは回転に合わせて回してから打ち消す。*/
+			Vector3 vOffset = vModelOffset_;
+			qRotation.Apply(vOffset);
+
 			Vector3 vViewPos = vPosition_;
 			vViewPos.y += kPickupHeight;
-			stModel_.SetPosition(vViewPos);
-			stModel_.Update();
+			vViewPos -= vOffset;
 
-			return true;
+			stModel_.SetPosition(vViewPos);
+			stModel_.SetRotation(qRotation);
+			stModel_.Update();
 		}
 
 
@@ -67,10 +115,7 @@ namespace nsApp
 			fSpinAngle_ += kSpinSpeed * g_gameTime->GetFrameDeltaTime();
 
 			/* 進めた角度をモデルへ反映する。*/
-			Quaternion qRotation;
-			qRotation.SetRotationY(fSpinAngle_);
-			stModel_.SetRotation(qRotation);
-			stModel_.Update();
+			ApplyModelTransform();
 		}
 
 

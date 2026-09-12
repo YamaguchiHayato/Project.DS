@@ -5,6 +5,7 @@
 #include "Src/Actor/Character/Enemy/CommonEnemy.h"
 #include "Src/Event/EventBus.h"
 #include "Src/UI/InGameHud.h"
+#include "Src/Item/Pickup.h"
 
 namespace
 {
@@ -54,6 +55,11 @@ namespace
 	/* 手前中央。敵とは離す。*/
 	const Vector3 vPlayerSpawn_ = { 0.0f, 300.0f, -600.0f };
 
+	/* 拾える物資の置き方。プレイヤーの右手側に、銃を1列に並べる。*/
+	const Vector3 vPickupRowStart_ = { -700.0f, 300.0f, -900.0f };	//! 列の左端。
+	const float fPickupRowStep_ = 200.0f;								//! 物資どうしの間隔。
+	const float fPickupItemRowOffset_ = -200.0f;						//! 銃の列から見た、物資(弾薬・回復)の列の奥行きのずれ。
+
 	const Vector3 aTargetPositions_[12] =
 	{
 		/* 手前〜中（左右に開く） */
@@ -89,6 +95,10 @@ namespace nsApp
 			/* 倒済みは FindGOs に出ないので二重破棄しない。*/
 			for (nsActor::CommonEnemy* pEnemy : FindGOs<nsActor::CommonEnemy>("commonEnemy"))
 				DeleteGO(pEnemy);
+
+			/* 拾われずに残っている物資(入れ替えで落とした銃も含む)を消す。*/
+			for (nsItem::Pickup* pPickup : FindGOs<nsItem::Pickup>("pickup"))
+				DeleteGO(pPickup);
 
 			for (int i = 0; i < iTargetEnemyCount_; ++i)
 				aTargetEnemies_[i] = nullptr;
@@ -141,6 +151,9 @@ namespace nsApp
 
 			/* 的役の敵を奥に配置する。 */
 			SpawnTargetEnemies();
+
+			/* 拾える物資を手前に並べる。*/
+			SpawnPickups();
 
 			/* ヒントを描画する。 */
 			stHintFont_.SetPosition(vHintFontPos_);
@@ -320,6 +333,41 @@ namespace nsApp
 			/* 歩きと横移動に合わせてカメラをわずかに傾ける。*/
 			g_camera3D->SetUp(MakeCameraUp(vLook, pPlayer_->GetViewRoll()));
 			g_camera3D->Update();
+		}
+
+
+		void DebugShootingRangeScene::SpawnPickups()
+		{
+			/* 全種類の銃を1列に並べる。Eで拾うと同じ区分の手持ちと入れ替わり、手放した銃がその場に落ちる。*/
+			const int iWeaponCount = static_cast<int>(nsWeapon::EnWeaponType::Num);
+			for (int i = 0; i < iWeaponCount; i++)
+			{
+				Vector3 vPos = vPickupRowStart_;
+				vPos.x += fPickupRowStep_ * static_cast<float>(i);
+
+				nsItem::Pickup* pPickup = NewGO<nsItem::Pickup>(0, "pickup");
+				pPickup->SetupWeapon(static_cast<nsWeapon::EnWeaponType>(i), vPos);
+			}
+
+			/* 銃の列の手前に、弾薬の山・回復・投擲・鎮痛剤・アドレナリンを並べる。*/
+			const nsItem::EnPickupType aItemTypes[] =
+			{
+				nsItem::EnPickupType::Ammo,
+				nsItem::EnPickupType::Medkit,
+				nsItem::EnPickupType::Grenade,
+				nsItem::EnPickupType::Pills,
+				nsItem::EnPickupType::Adrenaline,
+			};
+
+			for (int i = 0; i < _countof(aItemTypes); i++)
+			{
+				Vector3 vPos = vPickupRowStart_;
+				vPos.x += fPickupRowStep_ * static_cast<float>(i);
+				vPos.z += fPickupItemRowOffset_;
+
+				nsItem::Pickup* pPickup = NewGO<nsItem::Pickup>(0, "pickup");
+				pPickup->Setup(aItemTypes[i], vPos);
+			}
 		}
 
 

@@ -30,6 +30,15 @@ namespace nsApp
 			void AddWeapon(EnWeaponType enType);
 
 			/**
+			 * @brief 同じ区分(メイン/サブ)の手持ちの武器を、別の武器と入れ替えて構える。
+			 *        その区分を持っていなければ追加になる。落ちている銃を拾ったときに使う。
+			 * @param enNewType   新しく持つ武器の種類。
+			 * @param enOutOldType 手放した武器の種類を受け取る(追加になった場合は enNewType が入る)。
+			 * @return 入れ替え(または追加)したら true。すでに同じ種類を持っていれば false。
+			 */
+			bool ReplaceWeapon(EnWeaponType enNewType, EnWeaponType& enOutOldType);
+
+			/**
 			 * @brief 毎フレーム呼ぶ更新処理(現在武器のクールタイム等を進める)。
 			 * @param fDeltaTime       1フレームの経過時間(秒)。
 			 * @param fActionSpeedRate リロードと構えの速さの倍率(アドレナリン中は1より大きくなる)。

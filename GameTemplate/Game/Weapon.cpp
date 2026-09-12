@@ -18,6 +18,7 @@ namespace nsApp
 			fFireTimer_ = 0.0f;
 			fReloadTimer_ = 0.0f;
 			iRecoilIndex_ = 0;
+			iBurstRemain_ = 0;
 			fRecoilResetTimer_ = 0.0f;
 			bIsReloading_ = false;
 		}
@@ -41,33 +42,48 @@ namespace nsApp
 			if (fRecoilResetTimer_ >= stStatus_.fRecoilResetTime_)
 				iRecoilIndex_ = 0;
 
-			/* リロード中ならリロードタイマーを進める。*/
+			/* リロード中ならリロードタイマーを進め、時間が来たら装填する。*/
 			if (bIsReloading_)
 			{
 				fReloadTimer_ -= fActionDelta;
-
-				/* リロード完了で弾を満タンにする。*/
 				if (fReloadTimer_ <= 0.0f)
-				{
-					bIsReloading_ = false;
-
-					/* マガジンを満たすのに必要な数を求める。*/
-					const int iNeed = stStatus_.iMaxAmmo_ - iCurrentAmmo_;
-
-					/* サブ武器は予備弾が無限なので、常に満タンにする。*/
-					if (IsInfiniteReserve())
-					{
-						iCurrentAmmo_ = stStatus_.iMaxAmmo_;
-					}
-					else
-					{
-						/* メイン武器は予備弾から補充し、足りなければあるぶんだけ入れる。*/
-						const int iLoad = (iNeed < iReserveAmmo_) ? iNeed : iReserveAmmo_;
-						iCurrentAmmo_ += iLoad;
-						iReserveAmmo_ -= iLoad;
-					}
-				}
+					FinishReloadStep();
 			}
+		}
+
+
+		void Weapon::FinishReloadStep()
+		{
+			/* マガジンを満たすのに必要な数。*/
+			const int iNeed = stStatus_.iMaxAmmo_ - iCurrentAmmo_;
+
+			/* 1回で入れる数。1発ずつ装填する銃は1、普通の銃は必要なぶん全部。*/
+			int iLoad = stStatus_.bIsShellReload_ ? 1 : iNeed;
+
+			/* メイン武器は予備弾から補充し、足りなければあるぶんだけ入れる。サブ武器は無限。*/
+			if (!IsInfiniteReserve())
+			{
+				if (iLoad > iReserveAmmo_)
+					iLoad = iReserveAmmo_;
+
+				iReserveAmmo_ -= iLoad;
+			}
+
+			iCurrentAmmo_ += iLoad;
+
+			/* 1発ずつ装填する銃は、まだ入る余地と予備があればもう1発ぶん続ける。*/
+			const bool bCanContinue = stStatus_.bIsShellReload_
+				&& (iCurrentAmmo_ < stStatus_.iMaxAmmo_)
+				&& (IsInfiniteReserve() || iReserveAmmo_ > 0);
+
+			if (bCanContinue)
+			{
+				fReloadTimer_ = stStatus_.fReloadTime_;
+				return;
+			}
+
+			bIsReloading_ = false;
+			fReloadTimer_ = 0.0f;
 		}
 
 
@@ -77,24 +93,47 @@ namespace nsApp
 			if (IsDeploying())
 				return false;
 
-			/* リロード中は撃てない。*/
+			/* リロード中は撃てない。ただし1発ずつ装填する銃は、弾が入っていれば装填をやめて撃てる(本家のショットガンと同じ)。*/
 			if (bIsReloading_)
-				return false;
+			{
+				if (!stStatus_.bIsShellReload_ || iCurrentAmmo_ <= 0)
+					return false;
+
+				CancelReload();
+			}
 
 			/* クールタイム中は撃てない。*/
 			if (fFireTimer_ > 0.0f)
 				return false;
 
-			/* 弾切れなら自動でリロードを開始し、今回は撃てない扱いにする。*/
+			/* 弾切れなら自動でリロードを開始し、今回は撃てない扱いにする。点射の途中でもそこで終わる。*/
 			if (iCurrentAmmo_ <= 0)
 			{
+				iBurstRemain_ = 0;
 				Reload();
 				return false;
 			}
 
-			/* 弾を1発消費し、クールタイムを設定する。*/
+			/* 弾を1発消費する。*/
 			iCurrentAmmo_--;
-			fFireTimer_ = stStatus_.fFireInterval_;
+
+			/*
+			 * 次に撃てるまでの時間。
+			 * 点射は「引き金を引いた瞬間に残りの発数を予約し、短い間隔で撃ち切ってから通常の間隔を空ける」。
+			 */
+			if (stStatus_.enFireMode_ == EnFireMode::Burst)
+			{
+				if (iBurstRemain_ <= 0)
+					iBurstRemain_ = stStatus_.iBurstCount_ - 1;
+				else
+					iBurstRemain_--;
+
+				fFireTimer_ = (iBurstRemain_ > 0) ? stStatus_.fBurstInterval_ : stStatus_.fFireInterval_;
+			}
+			else
+			{
+				fFireTimer_ = stStatus_.fFireInterval_;
+			}
 
 			/* この1発ぶんの跳ね方をパターンから取り出し、次の段へ進める。*/
 			if (stStatus_.pRecoilPattern_ != nullptr && stStatus_.iRecoilPatternCount_ > 0)
@@ -111,11 +150,7 @@ namespace nsApp
 			fRecoilResetTimer_ = 0.0f;
 
 			/*
-			 * TODO: ここで実際の弾Actor生成 or レイキャストによる命中判定を行う。
-			 *       当たり判定の共有仕様(敵側との接続)が決まったら、
-			 *       vPosition/vDirection と GetAttackPower() を使ってダメージを与える。
-			 */
-			/*
+			 * 命中判定はここでは行わない。散弾数・貫通数を見て弾を飛ばすのは持ち主(Player)の役目。
 			 * DebugPrintW は第1引数の「書式文字列」を内部で整形して直接出力する。
 			 * 書式はワイド文字列(L"...")で書き、ナロー文字列(const char* の pName_)は
 			 * ワイド書式では %hs を使う(%s だと wchar_t* 扱いになり文字化けする)。
@@ -129,6 +164,24 @@ namespace nsApp
 		}
 
 
+		float Weapon::CalcFalloffRate(float fDistance) const
+		{
+			/* 落ち始めの距離が無い、または幅が無ければ落ちない。*/
+			if (stStatus_.fFalloffStart_ <= 0.0f || stStatus_.fFalloffEnd_ <= stStatus_.fFalloffStart_)
+				return 1.0f;
+
+			if (fDistance <= stStatus_.fFalloffStart_)
+				return 1.0f;
+
+			if (fDistance >= stStatus_.fFalloffEnd_)
+				return stStatus_.fFalloffMinRate_;
+
+			/* 落ち始めから下限まで直線で落とす。*/
+			const float fRate = (fDistance - stStatus_.fFalloffStart_) / (stStatus_.fFalloffEnd_ - stStatus_.fFalloffStart_);
+			return 1.0f - (1.0f - stStatus_.fFalloffMinRate_) * fRate;
+		}
+
+
 		void Weapon::CancelReload()
 		{
 			bIsReloading_ = false;
@@ -138,8 +191,9 @@ namespace nsApp
 
 		void Weapon::Deploy()
 		{
-			/* 持ち替えたのでリロードは中断する。*/
+			/* 持ち替えたのでリロードは中断する。点射の予約も消える。*/
 			CancelReload();
+			iBurstRemain_ = 0;
 
 			/* 構え終わるまで撃てない時間を設定する。*/
 			fDeployTimer_ = stStatus_.fDeployTime_;
@@ -167,8 +221,9 @@ namespace nsApp
 			if (!IsInfiniteReserve() && iReserveAmmo_ <= 0)
 				return;
 
-			/* リロードを開始する。*/
+			/* リロードを開始する。点射の予約は消える。*/
 			bIsReloading_ = true;
+			iBurstRemain_ = 0;
 			fReloadTimer_ = stStatus_.fReloadTime_;
 		}
 	}

@@ -10,6 +10,7 @@
 namespace nsApp
 {
 	namespace nsEvent { class EventBus; }	//! 前方宣言。
+	namespace nsItem { class Pickup; }		//! 前方宣言。
 
 	namespace nsActor
 	{
@@ -453,6 +454,13 @@ namespace nsApp
 			void PickUpItem();
 
 			/**
+			 * @brief 落ちている銃と、同じ区分の手持ちの銃を入れ替える。手放した銃はその場に落とす。
+			 * @param pPickup 落ちている銃。
+			 * @return 入れ替えたら true。すでに同じ銃を持っていれば false。
+			 */
+			bool SwapWeaponWithPickup(nsItem::Pickup* pPickup);
+
+			/**
 			 * @brief 覗き込み(ADS)の度合いと、弾の拡散を更新する。
 			 * @param fDeltaTime 1フレームの経過時間(秒)。
 			 */
@@ -498,14 +506,44 @@ namespace nsApp
 			Vector3 MakeSpreadDirection(const Vector3& vAimDir) const;
 
 			/**
-			 * @brief 弾が当たった敵と、当たった部位を調べる(ヒットスキャン)。
-			 *        当たった敵が複数いれば、一番手前の1体を返す。
+			 * @struct HitEnemy
+			 * @brief  1本の弾道に当たった敵1体ぶんの記録。
+			 */
+			struct HitEnemy
+			{
+				CommonEnemy* pEnemy_ = nullptr;		//! 当たった敵。
+				nsCombat::HitResult stResult_;		//! 当たった部位と位置。
+			};
+
+			/**
+			 * @brief 弾道に当たった敵と部位を、手前から順に調べる(ヒットスキャン)。
+			 *        貫通しない武器は1体、貫通する武器はその数だけ奥まで拾う。
 			 * @param vRayStart     判定の起点(目の位置)。
 			 * @param vRayDirection 弾の進む向き(正規化済み)。
-			 * @param stOutResult   当たった部位の情報を受け取る。
-			 * @return 当たった敵。当たっていなければnullptr。
+			 * @param iMaxCount     拾う最大数(1＝手前の1体だけ)。
+			 * @param vecOutHits    手前から順に並べた命中の一覧を受け取る。
 			 */
-			CommonEnemy* FindHitEnemy(const Vector3& vRayStart, const Vector3& vRayDirection, nsCombat::HitResult& stOutResult);
+			void FindHitEnemies(const Vector3& vRayStart, const Vector3& vRayDirection, int iMaxCount, std::vector<HitEnemy>& vecOutHits);
+
+			/**
+			 * @brief 弾1粒ぶんの弾道を飛ばし、当たった敵にダメージを与えてトレーサーを出す。
+			 *        散弾はこれを粒の数だけ呼ぶ。
+			 * @param pWeapon    撃った武器。
+			 * @param vEyePos    判定の起点(目の位置)。
+			 * @param vMuzzlePos トレーサーの始点(画面上の銃口)。
+			 * @param vAimDir    照準の向き(ばらつかせる前)。
+			 */
+			void FireHitScan(nsWeapon::Weapon* pWeapon, const Vector3& vEyePos, const Vector3& vMuzzlePos, const Vector3& vAimDir);
+
+			/**
+			 * @brief 敵にダメージを与え、命中と撃破の通知を出す。倒したら退場させる。
+			 * @param pEnemy    当たった敵。
+			 * @param iDamage   与えるダメージ。
+			 * @param vHitPoint 当たった位置。
+			 * @param vShotDir  弾の向き。
+			 * @param bHeadShot 頭に当たったか。
+			 */
+			void DealBulletDamage(CommonEnemy* pEnemy, int iDamage, const Vector3& vHitPoint, const Vector3& vShotDir, bool bHeadShot);
 
 			/**
 			 * @brief 1発ぶんの反動を加える(発射した瞬間に呼ぶ)。
@@ -595,8 +633,8 @@ namespace nsApp
 
 			ModelRender aWeaponModels_[static_cast<int>(nsWeapon::EnWeaponType::Num)];			//! 武器ごとのモデル(種類で添字)。切替のたびに再Initすると壊れるので一度だけ読み込む。
 			bool aWeaponModelLoaded_[static_cast<int>(nsWeapon::EnWeaponType::Num)] = {};	//! 各武器モデルを読み込み済みか。
-			//! 各武器モデルのローカルAABB中心(原点ズレ吸収用)。Vector3に既定コンストラクタが無いので要素数ぶん明示初期化する。
-			Vector3 aWeaponModelCenter_[static_cast<int>(nsWeapon::EnWeaponType::Num)] = { { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } };
+			//! 各武器モデルのローカルAABB中心(原点ズレ吸収用)。読み込んだときに CalcWeaponModelFit が入れる。
+			Vector3 aWeaponModelCenter_[static_cast<int>(nsWeapon::EnWeaponType::Num)];
 			float aWeaponModelAutoScale_[static_cast<int>(nsWeapon::EnWeaponType::Num)] = {};//! 各武器モデルの自動サイズ合わせスケール。
 			float aWeaponModelLongestEdge_[static_cast<int>(nsWeapon::EnWeaponType::Num)] = {};//! 各武器モデルのローカルAABBの一番長い辺。実寸を指定して置くときに使う。
 			nsWeapon::EnWeaponType enEquippedType_ = nsWeapon::EnWeaponType::Handgun;			//! 現在装備中の武器の種類(描画対象)。

@@ -43,6 +43,14 @@ namespace nsApp
 			 * @return キー名。
 			 */
 			static const char* GetTypeName(nsWeapon::EnWeaponType enType);
+
+			/**
+			 * @brief キー名から武器の種類を探す(ステージデータに銃の名前で置くときに使う)。
+			 * @param pName     キー名("Handgun" など)。
+			 * @param enOutType 見つかった種類を受け取る。
+			 * @return 見つかれば true。
+			 */
+			static bool FindTypeByName(const char* pName, nsWeapon::EnWeaponType& enOutType);
 		};
 	}
 }

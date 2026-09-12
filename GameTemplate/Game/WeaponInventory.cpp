@@ -14,6 +14,40 @@ namespace nsApp
 		}
 
 
+		bool WeaponInventory::ReplaceWeapon(EnWeaponType enNewType, EnWeaponType& enOutOldType)
+		{
+			/* 新しい武器の区分を調べる。*/
+			Weapon stNewWeapon;
+			stNewWeapon.Init(enNewType);
+			const EnWeaponSlot enSlot = stNewWeapon.GetSlot();
+
+			/* 同じ区分の武器を探す。*/
+			for (int i = 0; i < static_cast<int>(vecWeapons_.size()); i++)
+			{
+				if (vecWeapons_[i].GetSlot() != enSlot)
+					continue;
+
+				/* すでに同じ銃なら入れ替える意味が無い。*/
+				if (vecWeapons_[i].GetType() == enNewType)
+					return false;
+
+				/* 入れ替えて、その銃を構える。*/
+				enOutOldType = vecWeapons_[i].GetType();
+				vecWeapons_[i] = stNewWeapon;
+				iCurrentIndex_ = i;
+				vecWeapons_[iCurrentIndex_].Deploy();
+				return true;
+			}
+
+			/* その区分をまだ持っていなければ追加して構える。*/
+			enOutOldType = enNewType;
+			vecWeapons_.push_back(stNewWeapon);
+			iCurrentIndex_ = static_cast<int>(vecWeapons_.size()) - 1;
+			vecWeapons_[iCurrentIndex_].Deploy();
+			return true;
+		}
+
+
 		void WeaponInventory::Update(float fDeltaTime, float fActionSpeedRate)
 		{
 			/* 現在の武器だけ更新する。*/

@@ -98,6 +98,12 @@ namespace nsApp
 			 */
 			void SpawnTargetEnemies();
 
+			/**
+			 * @brief 拾える物資(全種類の銃・弾薬の山・回復・鎮痛剤)を手前に並べる。
+			 *        銃の持ち替えと、それぞれの撃ち味をここで確かめる。
+			 */
+			void SpawnPickups();
+
 
 		private:
 			nsActor::Player* pPlayer_ = nullptr; //! プレイヤー（本番と同じ）。
