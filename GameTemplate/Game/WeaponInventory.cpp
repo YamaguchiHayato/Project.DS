@@ -14,12 +14,46 @@ namespace nsApp
 		}
 
 
-		void WeaponInventory::Update(float fDeltaTime)
+		bool WeaponInventory::ReplaceWeapon(EnWeaponType enNewType, EnWeaponType& enOutOldType)
+		{
+			/* 新しい武器の区分を調べる。*/
+			Weapon stNewWeapon;
+			stNewWeapon.Init(enNewType);
+			const EnWeaponSlot enSlot = stNewWeapon.GetSlot();
+
+			/* 同じ区分の武器を探す。*/
+			for (int i = 0; i < static_cast<int>(vecWeapons_.size()); i++)
+			{
+				if (vecWeapons_[i].GetSlot() != enSlot)
+					continue;
+
+				/* すでに同じ銃なら入れ替える意味が無い。*/
+				if (vecWeapons_[i].GetType() == enNewType)
+					return false;
+
+				/* 入れ替えて、その銃を構える。*/
+				enOutOldType = vecWeapons_[i].GetType();
+				vecWeapons_[i] = stNewWeapon;
+				iCurrentIndex_ = i;
+				vecWeapons_[iCurrentIndex_].Deploy();
+				return true;
+			}
+
+			/* その区分をまだ持っていなければ追加して構える。*/
+			enOutOldType = enNewType;
+			vecWeapons_.push_back(stNewWeapon);
+			iCurrentIndex_ = static_cast<int>(vecWeapons_.size()) - 1;
+			vecWeapons_[iCurrentIndex_].Deploy();
+			return true;
+		}
+
+
+		void WeaponInventory::Update(float fDeltaTime, float fActionSpeedRate)
 		{
 			/* 現在の武器だけ更新する。*/
 			Weapon* pCurrent = GetCurrentWeapon();
 			if (pCurrent != nullptr)
-				pCurrent->Update(fDeltaTime);
+				pCurrent->Update(fDeltaTime, fActionSpeedRate);
 		}
 
 
@@ -40,6 +74,15 @@ namespace nsApp
 			Weapon* pCurrent = GetCurrentWeapon();
 			if (pCurrent != nullptr)
 				pCurrent->Reload();
+		}
+
+
+		void WeaponInventory::CancelReload()
+		{
+			/* 現在の武器のリロードを止める。*/
+			Weapon* pCurrent = GetCurrentWeapon();
+			if (pCurrent != nullptr)
+				pCurrent->CancelReload();
 		}
 
 
@@ -89,6 +132,39 @@ namespace nsApp
 				vecWeapons_[iCurrentIndex_].Deploy();
 				return;
 			}
+		}
+
+
+		bool WeaponInventory::AddReserveAmmoToAll(int iAmount)
+		{
+			/* 1挺でも補給できたかを覚えておく。*/
+			bool bAdded = false;
+
+			/* 所持している武器を順に見て、余裕があるものへ補給する。*/
+			for (Weapon& weapon : vecWeapons_)
+			{
+				/* 満タンの武器と、予備弾が無限のサブ武器は0が返るので数に入れない。*/
+				if (weapon.AddReserveAmmo(iAmount) > 0)
+					bAdded = true;
+			}
+
+			/* どれにも入らなければ、物資はその場に残してもらう。*/
+			return bAdded;
+		}
+
+
+		bool WeaponInventory::RefillReserveAmmoToAll()
+		{
+			bool bAdded = false;
+
+			/* 上限までのぶんをそのまま足せば満タンになる。満タンの武器と無限のサブ武器は0が返る。*/
+			for (Weapon& weapon : vecWeapons_)
+			{
+				if (weapon.AddReserveAmmo(weapon.GetMaxReserveAmmo()) > 0)
+					bAdded = true;
+			}
+
+			return bAdded;
 		}
 
 

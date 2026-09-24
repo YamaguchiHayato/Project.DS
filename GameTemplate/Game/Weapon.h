@@ -7,12 +7,23 @@ namespace nsApp
 		/**
 		 * @enum EnWeaponType
 		 * @brief 武器の種類。WeaponStatusテーブルの添字にもなる。
+		 *        並びは本家(L4D2)のティア順(サブ→Tier1→Tier2)に寄せている。
 		 */
 		enum class EnWeaponType : uint8_t
 		{
-			Handgun,		//! ハンドガン。
-			AssaultRifle,	//! アサルトライフル。
-			/* ↑ここに武器を追加したら、Weapon.cpp のステータステーブルにも1行追加する。*/
+			Handgun,		//! ハンドガン(サブ。予備弾は無限)。
+			Magnum,			//! マグナム(サブ。威力が高く貫通する)。
+			SMG,			//! サブマシンガン(Tier1。連射は速いが1発は軽い)。
+			PumpShotgun,	//! ポンプショットガン(Tier1。散弾。1発ずつ装填)。
+			AssaultRifle,	//! アサルトライフル(Tier2)。
+			AK47,			//! AK-47(Tier2。1発が重く反動が大きい)。
+			CombatRifle,	//! コンバットライフル(Tier2。3点バースト)。
+			HuntingRifle,	//! ハンティングライフル(Tier2。単発高威力。何体でも貫通)。
+			/*
+			 * ↑ここに武器を追加したら、
+			 * ・Assets/data/weapon.json に同じ名前で1件追加する。
+			 * ・Src/Data/WeaponStatusTable.cpp のキー名一覧と既定値の表にも1件追加する。
+			 */
 			Num,			//! 武器の数。
 		};
 
@@ -24,6 +35,17 @@ namespace nsApp
 		{
 			Main,	//! メイン武器(予備弾数に限りがある)。
 			Sub,	//! サブ武器(予備弾数は無限。そのぶん火力は低い)。
+		};
+
+		/**
+		 * @enum  EnFireMode
+		 * @brief 引き金の挙動。
+		 */
+		enum class EnFireMode : uint8_t
+		{
+			Semi,	//! 単発。押した瞬間に1発。
+			Auto,	//! 連射。押している間、発射間隔ごとに撃つ。
+			Burst,	//! 点射。押した瞬間に決まった発数を短い間隔で撃つ。
 		};
 
 		/**
@@ -45,23 +67,38 @@ namespace nsApp
 		struct WeaponStatus
 		{
 			const char* pName_;			//! 武器名(UI表示用)。
-			float fFireInterval_;		//! 発射間隔(秒)。小さいほど連射が速い。
+			float fFireInterval_;		//! 発射間隔(秒)。小さいほど連射が速い。点射では「点射と点射の間」。
 			EnWeaponSlot enSlot_;		//! 武器の区分(メイン/サブ)。
+			EnFireMode enFireMode_;		//! 引き金の挙動(単発/連射/点射)。
+			int iBurstCount_;			//! 点射で1回に撃つ発数(点射のときだけ使う)。
+			float fBurstInterval_;		//! 点射の中の1発ごとの間隔(秒)。
 			int iMaxAmmo_;				//! マガジン最大弾数。
 			int iMaxReserveAmmo_;		//! 予備弾数の上限(サブ武器では使わない)。
-			float fReloadTime_;			//! リロードにかかる時間(秒)。
+			float fReloadTime_;			//! リロードにかかる時間(秒)。1発ずつ装填する武器では1発ぶんの時間。
+			bool bIsShellReload_;		//! 1発ずつ装填するか(ショットガン)。途中で撃って止められる。
 			float fDeployTime_;			//! 持ち替えてから撃てるようになるまでの時間(秒)。
-			int iAttackPower_;			//! 1発の威力。
-			bool bIsFullAuto_;			//! 押しっぱなしで連射できるか(falseなら単発)。
+			int iAttackPower_;			//! 1発の威力。散弾では1粒ぶん。
+			int iPelletCount_;			//! 1発で飛ぶ弾の数(散弾)。普通の銃は1。
+			int iPenetrateCount_;		//! 貫通して奥の敵に当たる数。0なら手前の1体で止まる。
+			float fFalloffStart_;		//! この距離から威力が落ち始める。0なら落ちない。
+			float fFalloffEnd_;			//! この距離で威力が下限まで落ちる。
+			float fFalloffMinRate_;		//! 距離で落ちた威力の下限(倍率)。
 			const char* pModelPath_;	//! 手に持つ武器モデルのファイルパス。
 			float fModelScale_;			//! 表示サイズ倍率(自動サイズ合わせに対する倍率。1.0=標準)。
 			float fViewModelForward_;	//! ビューモデルをカメラから前へ離す距離(大きい銃ほど離すとカメラにめり込みにくい)。
+			/* ↓三人称(他プレイヤーから見た姿)で、手のボーンに持たせるときの合わせ込み。銃ごとにグリップの位置が違うので調整する。*/
+			float fHandForward_;		//! 手のボーンから前へずらす距離。
+			float fHandRight_;			//! 手のボーンから右へずらす距離。
+			float fHandUp_;				//! 手のボーンから上へずらす距離。
+			float fHandLength_;			//! 手に持たせたときの銃の長さ(世界の単位)。ビューモデルは画面用に誇張しているので別に持つ。
 			float fRecoilPitch_;		//! 1発あたりに視点が跳ね上がる角度(ラジアン)。
 			float fRecoilYaw_;			//! 1発あたりに視点が左右へブレる角度の最大値(ラジアン)。
 			float fKickBack_;			//! 1発あたりに銃が手前へ下がる距離。
 			float fSpreadHip_;			//! 腰だめ撃ちの弾の拡散角(ラジアン)。
 			float fSpreadAds_;			//! 覗き込み(ADS)中の弾の拡散角(ラジアン)。
 			float fSpreadPerShot_;		//! 1発撃つごとに増える拡散角(ラジアン)。連射でばらつく。
+			float fMaxSpreadShot_;		//! 連射で増える拡散角の上限(ラジアン)。ここまで広がったら止まる。
+			float fRecoilResetTime_;	//! 撃つのをやめてからリコイルパターンが先頭へ戻るまでの時間(秒)。
 			float fAdsZoomRate_;		//! 覗き込み時の画角の倍率(小さいほど拡大される)。
 			float fAdsSpeedRate_;		//! 覗き込み中の移動速度の倍率。
 			const RecoilStep* pRecoilPattern_;	//! リコイルパターン(撃つ順に跳ねる方向が決まっている)。
@@ -73,7 +110,10 @@ namespace nsApp
 		 * @brief  データ駆動の武器クラス。
 		 *         挙動(クールタイム・弾数・リロード)は全武器共通で、
 		 *         EnWeaponTypeから引いたWeaponStatusのパラメータだけで銃の違いを表す。
-		 *         銃を増やすときはEnWeaponTypeとステータステーブルに1行足すだけでよい。
+		 *         パラメータの実体は Assets/data/weapon.json にあり、
+		 *         WeaponStatusTable が読み込んだものをこのクラスが受け取る(数値調整にリビルドは要らない)。
+		 *         命中判定はこのクラスでは行わない。Fire は「撃てたか」だけを返し、
+		 *         弾を飛ばすのは持ち主(Player)が散弾数・貫通数を見て行う。
 		 * @author Izumida Kiryu
 		 * @date   2026/08/19
 		 */
@@ -94,9 +134,10 @@ namespace nsApp
 
 			/**
 			 * @brief 毎フレームの更新処理(発射クールタイム・リロードの経過)。
-			 * @param fDeltaTime 1フレームの経過時間(秒)。
+			 * @param fDeltaTime       1フレームの経過時間(秒)。
+			 * @param fActionSpeedRate リロードと構えの速さの倍率(アドレナリン中は1より大きくなる。発射間隔には掛けない)。
 			 */
-			void Update(float fDeltaTime);
+			void Update(float fDeltaTime, float fActionSpeedRate = 1.0f);
 
 			/**
 			 * @brief 発射を試みる。
@@ -116,6 +157,11 @@ namespace nsApp
 			 *        リロード中だった場合は中断する(Apexと同じく持ち替えでキャンセルされる)。
 			 */
 			void Deploy();
+
+			/**
+			 * @brief リロードを中断する(突き飛ばしなど、手を使う動作をしたとき)。装填はされない。
+			 */
+			void CancelReload();
 
 
 		/* ゲッター。*/
@@ -165,6 +211,18 @@ namespace nsApp
 				return stStatus_.fViewModelForward_;
 			}
 
+			//! 三人称で手のボーンから前へずらす距離。
+			inline float GetHandForward() const { return stStatus_.fHandForward_; }
+
+			//! 三人称で手のボーンから右へずらす距離。
+			inline float GetHandRight() const { return stStatus_.fHandRight_; }
+
+			//! 三人称で手のボーンから上へずらす距離。
+			inline float GetHandUp() const { return stStatus_.fHandUp_; }
+
+			//! 三人称で手に持たせたときの銃の長さ(世界の単位)。
+			inline float GetHandLength() const { return stStatus_.fHandLength_; }
+
 			/**
 			 * @brief 現在の残弾数を取得する。
 			 * @return 現在の残弾数。
@@ -174,7 +232,7 @@ namespace nsApp
 				return iCurrentAmmo_;
 			}
 
-			//! リロードの進み具合(0=始まったところ, 1=完了間際)。演出に使う。
+			//! リロードの進み具合(0=始まったところ, 1=完了間際)。演出に使う。1発ずつ装填する武器では1発ごとに0へ戻る。
 			inline float GetReloadRate() const
 			{
 				/* リロード中でなければ0。*/
@@ -196,6 +254,27 @@ namespace nsApp
 			//! 現在の予備弾数(無限の武器では常に上限を返す)。
 			inline int GetReserveAmmo() const { return IsInfiniteReserve() ? stStatus_.iMaxReserveAmmo_ : iReserveAmmo_; }
 
+			/**
+			 * @brief 予備弾を補給する(上限を超えないよう切り詰める)。
+			 * @param iAmount 補給する数。
+			 * @return 実際に補給できた数(すでに満タンなら0)。
+			 */
+			inline int AddReserveAmmo(int iAmount)
+			{
+				/* 無限の武器は補給の必要がない。*/
+				if (IsInfiniteReserve())
+					return 0;
+
+				/* 上限までの空きぶんだけ受け取る。*/
+				const int iSpace = stStatus_.iMaxReserveAmmo_ - iReserveAmmo_;
+				const int iAdd = (iAmount < iSpace) ? iAmount : iSpace;
+				if (iAdd <= 0)
+					return 0;
+
+				iReserveAmmo_ += iAdd;
+				return iAdd;
+			}
+
 			//! 予備弾数の上限。
 			inline int GetMaxReserveAmmo() const { return stStatus_.iMaxReserveAmmo_; }
 
@@ -209,7 +288,7 @@ namespace nsApp
 			}
 
 			/**
-			 * @brief 1発の威力を取得する。
+			 * @brief 1発の威力を取得する(散弾では1粒ぶん)。
 			 * @return 1発の威力。
 			 */
 			inline int GetAttackPower() const
@@ -218,13 +297,35 @@ namespace nsApp
 			}
 
 			/**
-			 * @brief フルオート武器か。
+			 * @brief 連射(フルオート)武器か。
 			 * @return 押しっぱなしで連射できるならtrue。
 			 */
 			inline bool IsFullAuto() const
 			{
-				return stStatus_.bIsFullAuto_;
+				return stStatus_.enFireMode_ == EnFireMode::Auto;
 			}
+
+			//! 引き金の挙動(単発/連射/点射)。
+			inline EnFireMode GetFireMode() const { return stStatus_.enFireMode_; }
+
+			//! 点射の残りが撃たれるのを待っているか(持ち主はこれが true の間、引き金を引いていなくても Fire を呼ぶ)。
+			inline bool IsBurstPending() const { return iBurstRemain_ > 0; }
+
+			//! 1発で飛ぶ弾の数(散弾)。普通の銃は1。
+			inline int GetPelletCount() const { return (stStatus_.iPelletCount_ > 1) ? stStatus_.iPelletCount_ : 1; }
+
+			//! 貫通して奥の敵に当たる数。0なら手前の1体で止まる。
+			inline int GetPenetrateCount() const { return (stStatus_.iPenetrateCount_ > 0) ? stStatus_.iPenetrateCount_ : 0; }
+
+			//! 1発ずつ装填する武器か(ショットガン)。
+			inline bool IsShellReload() const { return stStatus_.bIsShellReload_; }
+
+			/**
+			 * @brief 距離による威力の倍率を求める。近いほど痛く、遠いと下限まで落ちる。
+			 * @param fDistance 撃った位置から命中点までの距離。
+			 * @return 威力に掛ける倍率(下限〜1)。
+			 */
+			float CalcFalloffRate(float fDistance) const;
 
 			//! 1発あたりに視点が跳ね上がる角度(ラジアン)。
 			inline float GetRecoilPitch() const { return stStatus_.fRecoilPitch_; }
@@ -243,6 +344,9 @@ namespace nsApp
 
 			//! 1発撃つごとに増える拡散角(ラジアン)。
 			inline float GetSpreadPerShot() const { return stStatus_.fSpreadPerShot_; }
+
+			//! 連射で増える拡散角の上限(ラジアン)。
+			inline float GetMaxSpreadShot() const { return stStatus_.fMaxSpreadShot_; }
 
 			//! 覗き込み時の画角の倍率(小さいほど拡大される)。
 			inline float GetAdsZoomRate() const { return stStatus_.fAdsZoomRate_; }
@@ -264,6 +368,14 @@ namespace nsApp
 
 
 		private:
+			/**
+			 * @brief リロードの1回ぶんが終わったときの装填処理。
+			 *        普通の銃はマガジンを満たして終わり、1発ずつ装填する銃は1発入れて続きがあればもう1回始める。
+			 */
+			void FinishReloadStep();
+
+
+		private:
 			WeaponStatus	stStatus_ = {};						//! この武器のパラメータ。
 			EnWeaponType	enType_ = EnWeaponType::Handgun;	//! 武器の種類。
 			int				iCurrentAmmo_ = 0;					//! 現在の残弾数。
@@ -271,6 +383,7 @@ namespace nsApp
 			float			fFireTimer_ = 0.0f;					//! 発射クールタイムの残り(秒)。
 			float			fReloadTimer_ = 0.0f;				//! リロードの残り時間(秒)。
 			bool			bIsReloading_ = false;				//! リロード中かどうか。
+			int				iBurstRemain_ = 0;					//! 点射で残っている発数。0なら点射の途中ではない。
 			int				iRecoilIndex_ = 0;					//! リコイルパターンの現在位置(撃つたびに進む)。
 			float			fDeployTimer_ = 0.0f;				//! 構え終わるまでの残り時間(秒)。
 			float			fRecoilResetTimer_ = 0.0f;			//! 撃つのをやめてからの経過時間(秒)。一定時間でパターンが最初へ戻る。

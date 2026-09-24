@@ -39,12 +39,14 @@ namespace nsApp
 			stOut.bLightTrigger_ = stInput_.IsLightTrigger();
 			stOut.bPauseTrigger_ = stInput_.IsPauseTrigger();
 
-			/* アイテム(回復/投擲)。*/
-			stOut.bHealTrigger_ = stInput_.IsHealTrigger();
+			/* アイテム(メディキット/投擲/即効アイテム)。*/
+			stOut.bHealPress_ = stInput_.IsHealPress();
 			stOut.bThrowTrigger_ = stInput_.IsThrowTrigger();
+			stOut.bQuickItemTrigger_ = stInput_.IsQuickItemTrigger();
 
-			/* スプリント(Shift)。*/
+			/* スプリント(Shift)としゃがみ(Ctrl)。*/
 			stOut.bSprintPress_ = stInput_.IsSprintPress();
+			stOut.bCrouchPress_ = stInput_.IsCrouchPress();
 
 			/* 突き飛ばし(Vキー)。*/
 			stOut.bShoveTrigger_ = stInput_.IsShoveTrigger();

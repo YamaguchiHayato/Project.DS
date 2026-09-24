@@ -1,4 +1,5 @@
 #pragma once
+#include "Src/Event/GameEvent.h"
 #include "Src/Effect/EffectList.h"
 #include "Src/Effect/EffectListener.h"
 #include "Src/Scene/IScene.h"
@@ -27,7 +28,13 @@ namespace nsApp
 		 * @author Izumida Kiryu
 		 * @date   2026/08/20
 		 */
-		class InGameScene : public IScene
+		/*
+		 * IScene はシーンとしての役目、IGameEventListener は通知の購読者としての役目。
+		 * 撃破数を数えるために EventBus を購読する必要があり、購読者は
+		 * IGameEventListener を継承していないとバスへ登録できないため、
+		 * 役割の異なるインターフェースを2つ実装している(状態を持つ基底の多重継承ではない)。
+		 */
+		class InGameScene : public IScene, public nsEvent::IGameEventListener
 		{
 		public:
 			/* コンストラクタとデストラクタ。*/
@@ -54,10 +61,25 @@ namespace nsApp
 			void UpdateCamera();
 
 			/**
+			 * @brief 一人称と三人称を切り替える入力を処理する(デバッグ用)。
+			 *        マルチで他プレイヤーから見たときの姿(銃を持った体)を、その場で確認するためのもの。
+			 */
+			void UpdateViewModeSwitch();
+
+			/**
 			 * @brief 状況をイベント発行し、勝敗管理(ResolveGameWinner)の決着を見てリザルトへ橋渡しする。
 			 * @details センサ(到達/死亡)→EventBus発行→GameRuleが勝敗確定→ここでシーン遷移を予約。
 			 */
 			void UpdateResultJudge();
+
+		public:
+			/**
+			 * @brief 通知を受け取り、戦績(撃破数)を数える。
+			 * @param stEvent 受け取った通知。
+			 */
+			void OnGameEvent(const nsEvent::GameEvent& stEvent) override;
+
+		private:
 
 
 		private:
@@ -77,6 +99,10 @@ namespace nsApp
 
 			nsUI::InGameHud* pHud_ = nullptr;			//! HUD(HP/弾/目標/クロスヘア/ダウン表示)。
 			bool bPrevEnter_ = false;		//! 前フレームのEnter押下(ポーズ中のタイトル復帰用)。
+			bool bPrevViewKey_ = false;		//! 前フレームの視点切り替えキー押下。
+			bool bIsThirdPersonView_ = false;	//! 三人称(他人から見た姿)で表示しているか。
+			int iKillCount_ = 0;			//! この試合での撃破数。
+			float fPlayTime_ = 0.0f;		//! この試合の経過時間(秒)。
 			float fBaseViewAngle_ = 0.0f;	//! 覗き込みの倍率を掛ける前の、もとの画角。
 			nsEffect::EffectList stEffectList_;			//! エフェクトの登録・再生・寿命管理。
 			nsEffect::EffectListener stEffectListener_;		//! 通知を購読してエフェクトを再生する係。

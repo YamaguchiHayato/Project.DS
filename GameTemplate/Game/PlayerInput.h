@@ -15,7 +15,10 @@ namespace nsApp
 		 *         キーコンフィグを変えたくなった時に直すのはここだけでよい。
 		 *
 		 *         対応キー: W/A/S/D=移動, 左クリック=射撃, ホイール=武器切替,
-		 *                   R=リロード, E=インタラクト, F=ライト, Esc=メニュー・ポーズ画面。
+		 *                   R=リロード, E=インタラクト, F=ライト, Esc=メニュー・ポーズ画面,
+		 *                   Shift=スプリント, Ctrl=しゃがみ, V=突き飛ばし,
+		 *                   1=メイン武器, 2=サブ武器, 3/G=投擲, 4/H=メディキット(長押し), 5=鎮痛剤・アドレナリン。
+		 *                   数字キーの並びは本家(L4D2)のスロット順に合わせている。
 		 *         マウスボタン・ホイールは nsK2EngineLow::Mouse(g_mouse) から取得する。
 		 * @author Yamaguchi Hayato
 		 * @date   2026/08/19
@@ -78,11 +81,17 @@ namespace nsApp
 			//! Escキーが押された瞬間か(メニュー・ポーズ画面)。
 			inline bool IsPauseTrigger() const { return bPauseTrigger_; }
 
-			//! Hキーが押された瞬間か(回復アイテム使用)。
-			inline bool IsHealTrigger() const { return bHealTrigger_; }
+			//! H または 4 キーを押しているか(メディキット。押し続けて使い切る)。
+			inline bool IsHealPress() const { return bHealPress_; }
 
-			//! Gキーが押された瞬間か(投擲アイテム)。
+			//! G または 3 キーが押された瞬間か(投擲アイテム)。
 			inline bool IsThrowTrigger() const { return bThrowTrigger_; }
+
+			//! 5キーが押された瞬間か(鎮痛剤・アドレナリン)。
+			inline bool IsQuickItemTrigger() const { return bQuickItemTrigger_; }
+
+			//! Ctrlキーを押しているか(しゃがみ。押しっぱなし判定)。
+			inline bool IsCrouchPress() const { return bCrouchPress_; }
 
 			//! 1キーを押した瞬間か(メイン武器へ持ち替え)。
 			inline bool IsMainWeaponTrigger() const { return bMainWeaponTrigger_; }
@@ -96,12 +105,27 @@ namespace nsApp
 
 		private:
 			/**
+			 * @brief キーが押されているかを判定する。
+			 * @param iVKey 判定する仮想キーコード(VK_XXXやアルファベット等)。
+			 * @return 押されていればtrue。
+			 */
+			bool IsKeyPress(int iVKey) const;
+
+			/**
 			 * @brief トリガー入力(押した瞬間のみtrue)を判定する。
 			 * @param iVKey      判定する仮想キーコード(VK_XXXやアルファベット等)。
 			 * @param bPrevPress 前回のフレームで押されていたかどうか(呼び出し側の変数を書き換える)。
 			 * @return 今回のフレームで押された瞬間ならtrue。
 			 */
 			bool CheckTrigger(int iVKey, bool& bPrevPress);
+
+			/**
+			 * @brief 押下状態からトリガー(押した瞬間のみtrue)を判定する。複数キーのどれかで反応させたいときに使う。
+			 * @param bIsPress   いま押されているか。
+			 * @param bPrevPress 前回のフレームで押されていたかどうか(呼び出し側の変数を書き換える)。
+			 * @return 今回のフレームで押された瞬間ならtrue。
+			 */
+			bool CheckTriggerFromPress(bool bIsPress, bool& bPrevPress);
 
 			/**
 			 * @brief カーソルをウィンドウ中央に固定し、その差分から横移動量を得る。
@@ -127,9 +151,11 @@ namespace nsApp
 			bool bInteractTrigger_ = false;				//! Eキートリガー。
 			bool bLightTrigger_ = false;					//! Fキートリガー。
 			bool bPauseTrigger_ = false;					//! Escキートリガー。
-			bool bHealTrigger_ = false;					//! Hキートリガー(回復)。
-			bool bThrowTrigger_ = false;					//! Gキートリガー(投擲)。
+			bool bHealPress_ = false;					//! H/4キー押下中か(メディキット。押し続けて使う)。
+			bool bThrowTrigger_ = false;					//! G/3キートリガー(投擲)。
+			bool bQuickItemTrigger_ = false;			//! 5キートリガー(鎮痛剤・アドレナリン)。
 			bool bSprintPress_ = false;					//! Shift押下中か(スプリント)。
+			bool bCrouchPress_ = false;					//! Ctrl押下中か(しゃがみ)。
 			bool bMainWeaponTrigger_ = false;			//! 1キートリガー(メイン武器)。
 			bool bSubWeaponTrigger_ = false;			//! 2キートリガー(サブ武器)。
 
@@ -137,8 +163,8 @@ namespace nsApp
 			bool bPrevInteractPress_ = false;	//! 前回フレームのEキー押下状態。
 			bool bPrevLightPress_ = false;		//! 前回フレームのFキー押下状態。
 			bool bPrevPausePress_ = false;		//! 前回フレームのEscキー押下状態。
-			bool bPrevHealPress_ = false;		//! 前回フレームのHキー押下状態。
-			bool bPrevThrowPress_ = false;		//! 前回フレームのGキー押下状態。
+			bool bPrevThrowPress_ = false;		//! 前回フレームのG/3キー押下状態。
+			bool bPrevQuickItemPress_ = false;	//! 前回フレームの5キー押下状態。
 			bool bPrevShovePress_ = false;		//! 前回フレームのVキー押下状態。
 			bool bPrevMainWeaponPress_ = false;	//! 前回フレームの1キー押下状態。
 			bool bPrevSubWeaponPress_ = false;	//! 前回フレームの2キー押下状態。
