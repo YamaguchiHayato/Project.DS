@@ -73,6 +73,21 @@ namespace nsApp
 			virtual void PlayWalk() = 0;
 
 			/**
+			 * @brief 走りアニメを再生する。
+			 */
+			virtual void PlayRun() = 0;
+
+			/**
+			 * @brief 攻撃アニメを再生する。
+			 */
+			virtual void PlayAttack() = 0;
+
+			/**
+			 * @brief 死亡演出を再生する。
+			 */
+			virtual void PlayDeath() = 0;
+
+			/**
 			 * @brief 対象へ移動する。
 			 */
 			virtual void MoveToTarget() = 0;

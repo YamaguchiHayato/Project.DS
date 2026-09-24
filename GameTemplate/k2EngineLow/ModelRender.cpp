@@ -102,21 +102,17 @@ void nsK2EngineLow::ModelRender::InitModel(const char* filePath, EnModelUpAxis e
 }
 void nsK2EngineLow::ModelRender::Update()
 {
-	//スケルトンを更新。
-	if (m_skeleton.IsInited())
-	{
+	m_model.UpdateWorldMatrix(m_position, m_rotation, m_scale);
+	m_shadowModel.UpdateWorldMatrix(m_position, m_rotation, m_scale);
+
+	if (m_animation.IsInited()) {
+		m_animation.Progress(g_gameTime->GetFrameDeltaTime());
+	}
+	if (m_skeleton.IsInited()) {
 		m_skeleton.Update(m_model.GetWorldMatrix());
 	}
-
-	//モデルの更新。
-	m_model.UpdateWorldMatrix(m_position, m_rotation, m_scale);
-	//影のモデルに移動回転拡大を渡す
-	m_shadowModel.UpdateWorldMatrix(m_position, m_rotation, m_scale);
-	
-	//アニメーションを進める。
-	m_animation.Progress(g_gameTime->GetFrameDeltaTime());
-
 }
+
 
 void nsK2EngineLow::ModelRender::Draw(RenderContext& rc)
 {

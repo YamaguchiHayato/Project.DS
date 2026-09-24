@@ -1,5 +1,9 @@
 #pragma once
 
+#include "CharacterModel.h"
+
+using namespace std;
+
 namespace nsApp
 {
 	/**
@@ -14,6 +18,8 @@ namespace nsApp
 		Attack,			//! 攻撃。
 		Death,			//! 死亡。
 	};
+
+#define ANIM_LIST CharacterBasicAnimationList
 
 	/**
  　　 * @file   CharacterAnimation.h
@@ -32,35 +38,45 @@ namespace nsApp
 	public:
 		/**
 		 * @brief アニメーションを初期化する。
+		 * @param characterType キャラクターの種別。
 		 */
-		void Initialize();
+		void Initialize(CharacterModelType characterType);
 
 		/**
 		 * @brief アニメーションをロードする。
 		 */
 		void LoadAnimation();
 
+		/**
+		 * @brief 基本アニメのファイルパスを登録する。
+		 * @param state アニメーションの種類。
+		 * @param pFileStem 拡張子なしのファイル名。
+		 * @param bIsLoop ループ再生するか。
+		 */
+		void RegisterAnimation(ANIM_LIST state, const char* pFileStem, bool bIsLoop);
 
-	/* ゲッター。*/
+
+		/* ゲッター。*/
 	public:
 		/**
 		 * @brief 基本動作用アニメーションのインデックスを取得する。
 		 * @param state アニメーションの種類。
 		 * @return 基本動作用アニメーションのインデックス。
 		 */
-		inline int GetBasicAnimationIndex(CharacterBasicAnimationList state)
+		inline int GetBasicAnimationIndex(ANIM_LIST state)
 		{
 			return mapBasicIndexMap_.count(state) ? mapBasicIndexMap_[state] : 0;
 		}
 
 		/**
 		 * @brief 基本動作用アニメーションのファイルパスを取得する。
-		 * @param sFilePath ファイルパス。
+		 * @param sFileStem 拡張子なしのファイル名。
 		 * @return 基本動作用アニメーションのファイルパス。
 		 */
-		inline const std::string GetBasicAnimationFilePath(const std::string sFilePath)
+		inline const string GetBasicAnimationFilePath(const string& sFileStem)
 		{
-			const std::string sBasicAnimation = sBasicAnimationFilePath_ + sFilePath + sAnimationExtension_;
+			/* 拡張子 .tka は固定。*/
+			const string sBasicAnimation = sBasicAnimationFilePath_ + sFileStem + ".tka";
 			return sBasicAnimation;
 		}
 
@@ -83,15 +99,15 @@ namespace nsApp
 		}
 
 
-	/* セッター。*/
+		/* セッター。*/
 	public:
 		/**
-		 * @brief アニメーションクリップを設定する。	
+		 * @brief アニメーションクリップを設定する。
 		 * @param sFilePath ファイルパス。
 		 * @param bIsLoop ループするかどうか。
 		 * @return　設定したアニメーションクリップのインデックス。
 		 */
-		inline int SetAnimationClip(const std::string sFilePath, bool bIsLoop)
+		inline int SetAnimationClip(const string& sFilePath, bool bIsLoop)
 		{
 			/* アニメーションをロード。*/
 			pAnimationClipList_[iCurrentIndex_].Load(sFilePath.c_str());
@@ -103,18 +119,12 @@ namespace nsApp
 
 
 	private:
-		std::unordered_map<CharacterBasicAnimationList, std::string> mapBasicAnimationFilePathList_; //! 基本動作用アニメーションのファイルパスを管理するマップ。
-
-		/* 読み込んだアニメーションの要素数を代入する変数。*/
-		std::unordered_map<CharacterBasicAnimationList, int> mapBasicIndexMap_; //! 基本動作用アニメーシを管理するマップ。
+		std::unordered_map<ANIM_LIST, std::string> mapBasicAnimationFilePathList_; //! 基本動作用アニメーションのファイルパスを管理するマップ。
+		std::unordered_map<ANIM_LIST, bool> mapBasicLoopFlagList_; //! 基本動作用アニメーションのループ設定。
+		std::unordered_map<ANIM_LIST, int> mapBasicIndexMap_; //! 基本動作用アニメーシを管理するマップ。
 		std::unique_ptr<AnimationClip[]> pAnimationClipList_; //! 読み込んだアニメーションを管理する配列。
-
-		/* ファイルパスを定数化するための変数群。*/
-		const std::string sBasicAnimationFilePath_ = "Assets/animData/Infected/"; //! 基本動作用アニメーションのファイルパスの共通部分。
-		const std::string sAnimationExtension_ = ".tka"; //! アニメーションファイルの拡張子。
-
+		std::string sBasicAnimationFilePath_; //! 初期化時に CharacterAnimBank からセットする animData フォルダ。
 		int iCurrentIndex_ = 0; //! 現在のアニメーションの再生数を管理。
 		int iAnimationNum_ = 0;	//! 読み込んだアニメーションの数を管理する変数。
-		bool bIsLoop_ = false;	//! アニメーションをループするか管理する変数。
 	};
 }

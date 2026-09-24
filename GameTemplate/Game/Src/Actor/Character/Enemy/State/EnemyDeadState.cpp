@@ -15,7 +15,7 @@ namespace nsApp
 		void EnemyDeathState::OnEnter()
 		{
 			/* 死亡時は待機表示のまま止める。*/
-			pEnemy_->PlayIdle();
+			pEnemy_->PlayDeath();
 		}
 
 

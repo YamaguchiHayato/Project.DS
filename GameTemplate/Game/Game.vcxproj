@@ -238,6 +238,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Actor\Character\Common\CharacterAnimBank.cpp" />
     <ClCompile Include="Src\Actor\Character\Common\CharacterMovement.cpp" />
     <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyKnockBackState.cpp" />
     <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyStateBase.cpp" />
@@ -297,6 +298,7 @@
     <ClCompile Include="Tracer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Actor\Character\Common\CharacterAnimBank.h" />
     <ClInclude Include="Src\Actor\Character\Common\CharacterMovement.h" />
     <ClInclude Include="Src\Actor\Character\Common\CharacterTransition.h" />
     <ClInclude Include="Src\Actor\Character\Enemy\IEnemy.h" />

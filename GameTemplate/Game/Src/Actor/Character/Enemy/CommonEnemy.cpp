@@ -8,18 +8,37 @@
 
 namespace
 {
-	const char* sUnityChanModelPath_ = "Assets/modelData/unityChan.tkm";	//! Unityちゃんのモデルパス。
+	const float fAnimInterpolateTime_ = 0.2f; //! アニメ切替の補間時間。
 }
 
 namespace nsApp
 {
 	namespace nsActor
 	{
+#define TYPE_COMMON CharacterModelType::Common
+
+		void CommonEnemy::InitCharacterModel()
+		{
+			stAnimation_.Initialize(TYPE_COMMON);
+			stAnimation_.LoadAnimation();
+
+			stModel_.LoadCharacterModel(TYPE_COMMON, stAnimation_.GetAnimatiocClip(), stAnimation_.GetAnimationClips());
+
+			stModel_.SetCharacterScale(Vector3::One* 0.01f);
+			stModel_.SetPosition(vPosition_);
+			stModel_.Update();
+
+			iPlayingAnimation_ = -1;
+			PlayIdle();
+			
+		}
+
+
 		bool CommonEnemy::Start()
 		{
 			/* カプセルで壁（PhysicsStaticObject）と当たる。*/
 			stMovement_.Init(20.0f, 70.0f, vPosition_);
-
+			
 			/* 視線判定の目の高さを設定する。*/
 			stSightCheck_.SetEyeHeight(120.0f);
 
@@ -28,12 +47,11 @@ namespace nsApp
 			stCharacterStatus_.stHp_.iMaxHP_ = 30;
 			stCharacterStatus_.stHp_.iCurrentHP_ = 30;
 
-			/* 仮モデルをロードする。*/
-			stModelRender_.Init(sUnityChanModelPath_, nullptr, 0, enModelUpAxisZ);
-			stModelRender_.SetPosition(vPosition_);
+			/* 本番モデルとアニメーションをロードする。*/
+			InitCharacterModel();
 
-			/* 初期位置をモデルへ反映する。*/
-			ApplyModelTransform();
+			/* 待機アニメから開始する。*/
+			PlayIdle();
 
 			/* 遷移樹を所有者に結び、Common 用の枝を組む。*/
 			stTransition_.Bind(this);
@@ -60,6 +78,9 @@ namespace nsApp
 			/* ステートマシーンを更新する（遷移は State 内の TryChangeState）。*/
 			ICharacter::Update();
 
+			/* 大きさの倍率を設定する。*/
+			stModel_.SetCharacterScale(Vector3::One * 0.01f);
+
 			/* 位置をモデルへ反映する。*/
 			ApplyModelTransform();
 		}
@@ -67,8 +88,8 @@ namespace nsApp
 
 		void CommonEnemy::Render(RenderContext& rc)
 		{
-			/* 仮モデルを描画する。*/
-			stModelRender_.Draw(rc);
+			/* ICharacter::stModel_ を描画する。*/
+			ICharacter::Render(rc);
 		}
 
 
@@ -169,7 +190,7 @@ namespace nsApp
 
 			/* 対象の方向を向く。*/
 			qLook_.SetRotationY(atan2f(vToTarget_.x, vToTarget_.z));
-			stModelRender_.SetRotation(qLook_);
+			stModel_.SettRotation(qLook_);
 		}
 
 
@@ -191,7 +212,7 @@ namespace nsApp
 			}
 
 			/* 目標へ向かう移動計算はCharacterMovementクラスに一任する。*/
-			vPosition_ = stMovement_.MoveToward(pTarget_->GetPosition(),fChaseSpeed_,g_gameTime->GetFrameDeltaTime());
+			vPosition_ = stMovement_.MoveToward(pTarget_->GetPosition(), fChaseSpeed_, g_gameTime->GetFrameDeltaTime());
 		}
 
 
@@ -220,9 +241,10 @@ namespace nsApp
 
 		void CommonEnemy::ApplyModelTransform()
 		{
-			/* 位置をモデルへ反映する。*/
-			stModelRender_.SetPosition(vPosition_);
-			stModelRender_.Update();
+			/* 位置と向きをモデルへ反映する。*/
+			stModel_.SetPosition(vPosition_);
+			stModel_.SettRotation(qLook_);
+			stModel_.Update();
 		}
 
 
@@ -234,21 +256,48 @@ namespace nsApp
 
 			/* 指定アニメを再生する。*/
 			iPlayingAnimation_ = iAnimationNumber;
-			stModelRender_.PlayAnimation(iAnimationNumber, 0.2f);
+			stModel_.PlayAnimation(iAnimationNumber, fAnimInterpolateTime_);
 		}
+
+
+		void CommonEnemy::PlayAnimationList(ANIM_LIST state)
+		{
+
+		}
+
 
 
 		void CommonEnemy::PlayIdle()
 		{
 			/* 待機を再生する。*/
-			PlayAnimation(0);
+			PlayAnimation(stAnimation_.GetBasicAnimationIndex(ANIM_LIST::Idle));
 		}
 
 
 		void CommonEnemy::PlayWalk()
 		{
 			/* 歩きを再生する。*/
-			PlayAnimation(1);
+			PlayAnimation(stAnimation_.GetBasicAnimationIndex(ANIM_LIST::Walk));
+		}
+
+
+		void CommonEnemy::PlayRun()
+		{
+			PlayAnimation(stAnimation_.GetBasicAnimationIndex(ANIM_LIST::Run));
+		}
+
+
+		void CommonEnemy::PlayAttack()
+		{
+			/* 攻撃を再生する。*/
+			PlayAnimation(stAnimation_.GetBasicAnimationIndex(ANIM_LIST::Attack));
+		}
+
+
+		void CommonEnemy::PlayDeath()
+		{
+			/* 死亡時の演出用のアニメーションを再生する。*/
+			PlayAnimation(stAnimation_.GetBasicAnimationIndex(ANIM_LIST::Run));
 		}
 
 
@@ -298,7 +347,7 @@ namespace nsApp
 
 			/* 反対方向ベクトルを正規化して速度に変換する。*/
 			vAway_.Normalize();
-			vKnockBackSpeed_ = vAway_* fKnockBackPower_;
+			vKnockBackSpeed_ = vAway_ * fKnockBackPower_;
 			fKnockBackTimer_ = fKnockBackDuration_;
 			bKnockBackPending_ = true;
 			bKnockBackFinished_ = false;
