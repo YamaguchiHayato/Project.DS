@@ -15,7 +15,7 @@ namespace nsApp
 		void EnemyChaseState::OnEnter()
 		{
 			/* 歩きアニメを再生する。*/
-			pEnemy_->PlayWalk();
+			pEnemy_->PlayRun();
 		}
 
 
