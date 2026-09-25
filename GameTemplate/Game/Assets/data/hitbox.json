@@ -30,9 +30,24 @@
 
 			/* 部位の形。part は "Head"/"Body"/"Leg" のいずれか。書き間違えたその行は捨てられる。*/
 			"parts": [
-				{ "part": "Head", "bottom": 62.0, "top": 78.0, "radius": 10.0 },   //! 頭。
-				{ "part": "Body", "bottom": 38.0, "top": 62.0, "radius": 17.0 },   //! 胴と腕。
-				{ "part": "Leg",  "bottom":  0.0, "top": 38.0, "radius": 13.0 }    //! 脚。
+				{
+				　"part": "Head",
+				　"bottom": 62.0,
+				　"top": 78.0, 
+				　"radius": 10.0 
+				},   //! 頭。
+				{ 
+					"part": "Body",
+					"bottom": 38.0, 
+					"top": 62.0, 
+					"radius": 17.0 
+				},   //! 胴と腕。
+				{ 
+					"part": "Leg",  
+					"bottom":  0.0, 
+					"top": 38.0, 
+					"radius": 13.0 
+				}    //! 脚。
 			]
 		},
 
@@ -43,7 +58,7 @@
 		"Survivor": {
 
 			/* 部位ごとのダメージ倍率。*/
-			"damageRate": {
+			"damageRate": {　
 				"Head": 2.0,                            //! 頭。弱点。
 				"Body": 1.0,                            //! 胴と腕。
 				"Leg": 0.7                              //! 脚。
@@ -51,9 +66,26 @@
 
 			/* 部位の形。*/
 			"parts": [
-				{ "part": "Head", "bottom": 143.0, "top": 179.0, "radius": 23.0 }, //! 頭。
-				{ "part": "Body", "bottom":  87.0, "top": 143.0, "radius": 39.0 }, //! 胴と腕。
-				{ "part": "Leg",  "bottom":   0.0, "top":  87.0, "radius": 30.0 }  //! 脚。
+				{ 　
+					"part": "Head", 
+					"bottom": 143.0, 
+					"top": 179.0, 
+					"radius": 23.0 
+				}, //! 頭。
+				{ 
+					"part": 
+					"Body", 
+					"bottom":  87.0, 
+					"top": 143.0, 
+					"radius": 39.0 
+				}, //! 胴と腕。
+				{ 
+					"part": 
+					"Leg",  
+					"bottom":   0.0, 
+					"top":  87.0, 
+					"radius": 30.0
+				}  //! 脚。
 			]
 		}
 	}
