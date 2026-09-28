@@ -30,6 +30,7 @@
 
 			/* 部位の形。part は "Head"/"Body"/"Leg" のいずれか。書き間違えたその行は捨てられる。*/
 			"parts": [
+
 				{ "part": "Head", "bottom": 62.0, "top": 78.0, "radius": 10.0 },   //! 頭。
 				{ "part": "Body", "bottom": 38.0, "top": 62.0, "radius": 17.0 },   //! 胴と腕。
 				{ "part": "Leg",  "bottom":  0.0, "top": 38.0, "radius": 13.0 }    //! 脚。
@@ -43,6 +44,7 @@
 		"Survivor": {
 
 			/* 部位ごとのダメージ倍率。*/
+
 			"damageRate": {
 				"Head": 2.0,                            //! 頭。弱点。
 				"Body": 1.0,                            //! 胴と腕。
