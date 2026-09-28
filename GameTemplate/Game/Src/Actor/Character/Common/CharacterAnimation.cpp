@@ -1,16 +1,47 @@
 #include "stdafx.h"
 #include "CharacterAnimation.h"
+#include "CharacterAnimBank.h"
 
 namespace
 {
-	const int iCurrentIndexClear = 0;		//! 現在のインデックスをゼロで解放。
+	const int iCurrentIndexClear = 0; //! 現在のインデックスをゼロで解放。
 }
 
 namespace nsApp
 {
-	void CharacterAnimation::Initialize()
+	void CharacterAnimation::RegisterAnimation(ANIM_LIST state, const char* pFileStem, bool bIsLoop)
 	{
-		/* アニメーション読み込む。*/
+		/* アニメーションのファイルパスを登録する。*/
+		/* 拡張子は .tka 固定。*/
+		mapBasicAnimationFilePathList_[state] = sBasicAnimationFilePath_ + pFileStem + ".tka";
+		mapBasicLoopFlagList_[state] = bIsLoop;
+	}
+
+
+	void CharacterAnimation::Initialize(CharacterModelType characterType)
+	{
+		/* アニメーション読み込む前に箱をリセット。*/
+		mapBasicAnimationFilePathList_.clear();
+		mapBasicLoopFlagList_.clear();
+
+		/* 種別 ID からアニメバンクを引く。*/
+		const CharacterAnimBank* pBank = FindCharacterAnimBank(characterType);
+		if (pBank == nullptr)
+			return;
+
+		/* 種別に応じた animData フォルダをセットする。*/
+		sBasicAnimationFilePath_ = pBank->pBasePath;
+
+		/* アニメ未用意の種別はエントリ0件のまま終了する。*/
+		if (pBank->pEntries == nullptr || pBank->iEntryCount <= 0)
+			return;
+
+		/* バンクの分だけ RegisterAnimation を呼ぶ。*/
+		for (int i = 0; i < pBank->iEntryCount; ++i)
+		{
+			const CharacterAnimEntry& entry = pBank->pEntries[i];
+			RegisterAnimation(entry.state, entry.pFileStem, entry.bIsLoop);
+		}
 	}
 
 
@@ -31,21 +62,9 @@ namespace nsApp
 		/* 基本動作をロード */
 		for (auto& pair : mapBasicAnimationFilePathList_)
 		{
-			/* 特定のアニメーションは再生ループをオフにする。*/
-			if (pair.first == CharacterBasicAnimationList::Attack || pair.first == CharacterBasicAnimationList::Death)
-			{
-				/* 攻撃と死亡はループさせない。*/
-				/* true だと ループ。*/
-				bIsLoop_ = false;
-			}
-			else
-			{
-				/* それ以外はループするように。*/
-				bIsLoop_ = true;
-			}
-
-			/* ループ方式を bIsLoop_ に任せる。*/
-			mapBasicIndexMap_[pair.first] = SetAnimationClip(pair.second, bIsLoop_);
+			/* ループ設定は RegisterAnimation 時に保持した値を使う。*/
+			const bool bIsLoop = mapBasicLoopFlagList_[pair.first];
+			mapBasicIndexMap_[pair.first] = SetAnimationClip(pair.second, bIsLoop);
 		}
 	}
 }

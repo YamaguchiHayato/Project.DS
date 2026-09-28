@@ -1,4 +1,4 @@
-﻿#include "stdafx.h"
+#include "stdafx.h"
 #include "CharacterModel.h"
 
 namespace nsApp
@@ -6,6 +6,8 @@ namespace nsApp
 	CharacterModel::CharacterModel()
 	{
 		/* キャラモデルの格納。*/
+		/* todo 今回はCommonEnemy。*/
+		mapFilePathList_[CharacterModelType::Common] = "Assets/modelData/zombie/zombie.tkm";
 	}
 
 
@@ -22,7 +24,7 @@ namespace nsApp
 		pCharacterModelRender_ = std::make_unique<ModelRender>();
 
 		/* モデルをロードする。*/
-		pCharacterModelRender_->Init(sModelFilePath_.c_str(),pAnimationClip,iNumClips,enModelUpAxisZ);
+		pCharacterModelRender_->Init(sModelFilePath_.c_str(), pAnimationClip, iNumClips, enModelUpAxisZ);
 
 		return true;
 	}

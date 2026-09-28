@@ -8,8 +8,10 @@ namespace nsApp
 	 */
 	enum class CharacterModelType
 	{
-		Infected,			//! 雑魚ゾンビ。
-		Survivor,			//! サバイバー。
+		Common, //! 雑魚ゾンビ。
+		Special, //! 特殊ゾンビ。
+		Third, //! todo 種類は考える。
+		Survivor, //! サバイバー。
 	};
 
 	/**

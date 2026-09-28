@@ -2,6 +2,7 @@
 
 #include "Src/Actor/Character/Enemy/IEnemy.h"
 #include "Src/Actor/Character/Common/CharacterMovement.h"
+#include "Src/Actor/Character/Common/CharacterAnimation.h"
 #include "Src/Actor/Character/Enemy/Transition/EnemyTransition.h"
 #include "Src/System/RayTest/SightCheck.h"
 
@@ -53,6 +54,21 @@ namespace nsApp
 			 * @brief 歩きアニメーションを再生する。
 			 */
 			void PlayWalk() override;
+
+			/**
+			 * @brief 走りアニメーションを再生する。
+			 */
+			void PlayRun() override;
+
+			/**
+			 * @brief 攻撃アニメーションを再生する。
+			 */
+			void PlayAttack() override;
+
+			/**
+			 * @brief 死亡演出を再生する。
+			 */
+			void PlayDeath() override;
 
 			/**
 			 * @brief 現在のステート名を取得する。
@@ -203,6 +219,11 @@ namespace nsApp
 
 		private:
 			/**
+			 * @brief CharacterAnimBank 経由でアニメを読み、CharacterModel をロードする。
+			 */
+			void InitCharacterModel();
+
+			/**
 			 * @brief 対象への水平ベクトルを更新する。
 			 */
 			void UpdateToTargetVector();
@@ -217,6 +238,12 @@ namespace nsApp
 			 * @param iAnimationNumber 再生するアニメーション番号。
 			 */
 			void PlayAnimation(int iAnimationNumber);
+
+			/**
+			 * @brief アニメーションを再生する。
+			 * @param state 再生するアニメーションの種類。
+			 */
+			void PlayAnimationList(ANIM_LIST state);
 
 			/**
 			 * @brief 死亡ステートか。
@@ -235,7 +262,7 @@ namespace nsApp
 		private:
 			EnemyTransition stTransition_; //! ステート遷移。
 			CharacterMovement stMovement_; //! 移動処理。
-			ModelRender stModelRender_; //! 仮モデル。
+			CharacterAnimation stAnimation_; //! コモンゾンビ用アニメーション。
 			ICharacter* pTarget_ = nullptr; //! 追跡対象。
 			Vector3 vPosition_ = { 0.0f, 0.0f, 500.0f }; //! 現在位置。
 			Vector3 vToTarget_ = Vector3::Zero; //! 対象への水平ベクトル。

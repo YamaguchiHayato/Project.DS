@@ -70,10 +70,10 @@
     <Filter Include="Src\Actor\Character\Enemy\Transition">
       <UniqueIdentifier>{97e0e26a-5fc8-4208-872a-2f547d3871ce}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Src\Actor\Character\Enemy\Player">
+    <Filter Include="Src\Actor\Character\Player">
       <UniqueIdentifier>{5cdb75f3-5a32-404c-8699-4fea7e254d0f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Src\Actor\Character\Enemy\Player\State">
+    <Filter Include="Src\Actor\Character\Player\State">
       <UniqueIdentifier>{206394ef-a978-4b46-8f29-2112634db8c9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -170,13 +170,13 @@
       <Filter>Src\UI\Title</Filter>
     </ClCompile>
     <ClCompile Include="Player.cpp">
-      <Filter>Src\Actor\Character\Enemy\Player</Filter>
+      <Filter>Src\Actor\Character\Player</Filter>
     </ClCompile>
     <ClCompile Include="PlayerInput.cpp">
-      <Filter>Src\Actor\Character\Enemy\Player</Filter>
+      <Filter>Src\Actor\Character\Player</Filter>
     </ClCompile>
     <ClCompile Include="LocalPlayerController.cpp">
-      <Filter>Src\Actor\Character\Enemy\Player</Filter>
+      <Filter>Src\Actor\Character\Player</Filter>
     </ClCompile>
     <ClCompile Include="WeaponInventory.cpp">
       <Filter>Src\Actor\Weapon</Filter>
@@ -228,6 +228,9 @@
     </ClCompile>
     <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyKnockBackState.cpp">
       <Filter>Src\Actor\Character\Enemy\State</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Common\CharacterAnimBank.cpp">
+      <Filter>Src\Actor\Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -335,19 +338,19 @@
       <Filter>Src\UI\Title</Filter>
     </ClInclude>
     <ClInclude Include="Player.h">
-      <Filter>Src\Actor\Character\Enemy\Player</Filter>
+      <Filter>Src\Actor\Character\Player</Filter>
     </ClInclude>
     <ClInclude Include="PlayerInput.h">
-      <Filter>Src\Actor\Character\Enemy\Player</Filter>
+      <Filter>Src\Actor\Character\Player</Filter>
     </ClInclude>
     <ClInclude Include="PlayerIntent.h">
-      <Filter>Src\Actor\Character\Enemy\Player</Filter>
+      <Filter>Src\Actor\Character\Player</Filter>
     </ClInclude>
     <ClInclude Include="IPlayerController.h">
-      <Filter>Src\Actor\Character\Enemy\Player</Filter>
+      <Filter>Src\Actor\Character\Player</Filter>
     </ClInclude>
     <ClInclude Include="LocalPlayerController.h">
-      <Filter>Src\Actor\Character\Enemy\Player</Filter>
+      <Filter>Src\Actor\Character\Player</Filter>
     </ClInclude>
     <ClInclude Include="Weapon.h">
       <Filter>Src\Actor\Weapon</Filter>
@@ -411,6 +414,9 @@
     </ClInclude>
     <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyKnockBackState.h">
       <Filter>Src\Actor\Character\Enemy\State</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Common\CharacterAnimBank.h">
+      <Filter>Src\Actor\Common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

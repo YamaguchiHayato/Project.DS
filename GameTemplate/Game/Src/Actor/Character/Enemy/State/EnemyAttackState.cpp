@@ -18,7 +18,7 @@ namespace nsApp
 			pEnemy_->ReadyAttack();
 
 			/* 攻撃アニメを再生する。*/
-			pEnemy_->PlayIdle();
+			pEnemy_->PlayAttack();
 		}
 
 
