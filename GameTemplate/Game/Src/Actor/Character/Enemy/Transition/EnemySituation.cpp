@@ -7,7 +7,7 @@ namespace nsApp
 	{
 		void EnemySituation::Clear()
 		{
-			/* すべての事実を初期化する。*/
+			/* すべてのフラグを初期化する。*/
 			bSelfDead_ = false;
 			bTargetDead_ = false;
 			bInAggro_ = false;
@@ -15,6 +15,8 @@ namespace nsApp
 			bInAttack_ = false;
 			bNeedKnockBack_ = false;
 			bKnockBackDone_ = false;
+			bIdleDone_ = false;
+			bWanderDone_ = false;
 		}
 
 
@@ -23,9 +25,9 @@ namespace nsApp
 			/* bool の事実を遷移照合用のビットに落とす。*/
 			uint32_t uMask = enEnemyFact_None;
 
+			/* 死亡フラグは死亡している場合のみビットを立てる。*/
 			if (bSelfDead_)
 				uMask |= enEnemyFact_SelfDead;
-
 			if (bTargetDead_)
 				uMask |= enEnemyFact_TargetDead;
 
@@ -48,6 +50,12 @@ namespace nsApp
 
 			if (bKnockBackDone_)
 				uMask |= enEnemyFact_KnockBackDone;
+
+			if (bIdleDone_)
+				uMask |= enEnemyFact_IdleDone;
+
+			if (bWanderDone_)
+				uMask |= enEnemyFact_WanderDone;
 
 			return uMask;
 		}
