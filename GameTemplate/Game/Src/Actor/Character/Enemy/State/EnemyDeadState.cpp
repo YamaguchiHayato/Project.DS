@@ -21,7 +21,9 @@ namespace nsApp
 
 		void EnemyDeathState::OnUpdate()
 		{
-			/* todo 死亡後は何もしない。*/
+			/* 死亡演出を更新する。*/
+			pEnemy_->ExecuteDeth();
 		}
 	}
 }
+
