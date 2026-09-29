@@ -6,6 +6,8 @@
 #include "Src/Actor/Character/Enemy/State/EnemyAttackState.h"
 #include "Src/Actor/Character/Enemy/State/EnemyDeadState.h"
 #include "Src/Actor/Character/Enemy/State/EnemyKnockBackState.h"
+#include "Src/Actor/Character/Enemy/State/EnemyWanderState.h"
+
 
 namespace nsApp
 {
@@ -58,6 +60,15 @@ namespace nsApp
 			{
 				return new EnemyKnockBackState();
 			}
+
+			/**
+			 * @brief Wander ステートを生成する。
+			 * @return 生成したステート。
+			 */
+			nsState::IState<Actor>* CreateWanderState()
+			{
+				return new EnemyWanderState();
+			}
 		}
 
 
@@ -88,6 +99,9 @@ namespace nsApp
 
 			/* Idle：アグロ円内かつ視線ありなら Chase。*/
 			aEdges_.push_back({ EnEnemyState::Idle, enEnemyFact_InAggro | enEnemyFact_Visible, EnEnemyState::Chase });
+
+			/* Idle：待機時間が終われば Wander。*/
+			aEdges_.push_back({ EnEnemyState::Idle, enEnemyFact_IdleDone, EnEnemyState::Wander });
 
 			/* Chase：死亡していれば Death。*/
 			aEdges_.push_back({ EnEnemyState::Chase, enEnemyFact_SelfDead, EnEnemyState::Death });
@@ -128,8 +142,21 @@ namespace nsApp
 			/* KnockBack：終了かつアグロ円外なら Idle。*/
 			aEdges_.push_back({ EnEnemyState::KnockBack, enEnemyFact_KnockBackDone | enEnemyFact_NotInAggro, EnEnemyState::Idle });
 
+			/* Wander：死亡していれば Death。*/
+			aEdges_.push_back({ EnEnemyState::Wander, enEnemyFact_SelfDead, EnEnemyState::Death });
+
+			/* Wander：ノックバック要求があれば KnockBack。*/
+			aEdges_.push_back({ EnEnemyState::Wander, enEnemyFact_NeedKnockBack, EnEnemyState::KnockBack });
+
+			/* Wander：アグロ円内かつ視線ありなら Chase。*/
+			aEdges_.push_back({ EnEnemyState::Wander, enEnemyFact_InAggro | enEnemyFact_Visible, EnEnemyState::Chase });
+
+			/* Wander：徘徊時間が終われば Idle。*/
+			aEdges_.push_back({ EnEnemyState::Wander, enEnemyFact_WanderDone, EnEnemyState::Idle });
+
 			/* 派生の new は構築時に閉じる。実行時の TryChangeState では switch しない。*/
 			RegisterState(EnEnemyState::Idle, CreateIdleState);
+			RegisterState(EnEnemyState::Wander, CreateWanderState);
 			RegisterState(EnEnemyState::Chase, CreateChaseState);
 			RegisterState(EnEnemyState::Attack, CreateAttackState);
 			RegisterState(EnEnemyState::Death, CreateDeathState);
@@ -195,6 +222,9 @@ namespace nsApp
 			stSituation.SetInAttack(pEnemy_->IsTargetInAttackRange());
 			stSituation.SetNeedKnockBack(pEnemy_->IsKnockBackPending());
 			stSituation.SetKnockBackDone(pEnemy_->IsKnockBackFinished());
+			stSituation.SetIdleDone(pEnemy_->IsIdleDone());
+			stSituation.SetWanderDone(pEnemy_->IsWanderDone());	
+			
 			return stSituation;
 		}
 	}

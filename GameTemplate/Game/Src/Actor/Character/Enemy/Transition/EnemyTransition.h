@@ -21,7 +21,7 @@ namespace nsApp
 		 * @details 現在ステートを節とし、登録された枝を上から順に見て次ステートを決める。
 		 *          State 実体の生成は構築時に登録した関数テーブルで行い、実行時に switch しない。
 		 * @author Yamaguchi Hayato
-		 * @date   2026/08/26
+		 * @date   2026/09:24: 種類を更新。
 		 */
 		class EnemyTransition : public CharacterTransition
 		{
@@ -92,7 +92,7 @@ namespace nsApp
 			IEnemy* pEnemy_ = nullptr; //! 所有者（非所有）。
 			EnEnemyState enCurrentState_ = EnEnemyState::Idle; //! 現在のステート種別。
 			std::vector<EnemyTransitionEdge> aEdges_; //! 遷移樹の枝一覧。
-			EnemyStateCreator aCreators_[5] = {}; //! 種別ごとの生成関数。
+			EnemyStateCreator aCreators_[6] = {}; //! 種別ごとの生成関数。
 		};
 	}
 }

@@ -170,7 +170,7 @@ namespace nsApp
 			}
 
 			/* 撃破エフェクトを出す高さ(胸のあたり)。*/
-			const float fKillHeight = nsCombat::HitBoxSet::GetShared(CharacterModelType::Infected).GetHeight() * 0.5f;
+			const float fKillHeight = nsCombat::HitBoxSet::GetShared(CharacterModelType::Common).GetHeight() * 0.5f;
 
 			/* 有効半径内の敵にまとめてダメージを与える。*/
 			for (nsActor::CommonEnemy* pEnemy : FindGOs<nsActor::CommonEnemy>("commonEnemy"))

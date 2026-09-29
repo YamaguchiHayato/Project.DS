@@ -21,6 +21,8 @@ namespace nsApp
 			enEnemyFact_NotInAttack = 1u << 6,		//! 攻撃範囲外。
 			enEnemyFact_NeedKnockBack = 1u << 7,	//! ノックバック開始が必要。
 			enEnemyFact_KnockBackDone = 1u << 8,	//! ノックバックが終了した。
+			enEnemyFact_IdleDone = 1u << 9,			//! 待機時間が終わり、徘徊へ移ってよい。
+			enEnemyFact_WanderDone = 1u << 10,		//! 徘徊時間が終わり、待機へ戻ってよい。
 		};
 
 
@@ -125,6 +127,24 @@ namespace nsApp
 				bKnockBackDone_ = bKnockBackDone;
 			}
 
+			/**
+			 * @brief 待機終了フラグを設定する。
+			 * @param bIdleDone 終了していれば true。
+			 */
+			inline void SetIdleDone(bool bIdleDone)
+			{
+				bIdleDone_ = bIdleDone;
+			}
+
+			/**
+			 * @brief 徘徊終了フラグを設定する。
+			 * @param bWanderDone 終了していれば true。
+			 */
+			inline void SetWanderDone(bool bWanderDone)
+			{
+				bWanderDone_ = bWanderDone;
+			}
+
 
 		/* ゲッター。*/
 		public:
@@ -192,6 +212,25 @@ namespace nsApp
 			}
 
 
+			/**
+			 * @brief 待機時間が終わったか。
+			 * @return 終わっていれば true。
+			 */
+			inline bool IsIdleDone() const
+			{
+				return bIdleDone_;
+			}
+
+			/**
+			 * @brief 徘徊時間が終わったか。
+			 * @return 終わっていれば true。
+			 */
+			inline bool IsWanderDone() const
+			{
+				return bWanderDone_;
+			}
+
+
 		private:
 			bool bSelfDead_ = false; //! 自身が死亡しているか。
 			bool bTargetDead_ = false; //! 対象が死亡しているか。
@@ -200,6 +239,8 @@ namespace nsApp
 			bool bInAttack_ = false; //! 攻撃範囲内に対象がいるか。
 			bool bNeedKnockBack_ = false; //! ノックバック開始が必要か。
 			bool bKnockBackDone_ = false; //! ノックバックが終了したか。
+			bool bIdleDone_ = false;	//! 待機時間が終わったか。
+			bool bWanderDone_ = false;	//! 徘徊時間が終わったか。
 		};
 	}
 }

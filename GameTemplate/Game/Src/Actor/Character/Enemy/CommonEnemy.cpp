@@ -19,18 +19,26 @@ namespace nsApp
 
 		void CommonEnemy::InitCharacterModel()
 		{
+			/* モデルの種類をセットする。*/
 			stAnimation_.Initialize(TYPE_COMMON);
+
+			/* 対応するアニメーションを読み込む。*/
 			stAnimation_.LoadAnimation();
 
+			/* アニメーションをロードする。*/
 			stModel_.LoadCharacterModel(TYPE_COMMON, stAnimation_.GetAnimatiocClip(), stAnimation_.GetAnimationClips());
 
+			/* モデルの大きさをセットする。*/
 			stModel_.SetCharacterScale(Vector3::One* 0.01f);
+
+			/* 初期座標をセット。*/
 			stModel_.SetPosition(vPosition_);
+			stMovement_.SetGravityEnabled(true); //! 重力を有効化。
 			stModel_.Update();
 
+			/* 初期のアニメーションをセット。*/
 			iPlayingAnimation_ = -1;
-			PlayIdle();
-			
+			PlayIdle();			
 		}
 
 
@@ -75,11 +83,22 @@ namespace nsApp
 			if (stTransition_.GetCurrentState() != EnEnemyState::Death)
 				fAttackTimer_ += g_gameTime->GetFrameDeltaTime();
 
+			/* 待機中は Idle タイマーを進める。*/
+			if (stTransition_.GetCurrentState() == EnEnemyState::Idle)
+				fIdleTimer_ += g_gameTime->GetFrameDeltaTime();
+
+			/* 徘徊中は Wander タイマーを進める。*/
+			if (stTransition_.GetCurrentState() == EnEnemyState::Wander)
+				fWanderTimer_ += g_gameTime->GetFrameDeltaTime();
+
 			/* ステートマシーンを更新する（遷移は State 内の TryChangeState）。*/
 			ICharacter::Update();
 
 			/* 大きさの倍率を設定する。*/
-			stModel_.SetCharacterScale(Vector3::One * 0.01f);
+			if (stTransition_.GetCurrentState() != EnEnemyState::Death)
+				stModel_.SetCharacterScale(Vector3::One * 0.01f);
+			//else
+			//	stModel_.SetCharacterScale(Vector3::One * 0.01f);
 
 			/* 位置をモデルへ反映する。*/
 			ApplyModelTransform();
@@ -266,7 +285,6 @@ namespace nsApp
 		}
 
 
-
 		void CommonEnemy::PlayIdle()
 		{
 			/* 待機を再生する。*/
@@ -296,8 +314,15 @@ namespace nsApp
 
 		void CommonEnemy::PlayDeath()
 		{
+			fDeathFadeTimer_ = 0.0f;
+			fModelAlpha_ = 1.0f;
+			bDeathEffectPlayed_ = false;
+			stModel_.SetAlpha(1.0f);
+
 			/* 死亡時の演出用のアニメーションを再生する。*/
-			PlayAnimation(stAnimation_.GetBasicAnimationIndex(ANIM_LIST::Run));
+			const int iRun = stAnimation_.GetBasicAnimationIndex(ANIM_LIST::Run);
+			iPlayingAnimation_ = iRun;
+			stModel_.PlayAnimation(iRun, 0.0f); // 補完はなし。
 		}
 
 
@@ -315,6 +340,8 @@ namespace nsApp
 			{
 			case EnEnemyState::Idle:
 				return L"Idle";
+			case EnEnemyState::Wander:
+				return L"Wander";
 			case EnEnemyState::Chase:
 				return L"Chase";
 			case EnEnemyState::Attack:
@@ -400,6 +427,60 @@ namespace nsApp
 				vKnockBackSpeed_ = Vector3::Zero;
 				bKnockBackFinished_ = true;
 			}
+		}
+
+
+		void CommonEnemy::ExecuteDeth()
+		{
+			/* すでに消えて居るなら何もしない。*/
+			if (IsDeathFadeDone())
+				return;
+
+			/* 経過時間を更新する。*/
+			fDeathFadeTimer_ += g_gameTime->GetFrameDeltaTime();
+
+			/* 1 → 0 へ線形補完する。*/
+			fModelAlpha_ = CalcDeathFadeAlpha(fDeathFadeTimer_);
+			stModel_.SetAlpha(fModelAlpha_);
+
+			/* フェード完了時の処理。*/
+			if (IsDeathFadeDone())
+				stModel_.SetAlpha(0.0f);
+		}
+
+
+		void CommonEnemy::BeginWander()
+		{
+			/* 徘徊時間をカウント。*/
+			fWanderTimer_ = 0.0f;
+
+			/* 歩く方向をランダムに決める。*/
+			const float fAngle = (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * 6.2831853f;
+			vWanderDir_.x = sinf(fAngle);
+			vWanderDir_.y = 0.0f;
+			vWanderDir_.z = cosf(fAngle);
+
+			/* 進行方向を向かせる。*/
+			qLook_.SetRotation(Vector3::AxisY, fAngle);
+		}
+
+
+		float CommonEnemy::CalcDeathFadeAlpha(float fTimer) const
+		{
+			/* 前半は不透明のまま。*/
+			if (fTimer < fDeathHoldDuration_)
+				return 1.0f;
+
+			/* 後半の演出の長さを計算する。*/
+			const auto fFadeLen = fDeathFadeDuration_ - fDeathHoldDuration_;
+			if (fFadeLen <= 0.0f)
+				return 0.0f;
+
+			auto fTime = (fTimer - fDeathHoldDuration_) / fFadeLen;
+			fTime = std::clamp<float>(fTime, 0.0f, 1.0f);
+
+			/* 後半になればなるほど速く消す。*/
+			return 1.0f - (fTime * fTime);
 		}
 	}
 }

@@ -161,6 +161,7 @@ namespace nsApp
 				vCenter = Vector3::Zero;
 		}
 
+
 		Player::~Player()
 		{
 			/* コントローラを破棄する。*/
@@ -183,7 +184,7 @@ namespace nsApp
 			 * 重力は床のあるステージが入ってから有効にする。
 			 * 床が無い状態で有効にすると、接地できず落ち続けてしまう。
 			 */
-			stMovement_.SetGravityEnabled(false);
+			stMovement_.SetGravityEnabled(true);
 
 			/* モデルとアニメーションを読み込む。*/
 			InitModel();
@@ -673,7 +674,7 @@ namespace nsApp
 			vecOutHits.clear();
 
 			/* 敵の部位別当たり判定(形とダメージ倍率)を取り出す。*/
-			const nsCombat::HitBoxSet& stHitBoxSet = nsCombat::HitBoxSet::GetShared(CharacterModelType::Infected);
+			const nsCombat::HitBoxSet& stHitBoxSet = nsCombat::HitBoxSet::GetShared(CharacterModelType::Common);
 
 			/* 射程内で弾道に触れる敵を全部集める。*/
 			for (CommonEnemy* pEnemy : FindGOs<CommonEnemy>("commonEnemy"))
@@ -722,7 +723,7 @@ namespace nsApp
 
 			/* 撃破の閃光は胸のあたり(身長の半分)に出す。*/
 			Vector3 vKillPos = pEnemy->GetPosition();
-			vKillPos.y += nsCombat::HitBoxSet::GetShared(CharacterModelType::Infected).GetHeight() * 0.5f;
+			vKillPos.y += nsCombat::HitBoxSet::GetShared(CharacterModelType::Common).GetHeight() * 0.5f;
 			PublishGameEvent(nsEvent::EnGameEvent::EnemyKilled, vKillPos);
 
 			DeleteGO(pEnemy);

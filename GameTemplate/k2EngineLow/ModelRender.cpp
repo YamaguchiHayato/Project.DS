@@ -94,14 +94,21 @@ void nsK2EngineLow::ModelRender::InitModel(const char* filePath, EnModelUpAxis e
 
 	//モデルの上方向を指定する。
 	initData.m_modelUpAxis = enModelUpAxis;
-	initData.m_expandConstantBuffer = &g_renderingEngine->GetLight();
-	initData.m_expandConstantBufferSize = sizeof(g_renderingEngine->GetLight());
+	m_expandCB.light = g_renderingEngine->GetLight();
+	m_expandCB.modelAlpha = m_alpha;
+	initData.m_expandConstantBuffer = &m_expandCB;
+	initData.m_expandConstantBufferSize = sizeof(m_expandCB);
+	initData.m_alphaBlendMode = AlphaBlendMode_Trans; // 半透明合成。
 
 	//作成した初期化データをもとにモデルを初期化する、
 	m_model.Init(initData);
 }
 void nsK2EngineLow::ModelRender::Update()
 {
+	/* シーンライトをセットし、モデルのα値を乗せる。*/
+	m_expandCB.light = g_renderingEngine->GetLight();
+	m_expandCB.modelAlpha = m_alpha;
+
 	m_model.UpdateWorldMatrix(m_position, m_rotation, m_scale);
 	m_shadowModel.UpdateWorldMatrix(m_position, m_rotation, m_scale);
 
@@ -117,7 +124,6 @@ void nsK2EngineLow::ModelRender::Update()
 void nsK2EngineLow::ModelRender::Draw(RenderContext& rc)
 {
 	g_renderingEngine->AddRenderObject(this);
-
 }
 
 

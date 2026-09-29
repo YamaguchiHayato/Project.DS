@@ -105,6 +105,16 @@ namespace nsApp
 				pCharacterModelRender_->SetScale(scale);
 		}
 
+		/**
+		 * @brief キャラクターモデルのアルファ値を設定する。
+		 * @param alpha 透明度の設定。
+		 */
+		inline void SetAlpha(float alpha)
+		{
+			if(pCharacterModelRender_)
+				pCharacterModelRender_->SetAlpha(alpha);
+		}
+
 
 	/* ゲッター。*/
 	public:
@@ -125,6 +135,6 @@ namespace nsApp
 		std::unique_ptr<ModelRender> pCharacterModelRender_; //! モデルを管理。
 		std::string sModelFilePath_; //! モデルのファイルパスを格納。
 		std::string sCharacterModelFilePath_ = "Assets/modelData/Character/CharacterModel/"; //! プレイヤー/NPCモデルのファイルパスを格納。
-		std::string sModelExtension_ = ".tkm"; //! プレイヤー/NPCモデルの拡張子を格納。
+		std::string sModelExtension_ = ".tkm"; //! NPCモデルの拡張子を格納。
 	};
 }

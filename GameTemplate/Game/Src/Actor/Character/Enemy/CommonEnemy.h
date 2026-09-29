@@ -56,6 +56,48 @@ namespace nsApp
 			void PlayWalk() override;
 
 			/**
+			 * @brief 徘徊を開始する。
+			 */
+			void BeginWander() override;
+
+			/**
+			 * @brief 徘徊移動を1フレーム進める。
+			 */
+			void ExecuteWander() override
+			{
+				vPosition_ = stMovement_.MoveOnDirection(vWanderDir_, fWanderSpeed_, g_gameTime->GetFrameDeltaTime());
+			}
+
+			/**
+			 * @brief 待機時間が終わったか。
+			 * @return 終わっていれば true。
+			 */
+			bool IsIdleDone() const override
+			{
+				/* 規定時間を超えた場合、徘徊に移ることが許可される。*/
+				return fIdleTimer_ >= fIdleDuration_;
+			}
+
+			/**
+			 * @brief 徘徊時間が終わったか。
+			 * @return 終わっていれば true。
+			 */
+			bool IsWanderDone() const override
+			{
+				/* 規定時間を超えた場合、待機状態に戻ることが許可される。*/
+				return fWanderTimer_ >= fWanderDuration_;
+			}
+
+			/**
+			 * @brief 待機タイマーをリセットする。
+			 */
+			void ResetIdleTimer() override
+			{
+				/* Idle ステートに入った際、カウントする。*/
+				fIdleTimer_ = 0.0f;
+			}
+
+			/**
 			 * @brief 走りアニメーションを再生する。
 			 */
 			void PlayRun() override;
@@ -212,6 +254,21 @@ namespace nsApp
 			void AttackTarget() override;
 
 			/**
+			 * @brief 死亡ステートの処理を実行する。
+			 */
+			void ExecuteDeth() override;
+
+			/**
+			 * @brief 死亡フェードが終わったか。
+			 * @return 終わっていれば true。
+			 */
+			bool IsDeathFadeDone() const override
+			{
+				/* α値が0以下ならフェード完了。*/
+				return fModelAlpha_ <= 0.0f;
+			}
+
+			/**
 			 * @brief 位置をモデルへ反映する。
 			 */
 			void ApplyModelTransform();
@@ -258,6 +315,23 @@ namespace nsApp
 			 */
 			Vector3 MakeEyePosition(const Vector3& vPos) const;
 
+			/**
+			 * @brief 死亡演出の経過時間から、表示用のα値を求める。
+			 * @param fTimer 死亡からの経過秒数。
+			 * @return 表示用のα値。
+			 */
+			float CalcDeathFadeAlpha(float fTimer) const;
+
+			/**
+			 * @brief 消滅エフェクトを出すべきタイミングかを図る。
+			 * @param fAlpha 現在のα値。
+			 * @return 出すべきタイミングならtrue。
+			 */
+		 	inline bool ShouldPlayDeathEffect(float fAlpha) const
+			{
+				return !bDeathEffectPlayed_ && fAlpha <= 0.5f; 
+			}
+ 
 
 		private:
 			EnemyTransition stTransition_; //! ステート遷移。
@@ -283,6 +357,17 @@ namespace nsApp
 			bool bKnockBackPending_ = false; //! ノックバック開始待ち。
 			bool bKnockBackFinished_ = false; //! ノックバック終了。
 			Vector3 vAway_ = Vector3::Zero;//! ノックバック方向。
+			float fWanderSpeed_ = 40.0f; //! 徘徊速度（Chaseより遅く）。
+			float fIdleDuration_ = 5.0; //! 待機の長さ（秒）。
+			float fWanderDuration_ = 3.0f; //! 徘徊の長さ（秒）。
+			float fIdleTimer_ = 0.0f; //! 待機経過時間。
+			float fWanderTimer_ = 0.0f; //! 徘徊経過時間。
+			Vector3 vWanderDir_ = Vector3::Zero; //! 徘徊中の水平方向。
+			float fDeathFadeDuration_ = 1.5;	//! 死亡演出全体の長さ（秒）。
+			float fDeathHoldDuration_ = 0.3f;	//! 最初に不透明のまま見せる時間（秒）。
+			float fDeathFadeTimer_ = 0.0f; //! 死亡演出経過時間（秒）。
+			float fModelAlpha_ = 1.0f; //! 表示用のα値。
+			bool bDeathEffectPlayed_ = false; //! 死亡エフェクトを出したか。
 		};
 	}
 }

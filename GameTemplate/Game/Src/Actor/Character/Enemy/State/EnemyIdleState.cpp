@@ -14,6 +14,9 @@ namespace nsApp
 
 		void EnemyIdleState::OnEnter()
 		{
+			/* タイマーをカウント。*/
+			pEnemy_->ResetIdleTimer();
+
 			/* 待機アニメを再生する。*/
 			pEnemy_->PlayIdle();
 		}
