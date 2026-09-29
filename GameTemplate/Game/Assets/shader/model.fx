@@ -1,5 +1,3 @@
-
-
 ////////////////////////////////////////////////
 //モデルシェーダー
 ////////////////////////////////////////////////
@@ -91,6 +89,9 @@ cbuffer DirectionLightCb : register(b1)
     SpotLight spotLight[10]; //スポットライト
     HemLight hemLight; //半球ライト
     float4x4 mLVP; //ライトビュースクリーン
+
+    float modelAlpha; //モデルのアルファ値。
+    float3 modelAlphaAlignmentPad;
 }
 ////////////////////////////////////////////////
 // 讒矩菴・
@@ -266,8 +267,10 @@ SPSOut PSMain( SPSIn psIn,int isShadowReceiver ) : SV_Target0
 
     //// ==========================================
     
+    albedoColor.rgb *= modelAlpha;
+    albedoColor.a = modelAlpha;
     shadowColor.color = albedoColor;
-       
+
     return shadowColor;
 }
 

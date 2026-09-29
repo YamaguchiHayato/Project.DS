@@ -5,6 +5,18 @@ namespace nsK2EngineLow {
 	class ModelRender:public IRender
 	{
 	public:
+		// 拡張。
+
+		/// <summary>
+		/// </summary>
+		struct EnModelExpandCB
+		{
+			SceneLight light; //!  フレームごとのライトを管理。
+			float modelAlpha = 1.0f; //!  モデルのアルファ値。
+			float alphaPadding[3] = {}; //! 定数バッファ整列用（中身は使わない）。
+		};
+
+
 		/// <summary>
 		/// 通常描画用の初期化
 		/// </summary>
@@ -94,7 +106,7 @@ namespace nsK2EngineLow {
 			SetScale({ x, y, z });
 		}
 
-		/// <summary>
+	/// <summary>
 	/// モデルを取得。
 	/// </summary>
 	/// <returns>モデル</returns>
@@ -130,6 +142,24 @@ namespace nsK2EngineLow {
 			SetScale(scale);
 		}
 
+		/**
+		 * @brief モデルのα値を設定する。
+		 * @param alpha 設定するα値。
+		 */
+		inline void SetAlpha(float alpha)
+		{
+			m_alpha = alpha;
+		}
+
+		/*
+		 * @brief モデルのα値を取得する。
+		 * @return 取得したα値。
+		 */
+		inline float GetAlpha() const
+		{
+			return m_alpha;
+		}
+
 
 		AnimationClip* m_animationClips = nullptr;		//アニメーションクリップ
 		int m_numAnimationClips = 0;					//アニメーションの数
@@ -143,7 +173,8 @@ namespace nsK2EngineLow {
 		bool m_isUpdateAnimation = true;				//アニメーションを更新する？
 		Skeleton m_skeleton;							//骨
 		float m_animationSpeed = 1.0f;					//アニメーション再生速度
-		float m_alpha = 1.0f;
-};
+		float m_alpha = 1.0f;							//! モデルのアルファ値。
+		EnModelExpandCB m_expandCB;						//! 拡張用の定数バッファ。
+	};
 }
 
