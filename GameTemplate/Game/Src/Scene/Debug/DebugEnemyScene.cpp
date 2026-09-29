@@ -94,6 +94,13 @@ namespace nsApp
 			bWasPressEsc_ = bPressEsc;
 			bWasPressT_ = bPressT;
 
+			/* 削除判定。*/
+			if (pCommonEnemy_ != nullptr && pCommonEnemy_->IsDeathFadeDone())
+			{
+				DeleteGO(pCommonEnemy_);
+				pCommonEnemy_ = nullptr;
+			}
+
 			/* デバッグ表示を更新する。*/
 			UpdateDebugFont();
 

@@ -73,6 +73,33 @@ namespace nsApp
 			virtual void PlayWalk() = 0;
 
 			/**
+			 * @brief  徘徊を開始する。
+			 */
+			virtual void BeginWander() = 0;
+
+			/**
+			 * @brief 徘徊を1フレーム進める。
+			 */
+			virtual void ExecuteWander() = 0;
+
+			/**
+			 * @brief 徘徊が終了したか。
+			 * @return 終わっていれば true。
+			 */
+			virtual bool IsWanderDone() const = 0;	
+
+			/**
+			 * @brief 待機時間が終わったか。
+			 * @return 終わっていれば true。
+			 */
+			virtual bool IsIdleDone() const = 0 ;
+
+			/**
+			 * @brief 待機タイマーをリセットする。
+			 */
+			virtual void ResetIdleTimer() = 0;
+
+			/**
 			 * @brief 走りアニメを再生する。
 			 */
 			virtual void PlayRun() = 0;
@@ -123,6 +150,17 @@ namespace nsApp
 			 * @brief ノックバック移動を1フレーム進める。
 			 */
 			virtual void ExecuteKnockBack() = 0;
+
+			/**
+			 * @brief 死亡演出を進める。
+			 */
+			virtual void ExecuteDeth() = 0;
+
+			/**
+			 * @brief 死亡演出が終わったか。
+			 * @return 終わっていれば true。
+			 */
+			virtual bool IsDeathFadeDone() const = 0;
 		};
 	}
 }

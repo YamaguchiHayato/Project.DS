@@ -232,6 +232,9 @@
     <ClCompile Include="Src\Actor\Character\Common\CharacterAnimBank.cpp">
       <Filter>Src\Actor\Common</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyWanderState.cpp">
+      <Filter>Src\Actor\Character\Enemy\State</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -417,6 +420,9 @@
     </ClInclude>
     <ClInclude Include="Src\Actor\Character\Common\CharacterAnimBank.h">
       <Filter>Src\Actor\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyWanderState.h">
+      <Filter>Src\Actor\Character\Enemy\State</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
