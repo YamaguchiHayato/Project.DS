@@ -235,6 +235,12 @@
     <ClCompile Include="Src\Actor\Character\Enemy\State\EnemyWanderState.cpp">
       <Filter>Src\Actor\Character\Enemy\State</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Director\EnemyPool.cpp">
+      <Filter>Src\Director</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Director\EnemySpawner.cpp">
+      <Filter>Src\Director</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -423,6 +429,15 @@
     </ClInclude>
     <ClInclude Include="Src\Actor\Character\Enemy\State\EnemyWanderState.h">
       <Filter>Src\Actor\Character\Enemy\State</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Director\IEnemyPool.h">
+      <Filter>Src\Director</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Director\EnemyPool.h">
+      <Filter>Src\Director</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Director\EnemySpawner.h">
+      <Filter>Src\Director</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

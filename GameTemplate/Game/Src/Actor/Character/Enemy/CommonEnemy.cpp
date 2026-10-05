@@ -9,6 +9,7 @@
 namespace
 {
 	const float fAnimInterpolateTime_ = 0.2f; //! アニメ切替の補間時間。
+	const Vector3 vPoolParkPosition_ = { 0.0f, -100000.0f, 0.0f };	//! プール待機中の退避先。どの射程・判定半径も届かない位置。
 }
 
 namespace nsApp
@@ -69,12 +70,28 @@ namespace nsApp
 			pStateMachine_->ChangeState(new EnemyIdleState());
 			stTransition_.SetCurrentState(EnEnemyState::Idle);
 
+			/* プール待機状態にする。*/
+			if (bPoolInactive_)
+				Deactivate();
+
+			else
+			{
+				fModelAlpha_ = 1.0f;
+				stModel_.SetAlpha(fModelAlpha_);
+				ApplyModelTransform();
+
+			}
+
 			return true;
 		}
 
 
 		void CommonEnemy::Update()
 		{
+			/* プールで待機中は更新しない。*/
+			if (bPoolInactive_)
+				return;
+
 			/* ポーズ中は動かさない。*/
 			if (nsSystem::IsGamePaused())
 				return;
@@ -97,8 +114,6 @@ namespace nsApp
 			/* 大きさの倍率を設定する。*/
 			if (stTransition_.GetCurrentState() != EnEnemyState::Death)
 				stModel_.SetCharacterScale(Vector3::One * 0.01f);
-			//else
-			//	stModel_.SetCharacterScale(Vector3::One * 0.01f);
 
 			/* 位置をモデルへ反映する。*/
 			ApplyModelTransform();
@@ -107,6 +122,10 @@ namespace nsApp
 
 		void CommonEnemy::Render(RenderContext& rc)
 		{
+			/* プールで待機中は描画しない。*/
+			if(bPoolInactive_)
+				return;
+
 			/* ICharacter::stModel_ を描画する。*/
 			ICharacter::Render(rc);
 		}
@@ -355,6 +374,10 @@ namespace nsApp
 
 		void CommonEnemy::ApplyDamage(int iDamage)
 		{
+			/* プールへの待機中はダメージを受けない。*/
+			if (bPoolInactive_)
+				return;
+
 			/* HPを減らす。*/
 			IEnemy::ApplyDamage(iDamage);
 
@@ -435,7 +458,7 @@ namespace nsApp
 			/* すでに消えて居るなら何もしない。*/
 			if (IsDeathFadeDone())
 				return;
-
+			
 			/* 経過時間を更新する。*/
 			fDeathFadeTimer_ += g_gameTime->GetFrameDeltaTime();
 
@@ -443,9 +466,15 @@ namespace nsApp
 			fModelAlpha_ = CalcDeathFadeAlpha(fDeathFadeTimer_);
 			stModel_.SetAlpha(fModelAlpha_);
 
-			/* フェード完了時の処理。*/
+			/* フェード完了時(死亡演出)の処理。*/
 			if (IsDeathFadeDone())
+			{
+				/* 透明度を設定する。*/
 				stModel_.SetAlpha(0.0f);
+
+				/* プール待機へ戻す。*/
+				Deactivate();
+			}
 		}
 
 
@@ -481,6 +510,62 @@ namespace nsApp
 
 			/* 後半になればなるほど速く消す。*/
 			return 1.0f - (fTime * fTime);
+		}
+
+
+		void CommonEnemy::Activate(const Vector3& vPos, ICharacter* pTarget)
+		{
+			/* 戦場で動かす。*/
+			bPoolInactive_ = false;
+
+			/* 呼び出し側から渡された位置・標的を使う。*/
+			SetPosition(vPos);
+			SetTarget(pTarget);
+
+			/* HP を満タンに戻す。*/
+			stCharacterStatus_.stHp_.iCurrentHP_ = stCharacterStatus_.stHp_.iMaxHP_;
+
+			/* 表示と死亡演出用の値を復帰させる。*/
+			fModelAlpha_ = 1.0f;
+			fDeathFadeTimer_ = 0.0f;
+			bDeathEffectPlayed_ = false;
+			stModel_.SetAlpha(1.0f);
+			stModel_.SetCharacterScale(Vector3::One * 0.01f);
+
+			/* 待機アニメ・待機ステートから始める。*/
+			iPlayingAnimation_ = -1;
+			PlayIdle();
+			pStateMachine_->ChangeState(new EnemyIdleState());
+			stTransition_.SetCurrentState(EnEnemyState::Idle);
+
+			/* 位置と向きをモデルへ反映する。*/
+			ApplyModelTransform();
+		}
+
+
+		void CommonEnemy::Deactivate()
+		{
+			/* プール待機へ戻す。*/
+			bPoolInactive_ = true;
+
+			/* マップ外へ退散させる。*/
+			SetPosition(vPoolParkPosition_);
+			ApplyModelTransform();
+
+			/* 演出用の値とフラグを初期化する。*/
+			fModelAlpha_ = 0.0f;
+			fDeathFadeTimer_ = 0.0f;
+			bDeathEffectPlayed_ = false;
+			stModel_.SetAlpha(0.0f);
+
+			/* ノックバック値を残さない。*/
+			bKnockBackPending_ = false;
+			bKnockBackFinished_ = false;
+
+			/* 再生成用のステートを設定する。*/
+			iPlayingAnimation_ = -1;
+			pStateMachine_->ChangeState(new EnemyIdleState());
+			stTransition_.SetCurrentState(EnEnemyState::Idle);
 		}
 	}
 }

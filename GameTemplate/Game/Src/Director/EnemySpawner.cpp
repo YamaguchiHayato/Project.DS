@@ -44,14 +44,16 @@ namespace nsApp
 			if (pTarget == nullptr)
 				return;
 
-			const auto enemies = FindGOs < nsActor::CommonEnemy>("commonEnemy");
+			/* プールの敵がまだ無ければ待つ。*/
+			const auto enemies = FindGOs<nsActor::CommonEnemy>("commonEnemy");
 			if (enemies.empty())
 				return;
 
+			/* 全員の初期化(Start)が終わるまで待つ。*/
 			for (nsActor::CommonEnemy* pEnemy : enemies)
 			{
 				if (pEnemy == nullptr || !pEnemy->IsStart())
-					continue;
+					return;
 			}
 
 			/* 設定数だけ生成する。（枯渇したらそこで打ち切り）。*/
@@ -60,14 +62,12 @@ namespace nsApp
 				/* プールから生成する。*/
 				if (pPool_->Spawn(enType_, vSpawnPos_, pTarget) == nullptr)
 					break;
-
 				/* 生成したら、フラグを立てる。*/
 				++iSpawned_;
 			}
-
 			/* 1体でも生成できたら、フラグを立てる。*/
-			if(iSpawned_ > 0)
-				bSpawned_ = true; 
+			if (iSpawned_ > 0)
+				bSpawned_ = true;
 		}
 	}
 }

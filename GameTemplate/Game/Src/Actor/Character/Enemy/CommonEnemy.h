@@ -46,6 +46,29 @@ namespace nsApp
 
 		public:
 			/**
+			 * @brief プールから出して戦場に出す。
+			 * @param vPos 出現位置。
+			 * @param pTarget 追跡対象。
+			 */
+			void Activate(const Vector3& vPos, ICharacter* pTarget) override;
+
+			/**
+			 * @brief プール待機へ戻す。
+			 */
+			void Deactivate() override;
+
+			/**
+			 * @brief プール待機中か。
+			 * @return 待機中なら true。
+			 */
+			bool IsPoolInactive() const override
+			{
+				return bPoolInactive_;
+			}
+
+
+		public:
+			/**
 			 * @brief 待機アニメーションを再生する。
 			 */
 			void PlayIdle() override;
@@ -333,6 +356,8 @@ namespace nsApp
 			}
  
 
+
+
 		private:
 			EnemyTransition stTransition_; //! ステート遷移。
 			CharacterMovement stMovement_; //! 移動処理。
@@ -368,6 +393,7 @@ namespace nsApp
 			float fDeathFadeTimer_ = 0.0f; //! 死亡演出経過時間（秒）。
 			float fModelAlpha_ = 1.0f; //! 表示用のα値。
 			bool bDeathEffectPlayed_ = false; //! 死亡エフェクトを出したか。
+			bool bPoolInactive_ = true;	//! true ならプール待機中。
 		};
 	}
 }
