@@ -45,7 +45,7 @@ namespace nsApp
 		bool CommonEnemy::Start()
 		{
 			/* カプセルで壁（PhysicsStaticObject）と当たる。*/
-			stMovement_.Init(20.0f, 70.0f, vPosition_);
+			stMovement_.Init(20.0f, 145.0f, vPosition_);
 			
 			/* 視線判定の目の高さを設定する。*/
 			stSightCheck_.SetEyeHeight(120.0f);
