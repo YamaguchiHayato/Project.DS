@@ -352,6 +352,7 @@
     <ClCompile Include="tkFile\TkmFile.cpp" />
     <ClCompile Include="tkFile\TknFile.cpp" />
     <ClCompile Include="tkFile\TksFile.cpp" />
+    <ClCompile Include="tsv\TSVTable.cpp" />
     <ClCompile Include="UIGaugeArc.cpp" />
     <ClCompile Include="VertexBufferVRAM.cpp" />
     <ClCompile Include="VMDAnimPlayer.cpp" />
@@ -470,11 +471,16 @@
     <ClInclude Include="tkFile\TkmFile.h" />
     <ClInclude Include="tkFile\TknFile.h" />
     <ClInclude Include="tkFile\TksFile.h" />
+    <ClInclude Include="tsv\TSVTable.h" />
+    <ClInclude Include="tsv\TSVTableLoader.h" />
     <ClInclude Include="UIGaugeArc.h" />
     <ClInclude Include="util\TResourceBank.h" />
     <ClInclude Include="VertexBufferVRAM.h" />
     <ClInclude Include="VMDAnimPlayer.h" />
     <ClInclude Include="VMDLoader.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="tsv\TSVTableLoader.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
