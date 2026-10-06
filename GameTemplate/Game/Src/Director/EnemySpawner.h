@@ -1,5 +1,5 @@
 #pragma once
-#include "Src/Actor/Character/Common/CharacterModel.h"
+#include "Src/Director/EnemySpawnSetting.h"
 
 namespace nsApp
 {
@@ -16,9 +16,10 @@ namespace nsApp
 		/**
 		 * @file   EnemySpawner.h
 		 * @brief  配置点から敵をプール経由で出す係。見えない配置オブジェクト想定。
-         * @details プールは所有しない。Director などから IEnemyPool を受け取る。
+		 * @details プールは所有しない。Director などから IEnemyPool を受け取る。
+		 *          湧き方(形・半径・間隔・数)は EnemySpawnSetting で決める。
 		 * @author Yamaguchi Hayato
-		 * @date   2026/10/05
+		 * @date   2026/10/06: 最終更新日。
 		 */
 		class EnemySpawner : public IGameObject
 		{
@@ -37,7 +38,7 @@ namespace nsApp
 		public:
 			/**
 			 * @brief 使用するプールをセットする。
-			 * @param pPool 使用するプールのポインタ。nullptr の場合はセットしない。
+			 * @param pPool 使用するプールのポインタ。
 			 */
 			inline void SetPool(IEnemyPool* pPool)
 			{
@@ -45,49 +46,52 @@ namespace nsApp
 			}
 
 			/**
-			 * @brief スポナーを生成する場所を設定する。
-			 * @param vPos 生成する座標。
+			 * @brief スポナーの設定をセットする(種類・中心・形・半径・間隔・数)。
+			 * @param setting スポナーの設定。
 			 */
-			inline void SetSpawnPosition(const Vector3& vPos)
+			inline void SetSetting(const EnemySpawnSetting& setting)
 			{
-				vSpawnPos_ = vPos;
-			}
-
-			/**
-			 * @brief スポナーから生成する敵を設定する。
-			 * @param enType 敵モデルの種類。
-			 */
-			inline void SetEnemyType(CharacterModelType enType)
-			{
-				enType_ = enType;
-			}
-
-			/**
-			 * @brief スポナーから生成する敵の数を設定する。
-			 * @param count 生成数。
-			 */
-			inline void SetSpawnCount(int count)
-			{
-				iSpawnCount_ = count;
+				stSetting_ = setting;
 			}
 
 
 		private:
 			/**
-			 * @brief 未出撃なら、設定数だけ Spawn する。
+			 * @brief プールの敵が全員初期化を終えたか確認する。終えていれば以降は確認しない。
+			 * @return 湧かせてよければtrue。
 			 */
-			void TrySpawn();
+			bool WaitReady();
+
+			/**
+			 * @brief 設定の数だけ1回分を湧かせる(プールが空、または合計に達したら打ち切る)。
+			 */
+			void SpawnWave();
+
+			/**
+			 * @brief 湧かせる位置を形に合わせて作る。
+			 * @param index 1回分の中で何体目か(Ringの角度に使う)。
+			 * @return 湧かせる位置。
+			 */
+			Vector3 MakeSpawnPosition(int index) const;
+
+			/**
+			 * @brief 合計の上限に達したか。
+			 * @return 達していればtrue。上限が0(無制限)なら常にfalse。
+			 */
+			inline bool IsReachedTotal() const
+			{
+				return stSetting_.iTotal_ > 0 && iSpawned_ >= stSetting_.iTotal_;
+			}
 
 
 		private:
 			IEnemyPool* pPool_ = nullptr; //! 使用するプール（非所有）。
 			nsActor::Player* pTarget = nullptr; //! 追跡対象（非所有）。
-			Vector3 vSpawnPos_ = Vector3::Zero; //! 出現位置。
-			CharacterModelType enType_ = CharacterModelType::Common; //! 出す種類。
-			int iSpawnCount_ = 1; //! 出す数。
-			bool bSpawned_ = false; //! 一度出したか。
+			EnemySpawnSetting stSetting_; //! スポナーの設定。
+			float fIntervalTimer_ = 0.0f; //! 次に湧くまでの残り時間。
 			int iSpawned_ = 0; //! すでに出した数。
+			bool bReady_ = false; //! プールの準備ができたか。
+			bool bFinished_ = false; //! もう湧かせないか。
 		};
 	}
 }
-

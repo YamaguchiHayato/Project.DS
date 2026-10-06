@@ -56,7 +56,7 @@ namespace nsApp
 
 
 		private:
-			static const int iPoolSize_ = 3; //! プールのサイズ。
+			static const int iPoolSize_ = 20; //! プールのサイズ。
 			nsActor::CommonEnemy* pCommonPoolNum_[iPoolSize_] = {}; //! CommonEnemyのプール。
 			bool bInited_ = false; //! 初期化済みフラグ。
 		};
