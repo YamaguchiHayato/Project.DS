@@ -7,11 +7,11 @@
 #include "Src/UI/InGameHud.h"
 #include "Src/Item/Pickup.h"
 #include "Src/Item/PipeBomb.h"
+#include "Src/Director/EnemySpawner.h"
+#include "Src/Director/EnemySpawnSetting.h"
 
 namespace
 {
-	const int iTargetEnemyCount_ = 12;
-
 	/**
 	 * @brief 視線を軸にして「上」を回し、傾けたカメラの上方向を作る。
 	 * @param vLook 視線方向(正規化済み)。
@@ -32,11 +32,11 @@ namespace
 
 		return vUp;
 	}
-	
+
 
 	const float fEyeHeight_ = 160.0f;
 	const char* sStageModelPath_ = "Assets/modelData/stage/FirstStage/firstStage.tkm";
-  
+
 	const Vector3 vHintFontPos_ = { -450.0f, 450.0f, 0.0f };
 	const int iViewModeKey_ = 'T';				//! 一人称/三人称を切り替えるキー。
 	const int iReviveKey_ = VK_F5;				//! ダウンから復帰させるキー(ソロでは救助されないので手で起こす)。
@@ -58,29 +58,11 @@ namespace
 
 	/* 拾える物資の置き方。プレイヤーの右手側に、銃を1列に並べる。*/
 	const Vector3 vPickupRowStart_ = { -700.0f, 300.0f, -900.0f };	//! 列の左端。
-	const float fPickupRowStep_ = 200.0f;								//! 物資どうしの間隔。
-	const float fPickupItemRowOffset_ = -200.0f;						//! 銃の列から見た、物資(弾薬・回復)の列の奥行きのずれ。
+	const float fPickupRowStep_ = 200.0f; //! 物資どうしの間隔。
+	const float fPickupItemRowOffset_ = -200.0f; //! 銃の列から見た、物資(弾薬・回復)の列の奥行きのずれ。
 
-	const Vector3 aTargetPositions_[12] =
-	{
-		/* 手前〜中（左右に開く） */
-		{ -900.0f, 300.0f,  -50.0f },
-		{  900.0f, 300.0f,    0.0f },
-		{ -400.0f, 300.0f,  200.0f },
-		{  450.0f, 300.0f,  280.0f },
-
-		/* 中盤（広く散らす） */
-		{ -1100.0f, 300.0f,  700.0f },
-		{     0.0f, 300.0f,  650.0f },
-		{  1100.0f, 300.0f,  720.0f },
-		{  -550.0f, 300.0f,  900.0f },
-		{   600.0f, 300.0f,  950.0f },
-
-		/* 奥（青の構造物側） */
-		{ -800.0f, 300.0f, 1400.0f },
-		{  200.0f, 300.0f, 1550.0f },
-		{  850.0f, 300.0f, 1350.0f },
-	};
+	/* TSVファイルを読み込む。*/
+	const char* sEnemySpawnFilePath_ = "Assets/data/enemySpawn_stage1.tsv"; //! 敵配置表のファイルパス。
 }
 
 
@@ -103,9 +85,6 @@ namespace nsApp
 			for (nsItem::PipeBomb* pPipeBomb : FindGOs<nsItem::PipeBomb>("pipeBomb"))
 				DeleteGO(pPipeBomb);
 
-			for (int i = 0; i < iTargetEnemyCount_; ++i)
-				aTargetEnemies_[i] = nullptr;
-
 			if (pPlayer_ != nullptr)
 			{
 				DeleteGO(pPlayer_);
@@ -124,6 +103,10 @@ namespace nsApp
 				DeleteGO(pEventBus_);
 				pEventBus_ = nullptr;
 			}
+
+			for (nsDirector::EnemySpawner* pSpawner : vecSpawners_)
+				DeleteGO(pSpawner);
+			vecSpawners_.clear();
 		}
 
 
@@ -140,7 +123,7 @@ namespace nsApp
 
 			/* PhysicsStaticObject を作り直す。 */
 			stGroundCollider_.Release();
-			stGroundCollider_.CreateFromModel(stGroundModel_.GetModel(),stGroundModel_.GetModel().GetWorldMatrix());
+			stGroundCollider_.CreateFromModel(stGroundModel_.GetModel(), stGroundModel_.GetModel().GetWorldMatrix());
 
 			/* 通知の配達役。プレイヤーが FindGO で見つけて命中・被弾を流し、HUDが受け取る。*/
 			pEventBus_ = NewGO<nsEvent::EventBus>(0, "eventBus");
@@ -376,11 +359,21 @@ namespace nsApp
 
 		void DebugShootingRangeScene::SpawnTargetEnemies()
 		{
-			for (int i = 0; i < iTargetEnemyCount_; ++i)
+			/* 先にプールを用意する(敵はプール側でまとめて作る)。*/
+			stEnemyPool_.Init();
+
+			/* 配置表を読む。読めなければ敵は置かない(失敗はウィンドウで知らせる)。*/
+			std::vector<nsDirector::EnemySpawnSetting> vecSettings;
+			if (!nsK2EngineLow::nsSystem::nsTSVFile::TSVTableLoader::LoadList(sEnemySpawnFilePath_, vecSettings))
+				return;
+
+			/* 1行につき1つスポナーを置く。*/
+			for (const nsDirector::EnemySpawnSetting& setting : vecSettings)
 			{
-				aTargetEnemies_[i] = NewGO<nsActor::CommonEnemy>(0, "commonEnemy");
-				aTargetEnemies_[i]->SetPosition(aTargetPositions_[i]);
-				aTargetEnemies_[i]->SetTarget(pPlayer_);
+				nsDirector::EnemySpawner* pSpawner = NewGO<nsDirector::EnemySpawner>(0, "enemySpawner");
+				pSpawner->SetPool(&stEnemyPool_);
+				pSpawner->SetSetting(setting);
+				vecSpawners_.push_back(pSpawner);
 			}
 		}
 	}

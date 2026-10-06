@@ -98,7 +98,7 @@ namespace nsApp
 			 * @brief 待機タイマーをリセットする。
 			 */
 			virtual void ResetIdleTimer() = 0;
-
+			
 			/**
 			 * @brief 走りアニメを再生する。
 			 */
@@ -161,6 +161,28 @@ namespace nsApp
 			 * @return 終わっていれば true。
 			 */
 			virtual bool IsDeathFadeDone() const = 0;
+
+
+		/* ObjectPool系の関数。*/
+		public:
+			/**
+			 * @brief 敵を有効にする。
+			 * @param vPos 位置。
+			 * @param pTarget 対象。
+			 */
+			virtual void Activate(const Vector3& vPos, ICharacter* pTarget) = 0;
+
+			/**
+			 * @brief プール待機へ戻す。
+			 * @details 倒した敵をプールへ還元する。
+			 */
+			virtual void Deactivate() = 0;
+
+			/**
+			 * @brief プール待機中か。
+			 * @return 待機中なら true。
+			 */
+			virtual bool IsPoolInactive() const = 0;
 		};
 	}
 }

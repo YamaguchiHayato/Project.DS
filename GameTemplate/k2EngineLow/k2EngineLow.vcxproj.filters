@@ -262,6 +262,10 @@
     <ClCompile Include="SE.cpp" />
     <ClCompile Include="UIGaugeArc.cpp" />
     <ClCompile Include="VertexBufferVRAM.cpp" />
+    <ClCompile Include="PenlightRender.cpp" />
+    <ClCompile Include="tsv\TSVTable.cpp">
+      <Filter>tsv</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="k2EngineLowPreCompile.h" />
@@ -580,6 +584,13 @@
     <ClInclude Include="SE.h" />
     <ClInclude Include="UIGaugeArc.h" />
     <ClInclude Include="VertexBufferVRAM.h" />
+    <ClInclude Include="PenlightRender.h" />
+    <ClInclude Include="tsv\TSVTable.h">
+      <Filter>tsv</Filter>
+    </ClInclude>
+    <ClInclude Include="tsv\TSVTableLoader.h">
+      <Filter>tsv</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="graphics">
@@ -645,5 +656,13 @@
     <Filter Include="MMD">
       <UniqueIdentifier>{70018ae3-60e8-4378-8cac-6db3b9a8a48c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="tsv">
+      <UniqueIdentifier>{0c311c12-cdb8-4ad1-a5b3-f82e2dd1e395}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="tsv\TSVTableLoader.inl">
+      <Filter>tsv</Filter>
+    </None>
   </ItemGroup>
 </Project>

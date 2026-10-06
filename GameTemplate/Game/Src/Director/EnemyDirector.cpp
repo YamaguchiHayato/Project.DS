@@ -29,6 +29,7 @@ namespace nsApp
 		{
 			/* 起動直後から間隔を数えて湧かせ始める。*/
 			fSpawnTimer_ = 0.0f;
+
 			return true;
 		}
 
@@ -45,17 +46,14 @@ namespace nsApp
 				return;
 
 			/* 同時出現数が上限に達していれば湧かせない。*/
-			const int iAlive = static_cast<int>(FindGOs<nsActor::CommonEnemy>("commonEnemy").size());
+			const int iAlive = static_cast<int>(enemyPool_.ActiveCount());
 			if (iAlive >= iMaxAliveEnemies_)
 				return;
 
 			/* 一定間隔ごとに1体湧かせる。*/
 			fSpawnTimer_ += g_gameTime->GetFrameDeltaTime();
 			if (fSpawnTimer_ >= fSpawnInterval_)
-			{
 				fSpawnTimer_ = 0.0f;
-				SpawnEnemy(pPlayer);
-			}
 		}
 
 
@@ -68,14 +66,9 @@ namespace nsApp
 			vSpawnPos.z += cosf(fAngle) * fSpawnRadius_;
 			vSpawnPos.y = 0.0f;
 
-			/*
-			 * 敵を生成し、湧き位置へ置いてプレイヤーを標的にする。
-			 * 座標を直接書き換えるだけだと敵の移動処理に上書きされてしまうため、
-			 * 移動処理へも反映される SetPosition を使う。
-			 */
-			nsActor::CommonEnemy* pEnemy = NewGO<nsActor::CommonEnemy>(0, "commonEnemy");
-			pEnemy->SetPosition(vSpawnPos);
-			pEnemy->SetTarget(pPlayer);
+			/* 敵を生成する。*/
+			/* todo 敵の種類増加により生成方式を切り替える必要あり。*/
+			enemyPool_.Spawn(CharacterModelType::Common, vSpawnPos, pPlayer);
 		}
 	}
 }

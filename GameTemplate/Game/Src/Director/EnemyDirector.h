@@ -1,4 +1,6 @@
 #pragma once
+#include"EnemyPool.h"
+
 
 namespace nsApp
 {
@@ -13,9 +15,8 @@ namespace nsApp
 		/**
 		 * @file   EnemyDirector.h
 		 * @brief  雑魚敵の湧き(スポーン)を一元管理する係。L4D2のAI Directorの簡易版。
-		 *         時間経過と同時出現数の上限を見て、プレイヤーの周囲に CommonEnemy を湧かせ続ける。
 		 * @author Izumida Kiryu
-		 * @date   2026/08/21
+		 * @date   2026/10:05: 最終更新日。
 		 */
 		class EnemyDirector : public IGameObject
 		{
@@ -31,6 +32,17 @@ namespace nsApp
 			void Update() override;
 
 
+		public:
+			/**
+			 * @brief 使用するプールを取得する。
+			 * @return 使用するプールのポインタ。nullptr の場合はセットされていない。
+			 */
+			inline IEnemyPool* GetPool()
+			{
+				return &enemyPool_;
+			}
+
+
 		private:
 			/**
 			 * @brief プレイヤーの周囲に敵を1体湧かせて、プレイヤーを標的にする。
@@ -41,6 +53,7 @@ namespace nsApp
 
 		private:
 			float fSpawnTimer_ = 0.0f;	//! 次の湧きまでの経過時間(秒)。
+			EnemyPool enemyPool_;	//! 敵を生成するためのスポナー用プール。
 		};
 	}
 }

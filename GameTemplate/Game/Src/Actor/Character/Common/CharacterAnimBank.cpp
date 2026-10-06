@@ -38,7 +38,7 @@ namespace nsApp
 		/* 特殊ゾンビ（アニメ未用意) */
 		const CharacterAnimBank kSpecialAnimBank_ =
 		{
-			CharacterModelType::Special,
+			CharacterModelType::Bile,
 			"Assets/animData/Infected/Special/",
 			nullptr,
 			0,
@@ -47,7 +47,7 @@ namespace nsApp
 		/*  第三種ゾンビ（アニメ未用意) */
 		const CharacterAnimBank kThirdAnimBank_ =
 		{
-			CharacterModelType::Third,
+			CharacterModelType::Bomber,
 			"Assets/animData/Infected/Third/",
 			nullptr,
 			0,

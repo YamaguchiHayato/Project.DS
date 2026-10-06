@@ -8,6 +8,7 @@
  */
 
 #include "Src/Scene/IScene.h"
+#include "Src/Director/EnemyPool.h"
 
 namespace nsApp
 {
@@ -27,13 +28,18 @@ namespace nsApp
 		class InGameHud;
 	}
 
+	namespace nsDirector
+	{
+		class EnemySpawner;
+	}
+
 	namespace nsScene
 	{
 		/**
 		 * @file   DebugShootingRangeScene.h
 		 * @brief  銃テスト用の射撃場シーン。
 		 * @author Yamaguchi Hayato
-		 * @date   2026/08/20
+		 * @date   2026/10/06: 最終更新日。
 		 */
 		class DebugShootingRangeScene : public IScene
 		{
@@ -109,7 +115,8 @@ namespace nsApp
 			nsActor::Player* pPlayer_ = nullptr; //! プレイヤー（本番と同じ）。
 			nsEvent::EventBus* pEventBus_ = nullptr; //! 通知の配達役(HUDが命中や被弾の通知を受け取るために要る)。
 			nsUI::InGameHud* pHud_ = nullptr; //! 本番と同じHUD。体力バーやアイテムスロットの見え方を確かめる。
-			nsActor::CommonEnemy* aTargetEnemies_[12] = {}; //! 奥に置く的役の雑魚敵。
+			nsDirector::EnemyPool stEnemyPool_; //! 的役の敵をまとめて持つプール。
+			std::vector<nsDirector::EnemySpawner*> vecSpawners_; //! 配置表の行ごとに置いたスポナー。
 			ModelRender stGroundModel_; //! 地面。
 			PhysicsStaticObject stGroundCollider_; //! 地面の静的コライダ。
 			FontRender stHintFont_; //! 操作ヒント。

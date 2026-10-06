@@ -147,3 +147,7 @@ static const int MAX_BONE = 512;	// ボーンの最大数。
 #include "UIGaugeArc.h"
 
 #include "VertexBufferVRAM.h"
+
+// TSVファイルの読み込み用。
+#include "tsv/TSVTable.h"
+#include "tsv/TSVTableLoader.h"

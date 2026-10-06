@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "InGameScene.h"
 #include "Player.h"
+#include "Tracer.h"
 #include "Src/Actor/Character/Enemy/CommonEnemy.h"
 #include "Src/Scene/GameFlow.h"
 #include "Src/Event/EventBus.h"
@@ -8,7 +9,6 @@
 #include "Src/UI/InGameHud.h"
 #include "Src/Director/EnemyDirector.h"
 #include "Src/System/GamePause.h"
-#include "Tracer.h"
 #include "Src/Item/PipeBomb.h"
 
 namespace

@@ -9,8 +9,8 @@ namespace nsApp
 	enum class CharacterModelType
 	{
 		Common, //! 雑魚ゾンビ。
-		Special, //! 特殊ゾンビ。
-		Third, //! todo 種類は考える。
+		Bile, //! バイル。
+		Bomber, //! ボンバー。
 		Survivor, //! サバイバー。
 	};
 
