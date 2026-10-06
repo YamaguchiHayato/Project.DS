@@ -241,6 +241,9 @@
     <ClCompile Include="Src\Director\EnemySpawner.cpp">
       <Filter>Src\Director</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Director\EnemySpawnSetting.cpp">
+      <Filter>Src\Director</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -437,6 +440,12 @@
       <Filter>Src\Director</Filter>
     </ClInclude>
     <ClInclude Include="Src\Director\EnemySpawner.h">
+      <Filter>Src\Director</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Enemy\EnEnemyType.h">
+      <Filter>Src\Actor\Character\Enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Director\EnemySpawnSetting.h">
       <Filter>Src\Director</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,0 +1,4 @@
+type	x	y	z	shape	radius	interval	amount	total
+Common	-1000	300	1000	Point	0	0	3	0
+Common	0	300	1000	Ring	400	0	8	0
+Common	1000	300	1000	Circle	400	0	8	0
