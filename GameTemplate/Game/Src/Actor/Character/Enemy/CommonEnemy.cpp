@@ -34,7 +34,7 @@ namespace nsApp
 
 			/* 初期座標をセット。*/
 			stModel_.SetPosition(vPosition_);
-			stMovement_.SetGravityEnabled(true); //! 重力を有効化。
+			stMovement_.SetGravityEnabled(false); //! 重力を有効化。
 			stModel_.Update();
 
 			/* 初期のアニメーションをセット。*/

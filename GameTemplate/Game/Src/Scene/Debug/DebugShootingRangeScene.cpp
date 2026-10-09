@@ -57,7 +57,7 @@ namespace
 	const Vector3 vPlayerSpawn_ = { 0.0f, 300.0f, -600.0f };
 
 	/* 拾える物資の置き方。プレイヤーの右手側に、銃を1列に並べる。*/
-	const Vector3 vPickupRowStart_ = { -700.0f, 300.0f, -900.0f };	//! 列の左端。
+	const Vector3 vPickupRowStart_ = { -700.0f, 0.0f, -900.0f };	//! 列の左端。
 	const float fPickupRowStep_ = 200.0f; //! 物資どうしの間隔。
 	const float fPickupItemRowOffset_ = -200.0f; //! 銃の列から見た、物資(弾薬・回復)の列の奥行きのずれ。
 

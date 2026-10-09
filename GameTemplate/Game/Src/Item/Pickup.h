@@ -97,6 +97,7 @@ namespace nsApp
 
 		private:
 			ModelRender stModel_;					//! 見た目のモデル。
+			
 			EnPickupType enType_ = EnPickupType::Ammo;	//! 物資の種類。
 			nsWeapon::EnWeaponType enWeaponType_ = nsWeapon::EnWeaponType::Handgun;	//! 銃の種類(Weapon のときだけ使う)。
 			Vector3 vModelOffset_ = Vector3::Zero;	//! モデル原点のズレを打ち消す量(銃のモデルは原点が中心に無い)。
