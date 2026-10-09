@@ -184,7 +184,7 @@ namespace nsApp
 			 * 重力は床のあるステージが入ってから有効にする。
 			 * 床が無い状態で有効にすると、接地できず落ち続けてしまう。
 			 */
-			stMovement_.SetGravityEnabled(true);
+			stMovement_.SetGravityEnabled(false);
 
 			/* モデルとアニメーションを読み込む。*/
 			InitModel();
