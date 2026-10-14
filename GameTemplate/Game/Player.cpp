@@ -184,7 +184,7 @@ namespace nsApp
 			 * 重力は床のあるステージが入ってから有効にする。
 			 * 床が無い状態で有効にすると、接地できず落ち続けてしまう。
 			 */
-			stMovement_.SetGravityEnabled(false);
+			stMovement_.SetGravityEnabled(true);
 
 			/* モデルとアニメーションを読み込む。*/
 			InitModel();
@@ -1142,8 +1142,13 @@ namespace nsApp
 			const nsData::ViewShakeStatus& stShake = stPlayerStatus_.stViewShake_;
 			const nsData::ReloadMotionStatus& stReload = stPlayerStatus_.stReloadMotion_;
 
-			/* 最終スケール = 自動サイズ合わせ × 武器データの微調整倍率(1.0基準)。*/
-			const float fScale = aWeaponModelAutoScale_[iType] * pWeapon->GetModelScale();
+			/*ADS中は銃を少し小さくして、照準周辺の視界を確保する。*/
+			const float fAdsModelScale = 1.0f - 0.25f * fAdsRate_;
+
+			const float fScale =
+				aWeaponModelAutoScale_[iType]
+				* pWeapon->GetModelScale()
+				* fAdsModelScale;
 
 			/* 銃の「中心」を置きたい位置(目の前・右・下)。目の位置は歩きの上下動を含む。*/
 			Vector3 vGunPos = GetEyePosition();
