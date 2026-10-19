@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "PlayerStateBase.h"
-#include "Player.h"
+#include "Src/Actor/Character/Player/Player.h"
 
 namespace nsApp
 {

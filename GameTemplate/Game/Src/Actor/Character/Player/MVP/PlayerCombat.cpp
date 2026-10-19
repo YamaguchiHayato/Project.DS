@@ -1,7 +1,7 @@
 #include "stdafx.h"
-#include "PlayerCombat.h"
-#include "Player.h"
-#include "PlayerIntent.h"
+#include "Src/Actor/Character/Player/MVP/PlayerCombat.h"
+#include "Src/Actor/Character/Player/PlayerIntent.h"
+#include "Src/Actor/Character/Player/Player.h"
 #include "Weapon.h"
 
 /* todo 敵全体をターゲットにできるように修正。*/

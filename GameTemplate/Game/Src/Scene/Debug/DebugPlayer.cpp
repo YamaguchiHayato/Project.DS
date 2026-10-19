@@ -8,9 +8,11 @@ namespace nsApp
 	{
 		namespace
 		{
-			const char* sUnityChanModelPath_ = "Assets/modelData/unityChan.tkm";
-			const char* sUnityChanIdlePath_ = "Assets/animData/idle.tka";
-			const char* sUnityChanWalkPath_ = "Assets/animData/walk.tka";
+			const char* PLAYER_MODEL_PATH_ = "Assets/modelData/player/player.tkm";
+			const char* sUnityChanIdlePath_ = "Assets/animData/player/Idle.tka";
+			const char* sUnityChanWalkPath_ = "Assets/animData/player/Walk.tka";
+			const char* sUnityChanRunPath_ = "Assets/animData/player/Run.tka";
+			const char* sUnityChanWinPausePath_ = "Assets/animData/player/WinPause.tka";
 			const float fAnimInterpolate_ = 0.2f;
 		}
 
@@ -19,15 +21,17 @@ namespace nsApp
 		{
 			/* カプセルで壁（PhysicsStaticObject）と当たる。*/
 			stCharaCon_.Init(20.0f, 70.0f, vPosition_);
-
-			/* Unityちゃん用Idle/Walkを読み込む。*/
 			aAnimationClip_[0].Load(sUnityChanIdlePath_);
 			aAnimationClip_[0].SetLoopFlag(true);
-			aAnimationClip_[1].Load(sUnityChanWalkPath_);
+			aAnimationClip_[1].Load(sUnityChanRunPath_);
 			aAnimationClip_[1].SetLoopFlag(true);
+			aAnimationClip_[2].Load(sUnityChanRunPath_);
+			aAnimationClip_[2].SetLoopFlag(true);
+			aAnimationClip_[3].Load(sUnityChanWinPausePath_);
+			aAnimationClip_[3].SetLoopFlag(true);
 
 			/* アニメ付きでモデルを初期化する。*/
-			stModelRender_.Init(sUnityChanModelPath_, aAnimationClip_, 2, enModelUpAxisY);
+			stModelRender_.Init(PLAYER_MODEL_PATH_, aAnimationClip_, 2, enModelUpAxisZ);
 			stModelRender_.SetPosition(vPosition_);
 			stModelRender_.Update();
 			PlayAnimation(0); // Idle

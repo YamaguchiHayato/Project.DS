@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "EnemyPool.h"
 #include "Src/Actor/Character/Enemy/CommonEnemy.h"
+#include "Src/Actor/Character/Enemy/BomberEnemy.h"
+
 
 namespace nsApp
 {
@@ -8,49 +10,64 @@ namespace nsApp
 	{
 		void EnemyPool::Init()
 		{
-			/* 二重初期化を防ぐ。*/
+			/* すでに初期化済みなら何もしない。*/
 			if (bInited_)
 				return;
 
-			/* 設定の数だけ生成を行う。*/
-			/* todo 次のフェーズではパラメーターをTSV化する。*/
+			/* プールのサイズ分、敵キャラクターを生成する。*/
 			for (int i = 0; i < iPoolSize_; i++)
-			{
-				/* CommonEnemyクラスを生成する。*/
 				pCommonPoolNum_[i] = NewGO<nsActor::CommonEnemy>(0, "commonEnemy");
-			}
+			for (int i = 0; i < iBomberPoolSize_; i++)
+				pBomberPoolNum_[i] = NewGO<nsActor::BomberEnemy>(0, "bomberEnemy");
 
-			/* 初期化完了フラグをセット。*/
+			/* 初期化済みフラグを立てる。*/
 			bInited_ = true;
 		}
 
 
 		nsActor::IEnemy* EnemyPool::Spawn(CharacterModelType enType, const Vector3& vPosition, nsActor::ICharacter* pTarget)
 		{
-			/* 未初期化の場合、生成しない。*/
+			/* 未初期化の場合、nullptrを返す。*/
 			if (!bInited_)
 				return nullptr;
 
-			/* 現段階ではCommonEnemyのみを生成する。*/
-			if (enType != CharacterModelType::Common)
-				return nullptr;
-
 			/* プールから未使用の敵キャラクターを探す。*/
-			for (int i = 0; i < iPoolSize_; ++i)
+			if (enType == CharacterModelType::Common)
 			{
-				/* プールの敵キャラクターが非アクティブであれば使用可能。*/
-				if (pCommonPoolNum_[i] == nullptr)
-					continue;
-				if (!pCommonPoolNum_[i]->IsPoolInactive())
-					continue;
+				/* プールのサイズ分、敵キャラクターを探す。*/
+				for (int i = 0; i < iPoolSize_; ++i)
+				{
+					/* プールの敵キャラクターが非アクティブであれば、生成する。*/
+					if (pCommonPoolNum_[i] == nullptr || !pCommonPoolNum_[i]->IsPoolInactive())
+						continue;
 
-				/* 使用可能な敵キャラクターをアクティブ化して返す。*/
-				pCommonPoolNum_[i]->Activate(vPosition, pTarget);
-				return pCommonPoolNum_[i];
+					/* プールから出して戦場に出す。*/
+					pCommonPoolNum_[i]->Activate(vPosition, pTarget);
+					return pCommonPoolNum_[i];
+				}
+
+				/* プールに空きがない場合、nullptrを返す。*/
+				return nullptr;
 			}
 
-			/* プールが満杯で生成できなかった場合は nullptr を返す。*/
-			return nullptr; 
+			/* ボンバーゾンビの生成。*/
+			if (enType == CharacterModelType::Bomber)
+			{
+				/* プールのサイズ分、敵キャラクターを探す。*/
+				for (int i = 0; i < iBomberPoolSize_; ++i)
+				{
+					/* プールの敵キャラクターが非アクティブであれば、生成する。*/
+					if (pBomberPoolNum_[i] == nullptr || !pBomberPoolNum_[i]->IsPoolInactive())
+						continue;
+
+					/* プールから出して戦場に出す。*/
+					pBomberPoolNum_[i]->Activate(vPosition, pTarget);
+					return pBomberPoolNum_[i];
+				}
+				return nullptr;
+			}
+
+			return nullptr;
 		}
 
 		

@@ -1,6 +1,6 @@
 #include "stdafx.h"
-#include "PlayerView.h"
-#include "Player.h"
+#include "Src/Actor/Character/Player/MVP/PlayerView.h"
+#include "Src/Actor/Character/Player/Player.h"
 #include "Src/System/ModelBounds.h"
 
 namespace

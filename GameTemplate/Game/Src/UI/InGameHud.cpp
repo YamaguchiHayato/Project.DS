@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "InGameHud.h"
-#include "Player.h"
+#include "Src/Actor/Character/Player/Player.h"
 #include "Weapon.h"
 #include "Src/System/GamePause.h"
 #include "Src/Event/EventBus.h"

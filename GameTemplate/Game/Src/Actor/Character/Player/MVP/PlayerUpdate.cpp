@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "PlayerUpdate.h"
-#include "Player.h"
-#include "PlayerIntent.h"
+#include "Src/Actor/Character/Player/Player.h"
+#include "Src/Actor/Character/Player/PlayerIntent.h"
 #include <algorithm>
 
 namespace
