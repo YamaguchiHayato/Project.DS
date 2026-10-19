@@ -101,6 +101,15 @@ namespace nsApp
 			}
 
 			/**
+			 * @brief 計算部位への参照。
+			 * @return 計算結果。
+			 */
+			inline const PlayerCalc& GetCalc() const
+			{
+				return calc_;
+			}
+
+			/**
 			 * @brief 常時更新部位への参照。
 			 * @return 更新結果。
 			 */

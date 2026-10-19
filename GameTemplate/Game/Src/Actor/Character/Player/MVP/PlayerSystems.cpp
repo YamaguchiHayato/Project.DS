@@ -43,7 +43,7 @@ namespace nsApp
 			view_.Bind(pPlayer);
 			view_.Init(status, position);
 			update_.Bind(pPlayer);
-			calc_.Init();
+			calc_.Bind(pPlayer);
 			combat_.Init();
 			item_.Init();
 		}
