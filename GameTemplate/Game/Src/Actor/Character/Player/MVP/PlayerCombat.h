@@ -4,6 +4,8 @@ namespace nsApp
 {
 	namespace nsActor
 	{
+		class Player;
+
 		/**
 		 * @file   PlayerCombat.h
 		 * @brief  銃・近接など Attack 系の実処理置き場。
@@ -21,9 +23,13 @@ namespace nsApp
 
 		public:
 			/**
-			 * @brief 戦闘処理の初期化。
+			 * @brief 計算に使う参照を結びつける。
+			 * @details ステータスや武器へのポインタ等は移設時に決める。
 			 */
-			void Init();
+			inline void Bind(Player* pPlayer)
+			{
+				pPlayer_ = pPlayer;
+			}
 
 			/**
 			 * @brief 武器更新（射撃・リロード等）。
@@ -42,6 +48,22 @@ namespace nsApp
 			 * @details 移設元: Player::UpdateAction。
 			 */
 			void UpdateAction();
+
+
+		private:
+			Player* pPlayer_ = nullptr; //! 所有者（非所有）。
+			bool workWantFire_ = false; //! このフレーム撃つか。
+			Vector3 workAimDir_ = Vector3::Zero; //! 照準方向。
+			Vector3 workEyePos_ = Vector3::Zero; //! 目の位置。
+			Vector3 workMuzzleRight_ = Vector3::Zero; //! 銃口の右方向。
+			Vector3 workMuzzlePos_ = Vector3::Zero;	//! トレーサー始点。
+			int workPelletIndex_ = 0; //! 散弾ループの添字。
+			float workMotionRate_ = 0.0f;			//! 突き出し戻しの補間率。
+			bool workIsFatigued_ = false;			//! 疲労中か。
+			Vector3 workToEnemy_ = Vector3::Zero;	//! プレイヤー→敵(水平)。
+			float workDist_ = 0.0f;					//! 敵までの距離。
+			Vector3 workDir_ = Vector3::Zero;		//! 押し返し方向。
+			Vector3 workShoveHitPos_ = Vector3::Zero;	//! 手応え演出の位置。
 		};
 	}
 }

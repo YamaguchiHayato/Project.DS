@@ -44,10 +44,9 @@ namespace nsApp
 			view_.Init(status, position);
 			update_.Bind(pPlayer);
 			calc_.Bind(pPlayer);
-			combat_.Init();
-			item_.Init();
+			combat_.Bind(pPlayer);
+			item_.Bind(pPlayer);
 		}
-
 
 
 		void PlayerSystems::AlwaysUpdates(float deltaTime, const PlayerIntent& intent)
