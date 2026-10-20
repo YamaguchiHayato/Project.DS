@@ -3,6 +3,7 @@
 #include "Src/Scene/GameFlow.h"
 #include "Src/Actor/Character/Player/Player.h"
 #include "Src/Actor/Character/Enemy/CommonEnemy.h"
+#include "Src/Actor/Character/Enemy/BomberEnemy.h"
 #include "Src/Event/EventBus.h"
 #include "Src/UI/InGameHud.h"
 #include "Src/Item/Pickup.h"
@@ -79,6 +80,8 @@ namespace nsApp
 
 			/* 倒済みは FindGOs に出ないので二重破棄しない。*/
 			for (nsActor::CommonEnemy* pEnemy : FindGOs<nsActor::CommonEnemy>("commonEnemy"))
+				DeleteGO(pEnemy);
+			for (nsActor::BomberEnemy* pEnemy : FindGOs<nsActor::BomberEnemy>("bomberEnemy"))
 				DeleteGO(pEnemy);
 
 			/* 拾われずに残っている物資(入れ替えで落とした銃も含む)と、投げたパイプ爆弾を消す。*/
