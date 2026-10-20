@@ -17,6 +17,8 @@ namespace nsApp
 		Run,			//! 走り。
 		Attack,			//! 攻撃。
 		Death,			//! 死亡。
+		Hit,			//! 被弾。
+		WinPause,       //! リザルト画面で扱うアニメーション。
 	};
 
 #define ANIM_LIST CharacterBasicAnimationList
