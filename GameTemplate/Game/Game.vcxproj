@@ -255,6 +255,11 @@
     <ClCompile Include="Src\Actor\Character\Player\MVP\PlayerView.cpp" />
     <ClCompile Include="Src\Actor\Character\Player\Player.cpp" />
     <ClCompile Include="Src\Actor\Character\Player\PlayerInput.cpp" />
+    <ClCompile Include="Src\Actor\Character\Player\State\AttackState\AttackADSStrategy.cpp" />
+    <ClCompile Include="Src\Actor\Character\Player\State\AttackState\AttackFireStrategy.cpp" />
+    <ClCompile Include="Src\Actor\Character\Player\State\AttackState\AttackReloadStrategy.cpp" />
+    <ClCompile Include="Src\Actor\Character\Player\State\AttackState\AttackShoveStrategy.cpp" />
+    <ClCompile Include="Src\Actor\Character\Player\State\AttackState\AttackSwitchStrategy.cpp" />
     <ClCompile Include="Src\Actor\Character\Player\State\PlayerAttackState.cpp" />
     <ClCompile Include="Src\Actor\Character\Player\State\PlayerIdleState.cpp" />
     <ClCompile Include="Src\Actor\Character\Player\State\PlayerRunState.cpp" />
@@ -341,6 +346,12 @@
     <ClInclude Include="Src\Actor\Character\Player\Player.h" />
     <ClInclude Include="Src\Actor\Character\Player\PlayerInput.h" />
     <ClInclude Include="Src\Actor\Character\Player\PlayerIntent.h" />
+    <ClInclude Include="Src\Actor\Character\Player\State\AttackState\AttackADSStrategy.h" />
+    <ClInclude Include="Src\Actor\Character\Player\State\AttackState\AttackFireStrategy.h" />
+    <ClInclude Include="Src\Actor\Character\Player\State\AttackState\AttackReloadStrategy.h" />
+    <ClInclude Include="Src\Actor\Character\Player\State\AttackState\AttackShoveStrategy.h" />
+    <ClInclude Include="Src\Actor\Character\Player\State\AttackState\AttackSwitchStrategy.h" />
+    <ClInclude Include="Src\Actor\Character\Player\State\AttackState\IAttackStrategy.h" />
     <ClInclude Include="Src\Actor\Character\Player\State\PlayerAttackState.h" />
     <ClInclude Include="Src\Actor\Character\Player\State\PlayerIdleState.h" />
     <ClInclude Include="Src\Actor\Character\Player\State\PlayerRunState.h" />

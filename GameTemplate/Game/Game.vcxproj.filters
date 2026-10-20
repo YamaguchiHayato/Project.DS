@@ -82,6 +82,9 @@
     <Filter Include="Src\Actor\Character\Player\MVP">
       <UniqueIdentifier>{5a042f6a-7666-4438-b3f5-1933098551f8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Src\Actor\Character\Player\State\AttackState">
+      <UniqueIdentifier>{72c6715f-6996-4217-9477-2c7f1efce260}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
@@ -294,6 +297,21 @@
     </ClCompile>
     <ClCompile Include="Src\Actor\Character\Player\PlayerInput.cpp">
       <Filter>Src\Actor\Character\Player</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\State\AttackState\AttackFireStrategy.cpp">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\State\AttackState\AttackReloadStrategy.cpp">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\State\AttackState\AttackSwitchStrategy.cpp">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\State\AttackState\AttackShoveStrategy.cpp">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\State\AttackState\AttackADSStrategy.cpp">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -549,6 +567,24 @@
     </ClInclude>
     <ClInclude Include="Src\Actor\Character\Player\PlayerIntent.h">
       <Filter>Src\Actor\Character\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\State\AttackState\AttackFireStrategy.h">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\State\AttackState\IAttackStrategy.h">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\State\AttackState\AttackReloadStrategy.h">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\State\AttackState\AttackSwitchStrategy.h">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\State\AttackState\AttackShoveStrategy.h">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\State\AttackState\AttackADSStrategy.h">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
