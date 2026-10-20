@@ -117,8 +117,11 @@ namespace nsApp
 			nsUI::InGameHud* pHud_ = nullptr; //! 本番と同じHUD。体力バーやアイテムスロットの見え方を確かめる。
 			nsDirector::EnemyPool stEnemyPool_; //! 的役の敵をまとめて持つプール。
 			std::vector<nsDirector::EnemySpawner*> vecSpawners_; //! 配置表の行ごとに置いたスポナー。
-			ModelRender stGroundModel_; //! 地面。
-			PhysicsStaticObject stGroundCollider_; //! 地面の静的コライダ。
+			ModelRender stStageModel_; //! ステージのモデル。
+			ModelRender stStageCollisionModel_; //! ステージの当たり判定用モデル。
+			ModelRender stStageGroundModel_; //! ステージの地面モデル。
+			PhysicsStaticObject stGroundCollider_; //! ステージ地面の静的コライダ。
+			PhysicsStaticObject stModelCollider_; //! ステージの静的コライダ。
 			FontRender stHintFont_; //! 操作ヒント。
 			bool bWasPressEsc_ = false; //! 前フレームでESCが押されていたか。
 			bool bWasPressViewKey_ = false; //! 前フレームで視点切り替えキーが押されていたか。
