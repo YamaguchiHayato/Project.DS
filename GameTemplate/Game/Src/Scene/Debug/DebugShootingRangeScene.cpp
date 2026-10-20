@@ -35,7 +35,9 @@ namespace
 
 
 	const float fEyeHeight_ = 160.0f;
-	const char* sStageModelPath_ = "Assets/modelData/stage/FirstStage/firstStage.tkm";
+	const char* sStageModelPath_ = "Assets/modelData/stage/FirstStage/firstStage.tkm";			//! ステージモデル
+	const char* sStageCollisionModelPath_ = "Assets/modelData/stage/FirstStage/firstStageCollision.tkm";	//! ステージの当たり判定用モデル
+	const char* sStageGroundModelPath_ = "Assets/modelData/stage/FirstStage/Ground.tkm";				//! 地面モデル
 
 	const Vector3 vHintFontPos_ = { -450.0f, 450.0f, 0.0f };
 	const int iViewModeKey_ = 'T';				//! 一人称/三人称を切り替えるキー。
@@ -114,16 +116,34 @@ namespace nsApp
 		{
 			InitCamera();
 
-			/* InGameの床と同じ手順。demoStage に Physics を付ける。*/
-			stGroundModel_.Init(sStageModelPath_, nullptr, 0, enModelUpAxisZ);
-			stGroundModel_.SetScale(Vector3(fStageScale_, fStageScale_, fStageScale_));
-			stGroundModel_.SetPosition(Vector3::Zero);
-			stGroundModel_.SetRotation(Quaternion::Identity);
-			stGroundModel_.Update();
+			/* ステージモデルを読み込み */
+			stStageModel_.Init(sStageModelPath_, nullptr, 0, enModelUpAxisZ);
+			stStageModel_.SetScale(Vector3(fStageScale_, fStageScale_, fStageScale_));
+			stStageModel_.SetPosition(Vector3::Zero);
+			stStageModel_.SetRotation(Quaternion::Identity);
+			stStageModel_.Update();
+
+			/* ステージの当たり判定用モデルを読み込み */
+			stStageCollisionModel_.Init(sStageCollisionModelPath_, nullptr, 0, enModelUpAxisZ);
+			stStageCollisionModel_.SetScale(Vector3(fStageScale_, fStageScale_, fStageScale_));
+			stStageCollisionModel_.SetPosition(Vector3::Zero);
+			stStageCollisionModel_.SetRotation(Quaternion::Identity);
+			stStageCollisionModel_.Update();
+
+			/* ステージの地面モデルを読み込み */
+			stStageGroundModel_.Init(sStageGroundModelPath_, nullptr, 0, enModelUpAxisZ);
+			stStageGroundModel_.SetScale(Vector3(fStageScale_, fStageScale_, fStageScale_));
+			stStageGroundModel_.SetPosition(Vector3::Zero);
+			stStageGroundModel_.SetRotation(Quaternion::Identity);
+			stStageGroundModel_.Update();
 
 			/* PhysicsStaticObject を作り直す。 */
+			/* ステージモデル */
+			stModelCollider_.Release();
+			stModelCollider_.CreateFromModel(stStageCollisionModel_.GetModel(), stStageCollisionModel_.GetModel().GetWorldMatrix());
+			/** ステージの地面 */
 			stGroundCollider_.Release();
-			stGroundCollider_.CreateFromModel(stGroundModel_.GetModel(), stGroundModel_.GetModel().GetWorldMatrix());
+			stGroundCollider_.CreateFromModel(stStageGroundModel_.GetModel(), stStageGroundModel_.GetModel().GetWorldMatrix());
 
 			/* 通知の配達役。プレイヤーが FindGO で見つけて命中・被弾を流し、HUDが受け取る。*/
 			pEventBus_ = NewGO<nsEvent::EventBus>(0, "eventBus");
@@ -259,8 +279,10 @@ namespace nsApp
 
 		void DebugShootingRangeScene::Render(RenderContext& rc)
 		{
+			/* ステージを描画する。*/
+			stStageModel_.Draw(rc);
 			/* 地面を描画する。*/
-			stGroundModel_.Draw(rc);
+			stStageGroundModel_.Draw(rc);
 
 			/* ヒントを描画する。*/
 			stHintFont_.Draw(rc);

@@ -76,7 +76,7 @@ namespace nsApp
 			FontRender stHpFont_;							//! HP表示。
 			wchar_t aHpText_[32] = {};						//! HP表示用文字列。
 			Vector3 vPosition_ = { 0.0f, 0.0f, 0.0f };	//! 現在位置。
-			float fMoveSpeed_ = 200.0f;						//! 移動速度。
+			float fMoveSpeed_ = 1000.0f;						//! 移動速度。
 			bool bIsMoving_ = false;						//! 移動中か。
 			int iPlayingAnimation_ = -1;					//! 再生中のアニメーション番号。
 		};
