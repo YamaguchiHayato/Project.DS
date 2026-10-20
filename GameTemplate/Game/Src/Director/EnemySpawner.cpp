@@ -3,7 +3,7 @@
 #include "Src/Director/IEnemyPool.h"
 #include "Src/Actor/Character/Common/CharacterModel.h"
 #include "Src/Actor/Character/Enemy/CommonEnemy.h"
-#include "Player.h"
+#include "Src/Actor/Character/Player/Player.h"
 #include "Src/System/GamePause.h"
 
 namespace

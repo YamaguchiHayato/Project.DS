@@ -268,6 +268,8 @@
     <ClCompile Include="Src\Actor\Character\Player\State\PlayerWinPauseState.cpp" />
     <ClCompile Include="Src\Actor\Character\Player\Transition\PlayerSituation.cpp" />
     <ClCompile Include="Src\Actor\Character\Player\Transition\PlayerTransition.cpp" />
+    <ClCompile Include="Src\Data\EnemyStatus.cpp" />
+    <ClCompile Include="Src\Data\EnemyStatusTable.cpp" />
     <ClCompile Include="Src\Director\EnemyPool.cpp" />
     <ClCompile Include="Src\Director\EnemySpawner.cpp" />
     <ClCompile Include="Src\Director\EnemySpawnSetting.cpp" />
@@ -362,6 +364,8 @@
     <ClInclude Include="Src\Actor\Character\Player\Transition\PlayerSituation.h" />
     <ClInclude Include="Src\Actor\Character\Player\Transition\PlayerTransition.h" />
     <ClInclude Include="Src\Actor\Character\Player\Transition\PlayerTransitionEdge.h" />
+    <ClInclude Include="Src\Data\EnemyStatus.h" />
+    <ClInclude Include="Src\Data\EnemyStatusTable.h" />
     <ClInclude Include="Src\Director\EnemyPool.h" />
     <ClInclude Include="Src\Director\EnemySpawner.h" />
     <ClInclude Include="Src\Director\EnemySpawnSetting.h" />
