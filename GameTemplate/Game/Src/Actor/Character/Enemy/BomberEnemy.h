@@ -5,6 +5,7 @@
 #include "Src/Actor/Character/Common/CharacterAnimation.h"
 #include "Src/Actor/Character/Enemy/Transition/EnemyTransition.h"
 #include "Src/System/RayTest/SightCheck.h"
+#include "Src/Data/EnemyStatus.h"
 
 namespace nsApp
 {
@@ -389,6 +390,7 @@ namespace nsApp
 			float fExplodeRange_ = 250.0f; //! 爆発の半径(cm)。
 			int iExplodeDamage_ = 20; //! 爆発のダメージ。
 			bool bExploded_ = false; //! 接近爆発と死亡爆発で2回入らないようにする。
+			nsData::EnemyStatus stStatus_; //! TSV の Bomber 行。
 		};
 	}
 }

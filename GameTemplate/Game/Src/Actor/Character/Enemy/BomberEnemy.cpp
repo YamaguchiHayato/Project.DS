@@ -5,6 +5,7 @@
 #include "Src/Actor/Character/Enemy/State/EnemyChaseState.h"
 #include "Src/Actor/Character/Enemy/State/EnemyAttackState.h"
 #include "Src/Actor/Character/Enemy/State/EnemyDeadState.h"
+#include "Src/Data/EnemyStatusTable.h"
 
 namespace
 {
@@ -17,6 +18,7 @@ namespace nsApp
 	namespace nsActor
 	{
 #define TYPE_BOMBER CharacterModelType::Bomber
+
 
 		void BomberEnemy::InitCharacterModel()
 		{
@@ -46,15 +48,15 @@ namespace nsApp
 		bool BomberEnemy::Start()
 		{
 			/* カプセルで壁（PhysicsStaticObject）と当たる。*/
-			stMovement_.Init(30.0f, 160.0f, vPosition_);
+			stMovement_.Init(20.0f, 145.0f, vPosition_);
 
 			/* 視線判定の目の高さを設定する。*/
 			stSightCheck_.SetEyeHeight(130.0f);
 
 			/* 体力を初期化する。*/
-			/* todo 外部 Parameter 化。*/
-			stCharacterStatus_.stHp_.iMaxHP_ = 40;
-			stCharacterStatus_.stHp_.iCurrentHP_ = 40;
+			stStatus_ = nsData::EnemyStatusTable::Get(nsActor::EnEnemyType::Bomber);
+			stCharacterStatus_.stHp_.iMaxHP_ = stStatus_.iMaxHp_;
+			stCharacterStatus_.stHp_.iCurrentHP_ = stStatus_.iMaxHp_;
 
 			/* 本番モデルとアニメーションをロードする。*/
 			InitCharacterModel();

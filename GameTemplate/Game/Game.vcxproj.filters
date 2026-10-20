@@ -313,6 +313,12 @@
     <ClCompile Include="Src\Actor\Character\Player\State\AttackState\AttackADSStrategy.cpp">
       <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Data\EnemyStatus.cpp">
+      <Filter>Src\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Data\EnemyStatusTable.cpp">
+      <Filter>Src\Data</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -585,6 +591,12 @@
     </ClInclude>
     <ClInclude Include="Src\Actor\Character\Player\State\AttackState\AttackADSStrategy.h">
       <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Data\EnemyStatusTable.h">
+      <Filter>Src\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Data\EnemyStatus.h">
+      <Filter>Src\Data</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
