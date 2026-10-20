@@ -15,6 +15,7 @@
 #include <algorithm>
 
 #include "Src/Actor/Character/Common/CharacterAnimation.h"
+#include "Src/Actor/Character/Player/State/PlayerAttackState.h"
 #include "Src/Actor/Character/Player/State/PlayerIdleState.h"
 
 namespace
@@ -148,7 +149,6 @@ namespace nsApp
 			systems_.GetUpdate().UpdateLook(stIntent_);
 
 			/* 3.覗き込みと拡散、反動、体力の時間経過、目の高さを進める。*/
-			systems_.GetUpdate().UpdateAds(fDeltaTime, stIntent_);
 			systems_.GetUpdate().UpdateStanceSpread(fDeltaTime);
 			systems_.GetUpdate().UpdateRecoil(fDeltaTime);
 			systems_.GetUpdate().UpdateHealth(fDeltaTime);
@@ -166,8 +166,7 @@ namespace nsApp
 				systems_.GetUpdate().UpdateViewSway(fDeltaTime, stIntent_);
 
 				/* 移動の結果から揺れを作る。射撃の起点(目の位置)にも効くので武器より先に更新する。*/
-				UpdateWeapon(fDeltaTime);
-				UpdateShove(fDeltaTime);
+				PlayerAttackState::TickWeapon(this, fDeltaTime);
 				UpdateItems(fDeltaTime);
 				UpdateAction();
 				break;
@@ -178,7 +177,7 @@ namespace nsApp
 				bIsSprinting_ = false;
 				bIsCrouching_ = false;
 				systems_.GetUpdate().UpdateViewSway(fDeltaTime, stIntent_);
-				UpdateWeapon(fDeltaTime);
+				PlayerAttackState::TickWeapon(this, fDeltaTime);
 				break;
 
 			case EnLifeState::Dead:

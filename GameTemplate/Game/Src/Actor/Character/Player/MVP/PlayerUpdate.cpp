@@ -41,19 +41,6 @@ namespace nsApp
 		}
 
 
-		void PlayerUpdate::UpdateAds(float fDeltaTime, const PlayerIntent& stIntent)
-		{
-			/* nullの場合、処理しない。*/
-			if (pPlayer_ == nullptr)
-				return;
-
-			/* 覗き込みの度合いを目標へ寄せる。*/
-			ApproachAds(fDeltaTime, stIntent);
-			ApproachLower(fDeltaTime);
-			RecoverSpread(fDeltaTime);
-		}
-
-
 		void PlayerUpdate::UpdateStanceSpread(float fDeltaTime)
 		{
 			/* nullの場合、処理しない。*/

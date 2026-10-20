@@ -53,7 +53,6 @@ namespace nsApp
 		{
 			/* 視点・ADS・体力・移動など、毎フレ進める処理。*/
 			update_.UpdateLook(intent);
-			update_.UpdateAds(deltaTime, intent);
 			update_.UpdateStanceSpread(deltaTime);
 			update_.UpdateRecoil(deltaTime);
 			update_.UpdateHealth(deltaTime);

@@ -41,12 +41,6 @@ namespace nsApp
 			void UpdateLook(const PlayerIntent& stIntent);
 
 			/**
-			 * @brief 覗き込みの度合いを進める。
-			 * @details 移設元: Player::UpdateAds。
-			 */
-			void UpdateAds(float fDeltaTime, const PlayerIntent& stIntent);
-
-			/**
 			 * @brief 姿勢・移動による拡散倍率を進める。
 			 * @details 移設元: Player::UpdateStanceSpread。
 			 */
