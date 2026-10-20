@@ -26,6 +26,26 @@ namespace nsApp
 			ANIM_ENTRY(Attack, true),
 		};
 
+		/* 爆発ゾンビ。*/
+		const CharacterAnimEntry kBomberAnimEntries_[] =
+		{
+			ANIM_ENTRY(Idle, true),
+			ANIM_ENTRY(Run, true),
+			ANIM_ENTRY_AS(Attack, "Roar", false),
+			ANIM_ENTRY_AS(Death, "Ddeath", false),	
+			ANIM_ENTRY(Hit, false),
+		};
+
+		/* 操作キャラ。*/
+		const CharacterAnimEntry kPlayerAnimEntries_[] =
+		{
+			ANIM_ENTRY(Idle, true),
+			ANIM_ENTRY(Walk, true),
+			ANIM_ENTRY(Run, true),
+			ANIM_ENTRY(WinPause, true),
+		};
+
+
 		/* コモンゾンビ。*/
 		const CharacterAnimBank kCommonAnimBank_ =
 		{
@@ -35,32 +55,34 @@ namespace nsApp
 			static_cast<int>(sizeof(kCommonAnimEntries_) / sizeof(kCommonAnimEntries_[0])),
 		};
 
-		/* 特殊ゾンビ（アニメ未用意) */
+		/* 特殊ゾンビ（アニメ未用意） */
 		const CharacterAnimBank kSpecialAnimBank_ =
 		{
 			CharacterModelType::Bile,
-			"Assets/animData/Infected/Special/",
+			"Assets/animData/zombie/",
 			nullptr,
 			0,
 		};
 
-		/*  第三種ゾンビ（アニメ未用意) */
+
 		const CharacterAnimBank kThirdAnimBank_ =
 		{
 			CharacterModelType::Bomber,
-			"Assets/animData/Infected/Third/",
-			nullptr,
-			0,
+			"Assets/animData/zombie/Bomber/",
+			kBomberAnimEntries_,
+			static_cast<int>(sizeof(kBomberAnimEntries_) / sizeof(kBomberAnimEntries_[0])),
 		};
 
-		/*  操作キャラ（アニメ未用意) */
+
+		/*  操作キャラ。 */
 		const CharacterAnimBank kSurvivorAnimBank_ =
 		{
 			CharacterModelType::Survivor,
-			"Assets/animData/Survivor/",
-			nullptr,
-			0,
+			"Assets/animData/player/",
+			kPlayerAnimEntries_,
+			static_cast<int>(sizeof(kPlayerAnimEntries_) / sizeof(kPlayerAnimEntries_[0])),
 		};
+
 
 		/* すべてのアニメバンクを配列にまとめる。*/
 		const CharacterAnimBank* kAllCharacterAnimBanks_[] =

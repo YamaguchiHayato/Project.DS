@@ -6,8 +6,14 @@ namespace nsApp
 	CharacterModel::CharacterModel()
 	{
 		/* キャラモデルの格納。*/
-		/* todo 今回はCommonEnemy。*/
+		/* CommonEnemy。*/
 		mapFilePathList_[CharacterModelType::Common] = "Assets/modelData/zombie/zombie.tkm";
+
+		/* Bomber。*/
+		mapFilePathList_[CharacterModelType::Bomber] = "Assets/modelData/zombie/bomber/bomber.tkm";
+
+		/* 操作キャラ。*/
+		mapFilePathList_[CharacterModelType::Survivor] = "Assets/modelData/player/player.tkm";
 	}
 
 

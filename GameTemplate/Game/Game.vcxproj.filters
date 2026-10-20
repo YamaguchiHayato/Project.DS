@@ -76,6 +76,15 @@
     <Filter Include="Src\Actor\Character\Player\State">
       <UniqueIdentifier>{206394ef-a978-4b46-8f29-2112634db8c9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Src\Actor\Character\Player\Transition">
+      <UniqueIdentifier>{d939888a-b00e-4988-b65f-4bbf60394442}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Actor\Character\Player\MVP">
+      <UniqueIdentifier>{5a042f6a-7666-4438-b3f5-1933098551f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Actor\Character\Player\State\AttackState">
+      <UniqueIdentifier>{72c6715f-6996-4217-9477-2c7f1efce260}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
@@ -169,15 +178,6 @@
     <ClCompile Include="Src\UI\Title\TitleUI.cpp">
       <Filter>Src\UI\Title</Filter>
     </ClCompile>
-    <ClCompile Include="Player.cpp">
-      <Filter>Src\Actor\Character\Player</Filter>
-    </ClCompile>
-    <ClCompile Include="PlayerInput.cpp">
-      <Filter>Src\Actor\Character\Player</Filter>
-    </ClCompile>
-    <ClCompile Include="LocalPlayerController.cpp">
-      <Filter>Src\Actor\Character\Player</Filter>
-    </ClCompile>
     <ClCompile Include="WeaponInventory.cpp">
       <Filter>Src\Actor\Weapon</Filter>
     </ClCompile>
@@ -243,6 +243,75 @@
     </ClCompile>
     <ClCompile Include="Src\Director\EnemySpawnSetting.cpp">
       <Filter>Src\Director</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Enemy\BomberEnemy.cpp">
+      <Filter>Src\Actor\Character\Enemy</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\Transition\PlayerSituation.cpp">
+      <Filter>Src\Actor\Character\Player\Transition</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\Transition\PlayerTransition.cpp">
+      <Filter>Src\Actor\Character\Player\Transition</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\State\PlayerStateBase.cpp">
+      <Filter>Src\Actor\Character\Player\State</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\State\PlayerIdleState.cpp">
+      <Filter>Src\Actor\Character\Player\State</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\State\PlayerWalkState.cpp">
+      <Filter>Src\Actor\Character\Player\State</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\State\PlayerRunState.cpp">
+      <Filter>Src\Actor\Character\Player\State</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\State\PlayerWinPauseState.cpp">
+      <Filter>Src\Actor\Character\Player\State</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\State\PlayerAttackState.cpp">
+      <Filter>Src\Actor\Character\Player\State</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\MVP\PlayerView.cpp">
+      <Filter>Src\Actor\Character\Player\MVP</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\MVP\PlayerCalc.cpp">
+      <Filter>Src\Actor\Character\Player\MVP</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\MVP\PlayerCombat.cpp">
+      <Filter>Src\Actor\Character\Player\MVP</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\MVP\PlayerUpdate.cpp">
+      <Filter>Src\Actor\Character\Player\MVP</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\MVP\PlayerItem.cpp">
+      <Filter>Src\Actor\Character\Player\MVP</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\MVP\PlayerSystems.cpp">
+      <Filter>Src\Actor\Character\Player\MVP</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\LocalPlayerController.cpp">
+      <Filter>Src\Actor\Character\Player</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\Player.cpp">
+      <Filter>Src\Actor\Character\Player</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\PlayerInput.cpp">
+      <Filter>Src\Actor\Character\Player</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\State\AttackState\AttackFireStrategy.cpp">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\State\AttackState\AttackReloadStrategy.cpp">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\State\AttackState\AttackSwitchStrategy.cpp">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\State\AttackState\AttackShoveStrategy.cpp">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Character\Player\State\AttackState\AttackADSStrategy.cpp">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -349,21 +418,6 @@
     <ClInclude Include="Src\UI\Title\TitleUI.h">
       <Filter>Src\UI\Title</Filter>
     </ClInclude>
-    <ClInclude Include="Player.h">
-      <Filter>Src\Actor\Character\Player</Filter>
-    </ClInclude>
-    <ClInclude Include="PlayerInput.h">
-      <Filter>Src\Actor\Character\Player</Filter>
-    </ClInclude>
-    <ClInclude Include="PlayerIntent.h">
-      <Filter>Src\Actor\Character\Player</Filter>
-    </ClInclude>
-    <ClInclude Include="IPlayerController.h">
-      <Filter>Src\Actor\Character\Player</Filter>
-    </ClInclude>
-    <ClInclude Include="LocalPlayerController.h">
-      <Filter>Src\Actor\Character\Player</Filter>
-    </ClInclude>
     <ClInclude Include="Weapon.h">
       <Filter>Src\Actor\Weapon</Filter>
     </ClInclude>
@@ -447,6 +501,90 @@
     </ClInclude>
     <ClInclude Include="Src\Director\EnemySpawnSetting.h">
       <Filter>Src\Director</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Enemy\BomberEnemy.h">
+      <Filter>Src\Actor\Character\Enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\Transition\PlayerSituation.h">
+      <Filter>Src\Actor\Character\Player\Transition</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\Transition\PlayerTransitionEdge.h">
+      <Filter>Src\Actor\Character\Player\Transition</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\Transition\EnPlayerState.h">
+      <Filter>Src\Actor\Character\Player\Transition</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\Transition\PlayerTransition.h">
+      <Filter>Src\Actor\Character\Player\Transition</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\State\PlayerStateBase.h">
+      <Filter>Src\Actor\Character\Player\State</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\State\PlayerIdleState.h">
+      <Filter>Src\Actor\Character\Player\State</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\State\PlayerWalkState.h">
+      <Filter>Src\Actor\Character\Player\State</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\State\PlayerRunState.h">
+      <Filter>Src\Actor\Character\Player\State</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\State\PlayerWinPauseState.h">
+      <Filter>Src\Actor\Character\Player\State</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\State\PlayerAttackState.h">
+      <Filter>Src\Actor\Character\Player\State</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\MVP\PlayerView.h">
+      <Filter>Src\Actor\Character\Player\MVP</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\MVP\PlayerCalc.h">
+      <Filter>Src\Actor\Character\Player\MVP</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\MVP\PlayerUpdate.h">
+      <Filter>Src\Actor\Character\Player\MVP</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\MVP\PlayerCombat.h">
+      <Filter>Src\Actor\Character\Player\MVP</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\MVP\PlayerItem.h">
+      <Filter>Src\Actor\Character\Player\MVP</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\MVP\PlayerSystems.h">
+      <Filter>Src\Actor\Character\Player\MVP</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\IPlayerController.h">
+      <Filter>Src\Actor\Character\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\LocalPlayerController.h">
+      <Filter>Src\Actor\Character\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\Player.h">
+      <Filter>Src\Actor\Character\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\PlayerInput.h">
+      <Filter>Src\Actor\Character\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\PlayerIntent.h">
+      <Filter>Src\Actor\Character\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\State\AttackState\AttackFireStrategy.h">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\State\AttackState\IAttackStrategy.h">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\State\AttackState\AttackReloadStrategy.h">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\State\AttackState\AttackSwitchStrategy.h">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\State\AttackState\AttackShoveStrategy.h">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Character\Player\State\AttackState\AttackADSStrategy.h">
+      <Filter>Src\Actor\Character\Player\State\AttackState</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

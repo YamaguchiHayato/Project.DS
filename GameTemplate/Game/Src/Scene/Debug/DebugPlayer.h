@@ -72,7 +72,7 @@ namespace nsApp
 		private:
 			CharacterController stCharaCon_;	//! 壁との押し戻し用。
 			ModelRender stModelRender_;						//! 仮モデル。
-			AnimationClip aAnimationClip_[2];				//! IdleとWalk。
+			AnimationClip aAnimationClip_[4];				//! IdleとWalk。
 			FontRender stHpFont_;							//! HP表示。
 			wchar_t aHpText_[32] = {};						//! HP表示用文字列。
 			Vector3 vPosition_ = { 0.0f, 0.0f, 0.0f };	//! 現在位置。

@@ -6,6 +6,7 @@ namespace nsApp
 {
 	namespace nsActor {
 		class CommonEnemy;
+		class BomberEnemy;
 	}
 
 
@@ -57,8 +58,10 @@ namespace nsApp
 
 		private:
 			static const int iPoolSize_ = 20; //! プールのサイズ。
-			nsActor::CommonEnemy* pCommonPoolNum_[iPoolSize_] = {}; //! CommonEnemyのプール。
-			bool bInited_ = false; //! 初期化済みフラグ。
+			static const int iBomberPoolSize_ = 4;
+			nsActor::CommonEnemy* pCommonPoolNum_[iPoolSize_] = {};
+			nsActor::BomberEnemy* pBomberPoolNum_[iBomberPoolSize_] = {};
+			bool bInited_ = false;
 		};
 	}
 }

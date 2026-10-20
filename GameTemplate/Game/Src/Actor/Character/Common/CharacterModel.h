@@ -11,7 +11,7 @@ namespace nsApp
 		Common, //! 雑魚ゾンビ。
 		Bile, //! バイル。
 		Bomber, //! ボンバー。
-		Survivor, //! サバイバー。
+		Survivor, //! 操作キャラ。
 	};
 
 	/**
