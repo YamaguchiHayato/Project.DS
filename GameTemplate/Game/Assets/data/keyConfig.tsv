@@ -1,0 +1,25 @@
+action	binding	binding2
+moveForward	W	
+moveBack	S	
+moveLeft	A	
+moveRight	D	
+fire	MouseLeft	
+ads	MouseRight	
+weaponNext	WheelUp	
+weaponPrev	WheelDown	
+reload	R	
+interact	E	
+light	F	
+pause	Escape	
+heal	H	4
+throw	G	3
+quickItem	5	
+sprint	Shift	
+crouch	Control	
+shove	V	
+mainWeapon	1	
+subWeapon	2	
+confirm	Return	
+viewMode	T	
+startGame	1	
+openDebug	2	
