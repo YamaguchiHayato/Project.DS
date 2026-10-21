@@ -41,6 +41,7 @@ namespace nsApp
 			ViewMode,		//! 視点切替。
 			StartGame,		//! タイトルから本編へ。
 			OpenDebug,		//! タイトルからデバッグへ。
+			OpenKeyConfig,	//! キー設定を開く。
 			Count,			//! 操作の数。配列の大きさに使う。
 		};
 
@@ -89,6 +90,19 @@ namespace nsApp
 			bool Save();
 
 			/**
+			 * @brief その行の割り当てを、ユーザーが入力したキーに置き換える。
+			 * @param index 0から数えた行。
+			 * @return ユーザーが入力したら true。キャンセルされたら false。
+			 */
+			bool Rebind(int index);
+
+			/**
+			 * @brief 割り当てを初期値に戻し、TSVへ書き戻す。
+			 * @return 書き込めたら true。
+			 */
+			bool Reset();
+
+			/**
 			 * @brief その操作が押しっぱなしなら true。
 			 * @param action 調べる操作。
 			 * @return 押されていれば true。
@@ -106,6 +120,33 @@ namespace nsApp
 			inline bool IsTrigger(EnAction action) const
 			{
 				return trigger_[static_cast<int>(action)];
+			}
+
+			/**
+			 * @brief 一覧に出す操作の数。
+			 */
+			inline int GetActionCount() const
+			{
+				return actionNameCount_;
+			}
+
+			/**
+			 * @brief 一覧に出す操作名。
+			 * @param index 0から数えた行。
+			 */
+			inline const char* GetActionLabel(int index) const
+			{
+				return actionName_[index].pName;
+			}
+
+			/**
+			 * @brief その行の現在の割り当て。
+			 * @param index 0から数えた行。
+			 */
+			inline std::string GetBindingLabel(int index) const
+			{
+				const int actionIndex = static_cast<int>(actionName_[index].action);
+				return primary_[actionIndex].ToName();
 			}
 
 
@@ -146,7 +187,7 @@ namespace nsApp
 
 		private:
 			static constexpr int actionCount_ = static_cast<int>(EnAction::Count); //! 操作の数。
-			static constexpr int actionNameCount_ = 24; //! 操作名の表の行数。
+			static constexpr int actionNameCount_ = 25; //! 操作名の表の行数。
 			static const ActionName actionName_[actionNameCount_]; //! 操作名と列挙の対応表。
 			static InputObserver instance_; //! プログラム内の実体。
 			nsK2EngineLow::nsSystem::nsTSVFile::TSVTable table_; //! 読み込み中のTSV。

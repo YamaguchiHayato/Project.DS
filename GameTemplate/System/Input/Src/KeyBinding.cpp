@@ -170,5 +170,53 @@ namespace nsApp
 
 			return "";
 		}
+
+
+		bool KeyBinding::Capture(KeyBinding& outBinding)
+		{
+			/* デバイスが未設定の場合は押されていないとする。*/
+			for (const BindingName& name : bindingName)
+			{
+				/* デバイスとコードが一致する場合は、対応する名前を返す。*/
+				outBinding.device_ = name.bindingDevice;
+				outBinding.code_ = name.bindingCode;
+
+				/* このフレームで押されているかを確認する。*/
+				if (outBinding.IsPress())
+					return true;
+			}
+
+
+			/* 文字を管理。*/
+			for (int alphabet = 'A'; alphabet <= 'Z'; alphabet++)
+			{
+				/* 大文字アルファベットの場合は、GetAsyncKeyStateで押されているかを確認する。*/
+				if ((GetAsyncKeyState(alphabet) & 0x8000) != 0)
+				{
+					/* 大文字アルファベットが押されている場合は、出力変数に設定する。*/
+					outBinding.device_ = EnInputDevice::Keyboard;
+					outBinding.code_ = alphabet;
+					return true;
+				}
+			}
+
+			
+			/* 数字。*/
+			for (int number = '0'; number <= '9'; number++)
+			{
+				/* 数字キーが押されているかを確認する。*/
+				if ((GetAsyncKeyState(number) & 0x8000) != 0)
+				{
+					/* 数字キーが押されている場合は、出力変数に設定する。*/
+					outBinding.device_ = EnInputDevice::Keyboard;
+					outBinding.code_ = number;
+					return true;
+				}
+			}
+
+			/* どの入力も押されていない場合は、出力変数を未設定にする。*/
+			outBinding = KeyBinding();
+			return false;
+		}
 	}
 }

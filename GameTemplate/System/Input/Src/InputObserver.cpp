@@ -37,6 +37,7 @@ namespace nsApp
 			{ "viewMode", EnAction::ViewMode },
 			{ "startGame", EnAction::StartGame },
 			{ "openDebug", EnAction::OpenDebug },
+			{ "openKeyConfig", EnAction::OpenKeyConfig },
 		};
 
 		InputObserver InputObserver::instance_; 
@@ -113,6 +114,28 @@ namespace nsApp
 		}
 
 
+		bool InputObserver::Rebind(int index)
+		{
+			/* ユーザーが入力したキーを取得する。キャンセルされたら false。*/
+			if (!KeyBinding::Capture(loaded_))
+				return false;
+
+			/* 入力が取得できたら、割り当てを上書きして保存する。*/
+			primary_[static_cast<int>(actionName_[index].action)] = loaded_;
+
+			/* 保存に成功したら true。*/
+			return Save();
+		}
+
+
+		bool InputObserver::Reset()
+		{
+			/* 既定値を入れて保存する。*/
+			FillDefault();
+			return Save();
+		}
+
+
 		void InputObserver::FillDefault()
 		{
 			SetDefault(EnAction::MoveForward, "W");
@@ -139,6 +162,7 @@ namespace nsApp
 			SetDefault(EnAction::ViewMode, "T");
 			SetDefault(EnAction::StartGame, "1");
 			SetDefault(EnAction::OpenDebug, "2");
+			SetDefault(EnAction::OpenKeyConfig, "3");
 		}
 
 

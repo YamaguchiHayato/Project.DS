@@ -50,6 +50,13 @@ namespace nsApp
 			 * @return 文字列化した入力。 未設定の場合は空文字が入ります。
 			 */
 			std::string ToName() const;
+
+			/**
+			 * @brief ユーザーが入力したキーを取得する。
+			 * @param outBinding 取得した入力を格納する変数。
+			 * @return 入力が取得できたら true。キャンセルされた場合は false。
+			 */
+			static bool Capture(KeyBinding& outBinding);
 		};
 
 		/**
