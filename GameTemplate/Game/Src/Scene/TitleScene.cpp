@@ -3,6 +3,7 @@
 #include "Src/Scene/GameFlow.h"
 #include "Src/Scene/IScene.h"
 #include "Src/UI/Title/TitleUI.h"
+#include "Src/InputObserver.h"
 
 namespace nsApp
 {
@@ -33,13 +34,13 @@ namespace nsApp
 			const bool bPress1 = (GetAsyncKeyState('1') & 0x8000) != 0;
 			const bool bPress2 = (GetAsyncKeyState('2') & 0x8000) != 0;
 
-			/* キー1を押した瞬間だけ本編へ遷移予約。*/
-			if (bPress1 && !bWasPress1_)
-				pGameFlow_->ChangeScene(EnSceneID::InGame);
-
-			/* キー2を押した瞬間だけDebug選択へ遷移予約。*/
-			if (bPress2 && !bWasPress2_)
+			/* 1キーが押された瞬間なら InGame へ切り替える。*/
+			if(nsData::InputObserver::Get().IsTrigger(nsData::EnAction::OpenDebug))
 				pGameFlow_->ChangeScene(EnSceneID::Debug);
+
+			/* 2キーが押された瞬間なら Debug へ切り替える。*/
+			if (nsData::InputObserver::Get().IsTrigger(nsData::EnAction::StartGame))
+				pGameFlow_->ChangeScene(EnSceneID::InGame);
 
 			/* 次フレーム判定用に今の状態を残す。*/
 			bWasPress1_ = bPress1;

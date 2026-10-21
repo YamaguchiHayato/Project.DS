@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "PlayerInput.h"
 #include "system/system.h"
+#include "Src/InputObserver.h"
 
 namespace nsApp
 {
@@ -8,59 +9,41 @@ namespace nsApp
 	{
 		void PlayerInput::Update()
 		{
-			/* 移動(WASD)。*/
-			/* TODO: プロジェクト内に専用のKeyboardクラスがあれば、そちらのポーリングに */
-			/*       差し替えてください(Mouseクラスと同じ設計思想で統一できます)。*/
-			vMoveAxis_ = Vector3(0.0f, 0.0f, 0.0f);
-			if (GetAsyncKeyState('W') & 0x8000) { vMoveAxis_.z += 1.0f; }
-			if (GetAsyncKeyState('S') & 0x8000) { vMoveAxis_.z -= 1.0f; }
-			if (GetAsyncKeyState('D') & 0x8000) { vMoveAxis_.x += 1.0f; }
-			if (GetAsyncKeyState('A') & 0x8000) { vMoveAxis_.x -= 1.0f; }
+			nsData::InputObserver& input_ = nsData::InputObserver::Get();
 
-			/* マウスカーソル位置(スプライト空間、中心原点)を照準に使う。*/
-			/* g_mouse->BeginFrame()はエンジン側で毎フレーム呼ばれている前提。*/
+			/* 移動。割り当ては InputObserver が持つ。*/
+			vMoveAxis_ = Vector3(0.0f, 0.0f, 0.0f);
+			if (input_.IsPress(nsData::EnAction::MoveForward)) { vMoveAxis_.z += 1.0f; }
+			if (input_.IsPress(nsData::EnAction::MoveBack)) { vMoveAxis_.z -= 1.0f; }
+			if (input_.IsPress(nsData::EnAction::MoveRight)) { vMoveAxis_.x += 1.0f; }
+			if (input_.IsPress(nsData::EnAction::MoveLeft)) { vMoveAxis_.x -= 1.0f; }
+
+			/* 照準の位置だけ、マウスカーソルから取る。*/
 			nsK2EngineLow::Mouse* pMouse = nsK2EngineLow::g_mouse;
-			if (pMouse != nullptr) {
+			if (pMouse != nullptr)
 				vAimScreenPos_ = pMouse->GetSpritePos();
 
-				/* 左クリックで射撃(押しっぱなし=フルオート連射、押した瞬間=単発)。連射間隔は武器側で制御。*/
-				bFirePress_ = pMouse->IsPress(nsK2EngineLow::enMouseButtonLeft);
-				bFireTrigger_ = pMouse->IsTrigger(nsK2EngineLow::enMouseButtonLeft);
+			bFirePress_ = input_.IsPress(nsData::EnAction::Fire);
+			bFireTrigger_ = input_.IsTrigger(nsData::EnAction::Fire);
+			bAdsPress_ = input_.IsPress(nsData::EnAction::Ads);
+			bWeaponSwitchNextTrigger_ = input_.IsTrigger(nsData::EnAction::WeaponNext);
+			bWeaponSwitchPrevTrigger_ = input_.IsTrigger(nsData::EnAction::WeaponPrev);
 
-				/* 右クリックで覗き込み(ADS)。押しっぱなしで構え続ける。*/
-				bAdsPress_ = pMouse->IsPress(nsK2EngineLow::enMouseButtonRight);
-
-				/* ホイールで武器切り替え(奥へ1ノッチ=次の武器、手前へ1ノッチ=前の武器)。*/
-				const int iWheelDelta = pMouse->GetWheelDelta();
-				bWeaponSwitchNextTrigger_ = (iWheelDelta > 0);
-				bWeaponSwitchPrevTrigger_ = (iWheelDelta < 0);
-			}
-			else {
-				/* g_mouseが未初期化の場合は何もしない(安全側に倒す)。*/
-				bFirePress_ = false;
-				bFireTrigger_ = false;
-				bAdsPress_ = false;
-				bWeaponSwitchNextTrigger_ = false;
-				bWeaponSwitchPrevTrigger_ = false;
-			}
-
-			/* カメラ旋回用のマウス横移動量を更新する(カーソルロック)。*/
+			/* カメラ旋回用のマウス移動量。*/
 			UpdateMouseLook();
 
-			/* 各種トリガー入力(押した瞬間のみtrue)。*/
-			bReloadTrigger_ = CheckTrigger('R', bPrevReloadPress_);
-			bInteractTrigger_ = CheckTrigger('E', bPrevInteractPress_);
-			bLightTrigger_ = CheckTrigger('F', bPrevLightPress_);
-			bPauseTrigger_ = CheckTrigger(VK_ESCAPE, bPrevPausePress_);
-			/* アイテム。数字キーは本家(L4D2)のスロット順(3=投擲, 4=メディキット, 5=鎮痛剤)。*/
-			bHealPress_ = IsKeyPress('H') || IsKeyPress('4');
-			bThrowTrigger_ = CheckTriggerFromPress(IsKeyPress('G') || IsKeyPress('3'), bPrevThrowPress_);
-			bQuickItemTrigger_ = CheckTrigger('5', bPrevQuickItemPress_);
-			bSprintPress_ = IsKeyPress(VK_SHIFT);
-			bCrouchPress_ = IsKeyPress(VK_CONTROL);
-			bShoveTrigger_ = CheckTrigger('V', bPrevShovePress_);
-			bMainWeaponTrigger_ = CheckTrigger('1', bPrevMainWeaponPress_);
-			bSubWeaponTrigger_ = CheckTrigger('2', bPrevSubWeaponPress_);
+			bReloadTrigger_ = input_.IsTrigger(nsData::EnAction::Reload);
+			bInteractTrigger_ = input_.IsTrigger(nsData::EnAction::Interact);
+			bLightTrigger_ = input_.IsTrigger(nsData::EnAction::Light);
+			bPauseTrigger_ = input_.IsTrigger(nsData::EnAction::Pause);
+			bHealPress_ = input_.IsPress(nsData::EnAction::Heal);
+			bThrowTrigger_ = input_.IsTrigger(nsData::EnAction::Throw);
+			bQuickItemTrigger_ = input_.IsTrigger(nsData::EnAction::QuickItem);
+			bSprintPress_ = input_.IsPress(nsData::EnAction::Sprint);
+			bCrouchPress_ = input_.IsPress(nsData::EnAction::Crouch);
+			bShoveTrigger_ = input_.IsTrigger(nsData::EnAction::Shove);
+			bMainWeaponTrigger_ = input_.IsTrigger(nsData::EnAction::MainWeapon);
+			bSubWeaponTrigger_ = input_.IsTrigger(nsData::EnAction::SubWeapon);
 		}
 
 		PlayerInput::~PlayerInput()
