@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "ResultScene.h"
 #include "Src/Scene/GameFlow.h"
+#include "Src/InputObserver.h"
+
 
 namespace
 {
@@ -69,7 +71,7 @@ namespace nsApp
 				return;
 
 			/* Enter でタイトルへ戻る。*/
-			if ((GetAsyncKeyState(VK_RETURN) & 0x8000) != 0 && pGameFlow_ != nullptr)
+			if (nsData::InputObserver::Get().IsTrigger(nsData::EnAction::Confirm) && pGameFlow_ != nullptr)
 			{
 				pGameFlow_->ChangeScene(EnSceneID::Title);
 			}
