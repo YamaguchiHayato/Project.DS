@@ -1,10 +1,13 @@
 #pragma once
 #include "Bloom.h"
 #include "Light.h"
+#include "LightingManager.h"
 #include "IRender.h"
 #include "Shadow.h"
 #include "PMXRender.h"
 #include "PenlightRender.h"
+#include "Flashlight.h"
+
 
 
 namespace nsK2EngineLow {
@@ -87,6 +90,9 @@ namespace nsK2EngineLow {
 			return m_mainRenderingTarget;
 		}
 
+		Flashlight& GetFlashlight() { return m_flashlight; }
+
+
 	private:
 		void InitMainRenderTarget();
 		void Init2DSprite();
@@ -100,6 +106,7 @@ namespace nsK2EngineLow {
 		void PMXModelDraw(RenderContext& rc);
 		
 		Light m_light;
+		LightingManager m_lightingManager;
 		Bloom m_bloom;
 		Shadow m_shadow;
 		
@@ -121,6 +128,8 @@ namespace nsK2EngineLow {
 		RenderTarget m_tempRenderTarget; // 作業用バッファ
 		Sprite m_motionBlurSprite;       // ブラー描画用
 		Sprite m_copySprite;             // 書き戻し用
+
+		Flashlight m_flashlight;
 	};
 }
 

@@ -105,9 +105,8 @@ void nsK2EngineLow::ModelRender::InitModel(const char* filePath, EnModelUpAxis e
 }
 void nsK2EngineLow::ModelRender::Update()
 {
-	/* シーンライトをセットし、モデルのα値を乗せる。*/
-	m_expandCB.light = g_renderingEngine->GetLight();
-	m_expandCB.modelAlpha = m_alpha;
+	/* シーンライトと、モデルのα値を、このモデル用のコピーへ写す。*/
+	RefreshLight();
 
 	m_model.UpdateWorldMatrix(m_position, m_rotation, m_scale);
 	m_shadowModel.UpdateWorldMatrix(m_position, m_rotation, m_scale);
@@ -142,6 +141,8 @@ void nsK2EngineLow::ModelRender::OnRenderModel(RenderContext& rc)
 	//初期化されていたら
 	if (m_model.IsInited())
 	{
+		//この時点の最新のライトを渡す(手持ちライトなど、毎フレーム変わる光のため)。
+		RefreshLight();
 		//モデルの描画
 		m_model.Draw(rc, 1);
 	}
@@ -154,4 +155,31 @@ void nsK2EngineLow::ModelRender::OnRenderShadowMap(RenderContext&rc,Camera&came)
 		m_shadowModel.Draw(rc, came, 1);
 
 	}
+}
+
+
+void nsK2EngineLow::ModelRender::RefreshLight()
+{
+	m_expandCB.light = g_renderingEngine->GetLight();
+	{
+		auto& l = m_expandCB.light;
+		const float s = m_baseLightScale;
+
+		l.directionLig.m_color.x *= s;
+		l.directionLig.m_color.y *= s;
+		l.directionLig.m_color.z *= s;
+
+		l.ambientLight.x *= s;
+		l.ambientLight.y *= s;
+		l.ambientLight.z *= s;
+
+		l.hemiLig.m_groundColor.x *= s;
+		l.hemiLig.m_groundColor.y *= s;
+		l.hemiLig.m_groundColor.z *= s;
+		l.hemiLig.m_skyColor.x *= s;
+		l.hemiLig.m_skyColor.y *= s;
+		l.hemiLig.m_skyColor.z *= s;
+		// pointLig と spotLig は触らない(局所照明は弱めない)
+	}
+	m_expandCB.modelAlpha = m_alpha;
 }

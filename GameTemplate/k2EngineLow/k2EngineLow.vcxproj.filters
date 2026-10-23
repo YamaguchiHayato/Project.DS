@@ -266,6 +266,9 @@
     <ClCompile Include="tsv\TSVTable.cpp">
       <Filter>tsv</Filter>
     </ClCompile>
+    <ClCompile Include="LightingManager.cpp" />
+    <ClCompile Include="LightingConfigLoader.cpp" />
+    <ClCompile Include="Flashlight.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="k2EngineLowPreCompile.h" />
@@ -591,6 +594,10 @@
     <ClInclude Include="tsv\TSVTableLoader.h">
       <Filter>tsv</Filter>
     </ClInclude>
+    <ClInclude Include="LightingConfig.h" />
+    <ClInclude Include="LightingManager.h" />
+    <ClInclude Include="LightingConfigLoader.h" />
+    <ClInclude Include="Flashlight.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="graphics">
