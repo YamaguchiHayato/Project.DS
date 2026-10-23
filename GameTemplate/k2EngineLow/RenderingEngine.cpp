@@ -2,6 +2,7 @@
 #include "RenderingEngine.h"
 #include <algorithm>
 #include <execution> // PMXのCPUアニメーション並列更新用
+#include <filesystem>
 
 
 void nsK2EngineLow::RenderingEngine::Init()
@@ -27,6 +28,27 @@ void nsK2EngineLow::RenderingEngine::Init()
 
 	//ライトの初期化。
 	m_light.Init();
+
+	std::string lightingError;
+
+	if (!m_lightingManager.Initialize(
+		m_light,
+		"Assets/data/Lighting/overcast.json",
+		lightingError))
+	{
+		MessageBoxA(
+			nullptr,
+			lightingError.c_str(),
+			"LightingManager ERROR",
+			MB_OK | MB_ICONERROR
+		);
+	}
+	auto& p = m_light.GetLight().pointLig[0];
+	char buf[256];
+	sprintf_s(buf, "P0 pos(%.1f,%.1f,%.1f) col(%.1f,%.1f,%.1f) range=%.1f\n",
+		p.m_position.x, p.m_position.y, p.m_position.z,
+		p.m_color.x, p.m_color.y, p.m_color.z, p.m_renge);
+	OutputDebugStringA(buf);
 }
 void nsK2EngineLow::RenderingEngine::InitMainRenderTarget()
 {
@@ -166,6 +188,10 @@ void nsK2EngineLow::RenderingEngine::Execute(RenderContext& rc)
 {
 	//ライトカメラの更新。
 	m_light.LightCameraUpdate();
+
+
+	//手持ちライトの更新(モデルの描画より前に行う)。
+	m_flashlight.Update(m_light.GetLight());
 
 	////影。
 	m_shadow.Execute(rc, m_renderObjects);

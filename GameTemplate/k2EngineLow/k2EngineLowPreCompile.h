@@ -151,3 +151,9 @@ static const int MAX_BONE = 512;	// ボーンの最大数。
 // TSVファイルの読み込み用。
 #include "tsv/TSVTable.h"
 #include "tsv/TSVTableLoader.h"
+
+
+//LightingConfigの読み込み用。
+#include "LightingConfig.h"
+#include "LightingConfigLoader.h"
+#include "LightingManager.h"

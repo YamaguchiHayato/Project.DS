@@ -261,6 +261,7 @@
     <ClCompile Include="Bloom.cpp" />
     <ClCompile Include="BoneNode.cpp" />
     <ClCompile Include="DiamondWipe.cpp" />
+    <ClCompile Include="Flashlight.cpp" />
     <ClCompile Include="FontRender.cpp" />
     <ClCompile Include="gameObject\Gameobjectmanager.cpp" />
     <ClCompile Include="gameObject\IGameObject.cpp" />
@@ -320,6 +321,8 @@
     <ClCompile Include="level3D\MapChip.cpp" />
     <ClCompile Include="level3D\TklFile.cpp" />
     <ClCompile Include="Light.cpp" />
+    <ClCompile Include="LightingConfigLoader.cpp" />
+    <ClCompile Include="LightingManager.cpp" />
     <ClCompile Include="math\Matrix.cpp" />
     <ClCompile Include="math\Vector.cpp" />
     <ClCompile Include="ModelRender.cpp" />
@@ -369,6 +372,7 @@
     <ClInclude Include="dbg\MyLog.h" />
     <ClInclude Include="DebugPrint.h" />
     <ClInclude Include="DiamondWipe.h" />
+    <ClInclude Include="Flashlight.h" />
     <ClInclude Include="FontRender.h" />
     <ClInclude Include="gameObject\GameObjectManager.h" />
     <ClInclude Include="gameObject\IGameobject.h" />
@@ -431,6 +435,9 @@
     <ClInclude Include="level3D\MapChip.h" />
     <ClInclude Include="level3D\TklFile.h" />
     <ClInclude Include="Light.h" />
+    <ClInclude Include="LightingConfig.h" />
+    <ClInclude Include="LightingConfigLoader.h" />
+    <ClInclude Include="LightingManager.h" />
     <ClInclude Include="math\Math.h" />
     <ClInclude Include="math\Matrix.h" />
     <ClInclude Include="math\Vector.h" />
