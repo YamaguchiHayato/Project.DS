@@ -14,6 +14,12 @@ namespace nsK2EngineLow {
 			SceneLight light; //!  フレームごとのライトを管理。
 			float modelAlpha = 1.0f; //!  モデルのアルファ値。
 			float alphaPadding[3] = {}; //! 定数バッファ整列用（中身は使わない）。
+
+			//! 屋内ボリューム(model.fx の定数バッファと同じ並びにすること)。
+			Vector3 indoorMin = Vector3::Zero;	//! 箱の最小座標(ワールド)。
+			float indoorPad0 = 0.0f;			//! 定数バッファ整列用（中身は使わない）。
+			Vector3 indoorMax = Vector3::Zero;	//! 箱の最大座標(ワールド)。
+			float indoorScale = 1.0f;			//! 箱の中でのベース光の倍率(1.0で無効)。
 		};
 
 
@@ -138,7 +144,7 @@ namespace nsK2EngineLow {
 		void SetTRS(const Vector3& pos, const Quaternion& rotation, const Vector3& scale)
 		{
 			SetPosition(pos);
-			SetRotation(rotation);
+			SetRotation(rotation);	
 			SetScale(scale);
 		}
 
@@ -159,7 +165,36 @@ namespace nsK2EngineLow {
 		{
 			return m_alpha;
 		}
+		// ModelRender クラスの public に追加
+/// <summary>
+/// ベースの光(方向光・環境光・半球ライト)の倍率を設定する。
+/// 1.0=そのまま、0.2=屋内向けに暗くする。ポイントライトは影響を受けない。
+/// </summary>
+		void SetBaseLightScale(float scale)
+		{
+			m_baseLightScale = scale;
+		}
 
+
+		/// <summary>
+		/// 屋内ボリューム(軸に平行な箱)を設定する。
+		/// 箱の中のピクセルだけ、ベースの光(方向光・環境光・半球ライト)が弱まる。
+		/// 箱の端から内側へ30進むまでに、倍率が1.0からscaleへ滑らかに変わる。
+		/// </summary>
+		/// <param name="minPos">箱の最小座標(ワールド)</param>
+		/// <param name="maxPos">箱の最大座標(ワールド)</param>
+		/// <param name="scale">箱の中での倍率。0.2で暗く、1.0で無効</param>
+		void SetIndoorVolume(const Vector3& minPos, const Vector3& maxPos, float scale)
+		{
+			m_expandCB.indoorMin = minPos;
+			m_expandCB.indoorMax = maxPos;
+			m_expandCB.indoorScale = scale;
+		}
+
+		/// <summary>
+		/// シーンライトを、このモデル用のコピーに写す(倍率と、αも反映する)。
+		/// </summary>
+		void RefreshLight();
 
 		AnimationClip* m_animationClips = nullptr;		//アニメーションクリップ
 		int m_numAnimationClips = 0;					//アニメーションの数
@@ -175,6 +210,7 @@ namespace nsK2EngineLow {
 		float m_animationSpeed = 1.0f;					//アニメーション再生速度
 		float m_alpha = 1.0f;							//! モデルのアルファ値。
 		EnModelExpandCB m_expandCB;						//! 拡張用の定数バッファ。
+		float m_baseLightScale = 1.0f;
 	};
 }
 
