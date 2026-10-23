@@ -10,6 +10,7 @@
 #include "Src/Director/EnemyDirector.h"
 #include "Src/System/GamePause.h"
 #include "Src/Item/PipeBomb.h"
+#include "Src/InputObserver.h"
 
 namespace
 {
@@ -200,13 +201,11 @@ namespace nsApp
 		void InGameScene::Update()
 		{
 			/* ポーズメニューの入力: Enterでタイトルへ戻る(エッジ検出)。*/
-			const bool bEnter = (GetAsyncKeyState(VK_RETURN) & 0x8000) != 0;
-			const bool bEnterTrigger = bEnter && !bPrevEnter_;
-			bPrevEnter_ = bEnter;
+			const bool enterTrigger = nsData::InputObserver::Get().IsTrigger(nsData::EnAction::Confirm);
 
 			if (nsSystem::IsGamePaused())
 			{
-				if (bEnterTrigger && pGameFlow_ != nullptr)
+				if (enterTrigger && pGameFlow_ != nullptr)
 				{
 					nsSystem::SetGamePaused(false);
 					pGameFlow_->ChangeScene(EnSceneID::Title);
@@ -268,7 +267,8 @@ namespace nsApp
 			if (pPlayer_ == nullptr)
 				return;
 
-			const bool bPressViewKey = (GetAsyncKeyState(iViewModeKey_) & 0x8000) != 0;
+			/* 視点切り替えキーの押下を検知する。*/
+			const bool bPressViewKey = nsData::InputObserver::Get().IsTrigger(nsData::EnAction::ViewMode);
 
 			/* 押した瞬間だけ切り替える。*/
 			if (bPressViewKey && !bPrevViewKey_)
