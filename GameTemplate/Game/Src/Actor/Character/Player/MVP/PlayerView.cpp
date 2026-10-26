@@ -19,6 +19,7 @@ namespace
 	const float SPRINT_LOWER_ANGLE = 0.7f;		//! スプリント中に銃口を下げる角度(ラジアン)。走っている間は構えを解く。
 	const float SPRINT_LOWER_DOWN = 18.0f;		//! スプリント中に銃を下げる距離。
 	const float ADS_ROLL_ANGLE = 1.5708f;		//! 覗き込み時に銃を倒す角度(ラジアン。約90度)。視界を塞がないよう横倒しにする。
+	const int HAND_BONE_NAME_MAX = 128;			//! ボーン名をワイド文字列へ変換するときの長さの上限。
 }
 
 
@@ -52,9 +53,61 @@ namespace nsApp
 			/*
 			 * 三人称で銃を持たせるボーンを探しておく(毎フレーム名前で探さないため)。
 			 * 名前は player.json の handBoneName。見つからなければ -1 になり、銃は腰のあたりへ置かれる。
-			 * TODO: CharacterModel から Skeleton が取れたら FindBoneID する。
 			 */
-			rightHandBoneId_ = -1;
+			rightHandBoneId_ = FindHandBoneId(stStatus);
+		}
+
+
+		int PlayerView::FindHandBoneId(const nsData::PlayerStatus& stStatus)
+		{
+			/* モデルをまだ読めていなければ探せない。*/
+			ModelRender* pModelRender = model_.GetModelRender();
+			if (pModelRender == nullptr)
+				return -1;
+
+			/* スケルトン(tks)を持たないモデルでは、そもそもボーンが無い。*/
+			Skeleton& skeleton = pModelRender->GetSkeleton();
+			if (!skeleton.IsInited())
+				return -1;
+
+			/*
+			 * FindBoneID はワイド文字列を取るので、ステータス表の名前を変換してから渡す。
+			 * ナロー文字列(const char*)をワイド書式へ流し込むときは %hs を使う
+			 * (%s だと wchar_t* 扱いになり文字化けする)。
+			 */
+			wchar_t wcBoneName[HAND_BONE_NAME_MAX];
+			swprintf_s(wcBoneName, L"%hs", stStatus.sHandBoneName_.c_str());
+
+			return skeleton.FindBoneID(wcBoneName);
+		}
+
+
+		bool PlayerView::TryGetHandBonePosition(Vector3& vOutPosition)
+		{
+			/* 名前が見つからなかったモデルでは使えない。*/
+			if (rightHandBoneId_ < 0)
+				return false;
+
+			ModelRender* pModelRender = model_.GetModelRender();
+			if (pModelRender == nullptr)
+				return false;
+
+			/* モデルを差し替えてボーンが減っている場合に備えて、番号の範囲を確かめる。*/
+			Skeleton& skeleton = pModelRender->GetSkeleton();
+			if (rightHandBoneId_ >= skeleton.GetNumBones())
+				return false;
+
+			Bone* pBone = skeleton.GetBone(rightHandBoneId_);
+			if (pBone == nullptr)
+				return false;
+
+			/* ワールド行列の平行移動成分が、その骨のワールド座標。*/
+			const Matrix& mBoneWorld = pBone->GetWorldMatrix();
+			vOutPosition.x = mBoneWorld.m[3][0];
+			vOutPosition.y = mBoneWorld.m[3][1];
+			vOutPosition.z = mBoneWorld.m[3][2];
+
+			return true;
 		}
 
 
@@ -278,11 +331,14 @@ namespace nsApp
 			/*
 			 * 銃を置く基準は体の右手のボーン。
 			 * ボーンのワールド行列は ModelRender::Update が計算しているので、
-			 * 体のモデルを更新したあとに呼ぶこと(UpdateModel がその順で呼んでいる)。
-			 * TODO: CharacterModel から Skeleton が取れたら、ワールド行列の平行移動成分がその骨のワールド座標。
+			 * 体のモデルを更新したあとに呼ぶこと(Present → PresentWeapon の順で呼んでいる)。
 			 */
-			workWeaponCenter_ = pPlayer_->GetPosition();
-			workWeaponCenter_.y += pPlayer_->GetPlayerStatus().fEyeHeight_ * HAND_HEIGHT_RATE;
+			if (!TryGetHandBonePosition(workWeaponCenter_))
+			{
+				/* ボーンが見つからないモデルでは、目線の高さから割合で腰のあたりを出す。*/
+				workWeaponCenter_ = pPlayer_->GetPosition();
+				workWeaponCenter_.y += pPlayer_->GetPlayerStatus().fEyeHeight_ * HAND_HEIGHT_RATE;
+			}
 
 			/* 銃ごとにグリップの位置が違うので、武器データのぶんだけずらして手に収める。*/
 			workWeaponCenter_ += pPlayer_->GetLookDirection() * pWeapon->GetHandForward();
