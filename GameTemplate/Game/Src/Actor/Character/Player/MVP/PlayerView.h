@@ -123,6 +123,20 @@ namespace nsApp
 			void CalcBodyModelSize(const nsData::PlayerStatus& stStatus);
 
 			/**
+			 * @brief 銃を持たせるボーンの番号を、名前から一度だけ引く。
+			 * @param stStatus プレイヤーステータス（handBoneName を持つ）。
+			 * @return ボーン番号。モデルに無い名前なら -1。
+			 */
+			int FindHandBoneId(const nsData::PlayerStatus& stStatus);
+
+			/**
+			 * @brief 銃を持たせるボーンのワールド座標を取り出す。
+			 * @param vOutPosition 取り出した座標の受け取り先（失敗時は触らない）。
+			 * @return 取り出せたら true。ボーンが無いモデルでは false。
+			 */
+			bool TryGetHandBonePosition(Vector3& vOutPosition);
+
+			/**
 			 * @brief 未ロードなら武器モデルを一度だけ読む。
 			 */
 			void LoadWeaponModelIfNeeded(nsWeapon::Weapon* pWeapon, int iType);

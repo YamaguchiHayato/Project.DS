@@ -122,6 +122,19 @@ namespace nsK2EngineLow {
 		}
 
 		/// <summary>
+		/// スケルトンを取得。
+		/// </summary>
+		/// <remark>
+		/// ボーン名からボーン番号を引いたり、ボーンのワールド行列を参照したいときに使います。
+		/// ワールド行列は Update() が計算するので、Update() のあとで参照してください。
+		/// </remark>
+		/// <returns>スケルトン</returns>
+		Skeleton& GetSkeleton()
+		{
+			return m_skeleton;
+		}
+
+		/// <summary>
 		/// スケルトンの初期化。
 		/// </summary>
 		/// <param name="filePath">ファイルパス。</param>

@@ -129,6 +129,17 @@ namespace nsApp
 			return sModelPath;
 		}
 
+		/**
+		 * @brief モデルを描画するクラスを取得する。
+		 * @details スケルトン(ボーン)を参照したい側へ渡すための窓口。
+		 *          ボーンのワールド行列は Update() が計算するので、Update() のあとで参照すること。
+		 * @return モデルを描画するクラス。まだ読み込んでいなければ nullptr。
+		 */
+		inline ModelRender* GetModelRender()
+		{
+			return pCharacterModelRender_.get();
+		}
+
 
 	private:
 		std::unordered_map<CharacterModelType, std::string> mapFilePathList_; //! モデルIDからファイルパスを文字列に変化。

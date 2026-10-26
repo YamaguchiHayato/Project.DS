@@ -118,10 +118,11 @@ namespace nsApp
 
 			/*
 			 * 三人称で銃を持たせるボーンの名前。
-			 * ※unityChanは左右の名前が反転していて、"LeftHand" が見た目の右手になる。
+			 * ※tksのボーン名と完全一致させること。見つからない場合は -1 になり、
+			 *   銃は腰の高さのフォールバック位置へ置かれる。
 			 *   モデルを差し替えたら実際に持たせて確かめること。
 			 */
-			std::string sHandBoneName_ = "Character1_LeftHand";	//! 銃を持たせるボーンの名前。
+			std::string sHandBoneName_ = "SapphiArt_19:Hand_R";	//! 銃を持たせるボーンの名前。
 
 			/* ダウンと救助。*/
 			float	fBleedOutTime_ = 15.0f;			//! ダウンしてから死亡するまでの出血時間(秒)。

@@ -31,6 +31,9 @@
     <Filter Include="Src\UI\Title">
       <UniqueIdentifier>{6ad8042d-0f8d-4387-a9c8-34f9c0a55029}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Src\UI\KeyConfig">
+      <UniqueIdentifier>{518c5680-4aa2-4095-a894-f47d8b919b4f}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Src\Actor\Common">
       <UniqueIdentifier>{7a1076f5-4aa7-4256-bb30-7b178704b46e}</UniqueIdentifier>
     </Filter>
@@ -177,6 +180,9 @@
     </ClCompile>
     <ClCompile Include="Src\UI\Title\TitleUI.cpp">
       <Filter>Src\UI\Title</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\UI\KeyConfig\KeyConfigUI.cpp">
+      <Filter>Src\UI\KeyConfig</Filter>
     </ClCompile>
     <ClCompile Include="WeaponInventory.cpp">
       <Filter>Src\Actor\Weapon</Filter>
@@ -423,6 +429,9 @@
     </ClInclude>
     <ClInclude Include="Src\UI\Title\TitleUI.h">
       <Filter>Src\UI\Title</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\UI\KeyConfig\KeyConfigUI.h">
+      <Filter>Src\UI\KeyConfig</Filter>
     </ClInclude>
     <ClInclude Include="Weapon.h">
       <Filter>Src\Actor\Weapon</Filter>
