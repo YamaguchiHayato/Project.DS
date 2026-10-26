@@ -30,6 +30,7 @@ namespace nsApp
 			Vector3 workMuzzleRight_ = Vector3::Zero; //! 銃口の右方向。Player::stCharacterStatus_.stEyeOffset_ からコピーする。
 			Vector3 workMuzzlePos_ = Vector3::Zero; //! 銃口の位置。Player::vPosition_ + Player::stCharacterStatus_.stEyeOffset_ からコピーする。
 			int workPelletIndex_ = 0; //! 散弾の何発目か。Player::stWeaponInventory_.GetCurrentWeapon()->GetPelletCount() からコピーする。
+			float workMuzzleSideSign_ = 1.0f; //! 銃口を横へずらす向き。右なら+1、左なら-1。二丁持ちのとき撃つたびに入れ替わる。
 		};
 	}
 }

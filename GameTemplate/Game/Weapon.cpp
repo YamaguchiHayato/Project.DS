@@ -21,6 +21,7 @@ namespace nsApp
 			iBurstRemain_ = 0;
 			fRecoilResetTimer_ = 0.0f;
 			bIsReloading_ = false;
+			bIsNextMuzzleLeft_ = false;
 		}
 
 
@@ -149,6 +150,10 @@ namespace nsApp
 			/* 撃ったので、パターンが戻るまでの時間を数え直す。*/
 			fRecoilResetTimer_ = 0.0f;
 
+			/* 二丁持ちは1発ごとに左右の銃口を入れ替える(同時ではなく交互に撃つ)。*/
+			if (stStatus_.bIsDualWield_)
+				bIsNextMuzzleLeft_ = !bIsNextMuzzleLeft_;
+
 			/*
 			 * 命中判定はここでは行わない。散弾数・貫通数を見て弾を飛ばすのは持ち主(Player)の役目。
 			 * DebugPrintW は第1引数の「書式文字列」を内部で整形して直接出力する。
@@ -194,6 +199,9 @@ namespace nsApp
 			/* 持ち替えたのでリロードは中断する。点射の予約も消える。*/
 			CancelReload();
 			iBurstRemain_ = 0;
+
+			/* 構え直したら、二丁持ちは右の銃口から撃ち始める。*/
+			bIsNextMuzzleLeft_ = false;
 
 			/* 構え終わるまで撃てない時間を設定する。*/
 			fDeployTimer_ = stStatus_.fDeployTime_;

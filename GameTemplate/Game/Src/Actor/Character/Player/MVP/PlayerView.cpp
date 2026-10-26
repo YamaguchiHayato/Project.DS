@@ -205,6 +205,10 @@ namespace nsApp
 			/* 装備中の武器の種類をプレイヤーにセットする。*/
 			if (weaponModelLoaded_[static_cast<int>(pPlayer_->GetEquippedType())])
 				weaponModels_[static_cast<int>(pPlayer_->GetEquippedType())].Draw(rc);
+
+			/* 二丁持ちのときは左手ぶんも描く。*/
+			if (bDrawDualWeapon_ && bDualWeaponModelLoaded_)
+				dualWeaponModel_.Draw(rc);
 		}
 
 
@@ -232,23 +236,49 @@ namespace nsApp
 		}
 
 
-		void PlayerView::UpdateViewWeaponModel(nsWeapon::Weapon* pWeapon, int iType)
+		void PlayerView::LoadDualWeaponModelIfNeeded(nsWeapon::Weapon* pWeapon)
 		{
-			/* FPSのビューモデルとして、カメラ(目)基準で画面手前(前・右・下)に銃を置く。*/
-			BuildViewWeaponCenter(pWeapon);
-			BuildViewWeaponRotation(pWeapon);
-			PlaceWeaponModel(iType, CalcViewWeaponScale(pWeapon, iType));
+			/* 左手ぶんは一度読めば使い回す(再Initは壊れるので避ける)。*/
+			if (bDualWeaponModelLoaded_)
+				return;
+
+			dualWeaponModel_.Init(pWeapon->GetModelPath(), nullptr, 0, enModelUpAxisZ);
+			bDualWeaponModelLoaded_ = true;
 		}
 
 
-		void PlayerView::BuildViewWeaponCenter(nsWeapon::Weapon* pWeapon)
+		void PlayerView::UpdateViewWeaponModel(nsWeapon::Weapon* pWeapon, int iType)
+		{
+			/* FPSのビューモデルとして、カメラ(目)基準で画面手前(前・右・下)に銃を置く。*/
+			BuildViewWeaponCenter(pWeapon, 1.0f);
+			BuildViewWeaponRotation(pWeapon, 1.0f);
+			PlaceWeaponModel(weaponModels_[iType], iType, CalcViewWeaponScale(pWeapon, iType), true);
+
+			/* 1丁の銃はここまで。*/
+			bDrawDualWeapon_ = pWeapon->IsDualWield();
+			if (!bDrawDualWeapon_)
+				return;
+
+			/*
+			 * 二丁持ちは左手ぶんをもう一度組み立てる。
+			 * 横へずらす向きだけ反転させて同じ計算を通すので、
+			 * 揺れ・反動・リロードの動きは左右で揃う。
+			 */
+			LoadDualWeaponModelIfNeeded(pWeapon);
+			BuildViewWeaponCenter(pWeapon, -1.0f);
+			BuildViewWeaponRotation(pWeapon, -1.0f);
+			PlaceWeaponModel(dualWeaponModel_, iType, CalcViewWeaponScale(pWeapon, iType), false);
+		}
+
+
+		void PlayerView::BuildViewWeaponCenter(nsWeapon::Weapon* pWeapon, float fSideSign)
 		{
 			/* 銃の「中心」を置きたい位置(目の前・右・下)。目の位置は歩きの上下動を含む。*/
 			workWeaponCenter_ = pPlayer_->GetEyePosition();
 			workWeaponCenter_ += pPlayer_->GetLookDirection() * pWeapon->GetViewModelForward();	// 前(武器ごと)
 
 			/* 覗き込むほど、銃を画面中央(照準の位置)へ寄せる。*/
-			workWeaponCenter_ += Vector3(cosf(pPlayer_->GetCameraYaw()), 0.0f, -sinf(pPlayer_->GetCameraYaw())) * (VIEW_MODEL_RIGHT + (ADS_VIEW_MODEL_RIGHT - VIEW_MODEL_RIGHT) * pPlayer_->GetAdsRate());	// 右
+			workWeaponCenter_ += Vector3(cosf(pPlayer_->GetCameraYaw()), 0.0f, -sinf(pPlayer_->GetCameraYaw())) * ((VIEW_MODEL_RIGHT + (ADS_VIEW_MODEL_RIGHT - VIEW_MODEL_RIGHT) * pPlayer_->GetAdsRate()) * fSideSign);	// 右(二丁持ちの左手ぶんは反転)
 			workWeaponCenter_.y += VIEW_MODEL_DOWN + (ADS_VIEW_MODEL_DOWN - VIEW_MODEL_DOWN) * pPlayer_->GetAdsRate();	// 下(負)
 			workWeaponCenter_.y -= SPRINT_LOWER_DOWN * pPlayer_->GetLowerRate();	// 走っている間はさらに下げる
 
@@ -264,7 +294,7 @@ namespace nsApp
 
 			workWeaponCenter_.y -= pPlayer_->GetPlayerStatus().stReloadMotion_.fLowerDown_ * workReloadLower_;	// 抜く動作で沈める
 			workWeaponCenter_ -= pPlayer_->GetLookDirection() * (pPlayer_->GetPlayerStatus().stReloadMotion_.fPullBack_ * workReloadLower_);	// 手前へ引き寄せる
-			workWeaponCenter_ -= Vector3(cosf(pPlayer_->GetCameraYaw()), 0.0f, -sinf(pPlayer_->GetCameraYaw())) * (pPlayer_->GetPlayerStatus().stReloadMotion_.fPullRight_ * workReloadLower_);	// 画面中央へ寄せる
+			workWeaponCenter_ -= Vector3(cosf(pPlayer_->GetCameraYaw()), 0.0f, -sinf(pPlayer_->GetCameraYaw())) * (pPlayer_->GetPlayerStatus().stReloadMotion_.fPullRight_ * workReloadLower_ * fSideSign);	// 画面中央へ寄せる
 			workWeaponCenter_.y += pPlayer_->GetPlayerStatus().stReloadMotion_.fInsertUp_ * workReloadInsert_;	// 挿し込みの突き上げ
 			workWeaponCenter_.y += pPlayer_->GetPlayerStatus().stReloadMotion_.fSettleUp_ * workReloadSettle_;	// 構え直しの行き過ぎ
 
@@ -290,7 +320,7 @@ namespace nsApp
 		}
 
 
-		void PlayerView::BuildViewWeaponRotation(nsWeapon::Weapon* pWeapon)
+		void PlayerView::BuildViewWeaponRotation(nsWeapon::Weapon* pWeapon, float fSideSign)
 		{
 			(void)pWeapon;
 
@@ -300,10 +330,10 @@ namespace nsApp
 
 			/* 実際に銃へ与える回転。ここへ演出ぶんを重ねていく。*/
 			workWeaponRot_ = workWeaponBase_;
-			workWeaponRot_.AddRotationZ(ADS_ROLL_ANGLE * pPlayer_->GetAdsRate());	// 覗き込むほど銃を横倒しにし、拡大時に視界を塞がないようにする。
+			workWeaponRot_.AddRotationZ(ADS_ROLL_ANGLE * pPlayer_->GetAdsRate() * fSideSign);	// 覗き込むほど銃を横倒しにし、拡大時に視界を塞がないようにする(左右で逆へ倒す)。
 			workWeaponRot_.AddRotationX(SPRINT_LOWER_ANGLE * pPlayer_->GetLowerRate());	// 走っている間は銃口を下げて構えを解く。
 			workWeaponRot_.AddRotationX(pPlayer_->GetPlayerStatus().stReloadMotion_.fLowerAngle_ * workReloadLower_);	// マガジンを抜くあいだは銃口を下げる。
-			workWeaponRot_.AddRotationZ(pPlayer_->GetPlayerStatus().stReloadMotion_.fRollAngle_ * workReloadLower_);	// 差込口が見えるよう銃を傾ける。
+			workWeaponRot_.AddRotationZ(pPlayer_->GetPlayerStatus().stReloadMotion_.fRollAngle_ * workReloadLower_ * fSideSign);	// 差込口が見えるよう銃を傾ける(左右で逆へ倒す)。
 			workWeaponRot_.AddRotationX(-pPlayer_->GetPlayerStatus().stReloadMotion_.fInsertAngle_ * workReloadInsert_);	// 挿し込む瞬間だけ銃口が持ち上がる。
 			workWeaponRot_.AddRotationZ(pPlayer_->GetSwayRight() * pPlayer_->GetPlayerStatus().stViewShake_.fSwayRollRate_);	// 視点を振った遅れのぶん傾ける。
 			workWeaponRot_.AddRotationX(-SHOVE_MOTION_ANGLE * pPlayer_->GetShoveMotion());	// 突き飛ばした瞬間は銃口が上を向く。
@@ -319,10 +349,14 @@ namespace nsApp
 
 		void PlayerView::UpdateHandWeaponModel(nsWeapon::Weapon* pWeapon, int iType)
 		{
-			/* 銃は視線の向きに構える。体の向きではなく視線を使うので、狙っている方向がそのまま出る。*/
+			/*
+			 * 銃は視線の向きに構える。体の向きではなく視線を使うので、狙っている方向がそのまま出る。
+			 * TODO: 二丁持ちでも三人称では1丁しか出ない。左手のボーンを引いてもう1丁置けるようにする。
+			 */
+			bDrawDualWeapon_ = false;
 			BuildHandWeaponCenter(pWeapon);
 			BuildHandWeaponRotation();
-			PlaceWeaponModel(iType, CalcHandWeaponScale(pWeapon, iType));
+			PlaceWeaponModel(weaponModels_[iType], iType, CalcHandWeaponScale(pWeapon, iType), true);
 		}
 
 
@@ -370,7 +404,7 @@ namespace nsApp
 		}
 
 
-		void PlayerView::PlaceWeaponModel(int iType, float fScale)
+		void PlayerView::PlaceWeaponModel(ModelRender& stModel, int iType, float fScale, bool bRecordPosition)
 		{
 			/*
 			 * モデル原点のズレを打ち消す。
@@ -380,14 +414,16 @@ namespace nsApp
 			weaponViewPos_ = weaponModelCenter_[iType] * fScale;
 			workWeaponBase_.Apply(weaponViewPos_);
 
-			/* 不具合を調べられるよう、実際に置いた位置を控えておく。*/
 			weaponViewPos_ = workWeaponCenter_ - weaponViewPos_;
-			pPlayer_->SetWeaponViewPosition(weaponViewPos_);
 
-			weaponModels_[iType].SetPosition(weaponViewPos_);
-			weaponModels_[iType].SetRotation(workWeaponRot_);
-			weaponModels_[iType].SetScale(Vector3(fScale, fScale, fScale));
-			weaponModels_[iType].Update();
+			/* 不具合を調べられるよう、実際に置いた位置を控えておく(二丁持ちでは右手ぶんだけ)。*/
+			if (bRecordPosition)
+				pPlayer_->SetWeaponViewPosition(weaponViewPos_);
+
+			stModel.SetPosition(weaponViewPos_);
+			stModel.SetRotation(workWeaponRot_);
+			stModel.SetScale(Vector3(fScale, fScale, fScale));
+			stModel.Update();
 		}
 
 

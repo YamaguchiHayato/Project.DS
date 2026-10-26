@@ -47,6 +47,9 @@ namespace nsApp
 			abHasWeapon_[iSlot] = true;
 			EquipSlot(enSlot);
 
+			/* 同じ銃が両方の枠に揃ったら、二丁持ちへまとめる。*/
+			TryMergeDualWeapon();
+
 			return true;
 		}
 
@@ -238,6 +241,33 @@ namespace nsApp
 
 			/* 拾っても意味が無いので、その場に残す。*/
 			return EnWeaponSlot::Num;
+		}
+
+
+		bool WeaponInventory::TryMergeDualWeapon()
+		{
+			const int iMain = static_cast<int>(EnWeaponSlot::Main);
+			const int iSub = static_cast<int>(EnWeaponSlot::Sub);
+
+			/* 両方の枠が埋まっていなければ揃っていない。*/
+			if (!abHasWeapon_[iMain] || !abHasWeapon_[iSub])
+				return false;
+
+			/* 違う銃どうしはまとめられない。*/
+			if (aWeapons_[iMain].GetType() != aWeapons_[iSub].GetType())
+				return false;
+
+			/* 2丁揃えても変化しない銃(マグナムなど)はそのまま2枠を占める。*/
+			const EnWeaponType enDualType = aWeapons_[iSub].GetDualType();
+			if (enDualType == EnWeaponType::Num)
+				return false;
+
+			/* サブ枠を二丁持ちへ変え、メイン枠を空ける。*/
+			aWeapons_[iSub].Init(enDualType);
+			abHasWeapon_[iMain] = false;
+			EquipSlot(EnWeaponSlot::Sub);
+
+			return true;
 		}
 
 

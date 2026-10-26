@@ -139,6 +139,13 @@ namespace nsApp
 			EnWeaponSlot DecideSlot(EnWeaponType enNewType) const;
 
 			/**
+			 * @brief 同じ銃が両方の枠に揃っていたら、二丁持ちの武器へまとめる。
+			 *        まとめた銃はサブ枠に入り、メイン枠は空く。
+			 * @return まとめたら true。
+			 */
+			bool TryMergeDualWeapon();
+
+			/**
 			 * @brief 指定した枠を構える(構える動作を始める。リロード中だった場合は中断される)。
 			 * @param enSlot 構える区分。
 			 */

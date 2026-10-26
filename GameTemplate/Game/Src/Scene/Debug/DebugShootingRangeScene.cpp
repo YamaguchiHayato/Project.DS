@@ -10,6 +10,7 @@
 #include "Src/Item/PipeBomb.h"
 #include "Src/Director/EnemySpawner.h"
 #include "Src/Director/EnemySpawnSetting.h"
+#include "Src/Data/WeaponStatusTable.h"
 
 namespace
 {
@@ -357,13 +358,24 @@ namespace nsApp
 		{
 			/* 全種類の銃を1列に並べる。Eで拾うと同じ区分の手持ちと入れ替わり、手放した銃がその場に落ちる。*/
 			const int iWeaponCount = static_cast<int>(nsWeapon::EnWeaponType::Num);
+			int iPlacedCount = 0;	//! 実際に並べた数。飛ばした銃のぶんだけ列が空かないように数える。
 			for (int i = 0; i < iWeaponCount; i++)
 			{
+				const nsWeapon::EnWeaponType enWeaponType = static_cast<nsWeapon::EnWeaponType>(i);
+
+				/*
+				 * 二丁持ちは同じ銃を2丁揃えて初めて手に入るものなので、物資としては置かない。
+				 * 置いてしまうと、揃える手順を踏まずに拾えてしまって確認にならない。
+				 */
+				if (nsData::WeaponStatusTable::Get(enWeaponType).bIsDualWield_)
+					continue;
+
 				Vector3 vPos = vPickupRowStart_;
-				vPos.x += fPickupRowStep_ * static_cast<float>(i);
+				vPos.x += fPickupRowStep_ * static_cast<float>(iPlacedCount);
+				iPlacedCount++;
 
 				nsItem::Pickup* pPickup = NewGO<nsItem::Pickup>(0, "pickup");
-				pPickup->SetupWeapon(static_cast<nsWeapon::EnWeaponType>(i), vPos);
+				pPickup->SetupWeapon(enWeaponType, vPos);
 			}
 
 			/* 銃の列の手前に、弾薬の山・回復・投擲・鎮痛剤・アドレナリンを並べる。*/

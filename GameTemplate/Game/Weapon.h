@@ -19,6 +19,7 @@ namespace nsApp
 			AK47,			//! AK-47(Tier2。1発が重く反動が大きい)。
 			CombatRifle,	//! コンバットライフル(Tier2。3点バースト)。
 			HuntingRifle,	//! ハンティングライフル(Tier2。単発高威力。何体でも貫通)。
+			DualHandgun,	//! 二丁拳銃(サブ。ハンドガンを2丁揃えると変化する。落ちていることは無い)。
 			/*
 			 * ↑ここに武器を追加したら、
 			 * ・Assets/data/weapon.json に同じ名前で1件追加する。
@@ -75,6 +76,8 @@ namespace nsApp
 			const char* pName_;			//! 武器名(UI表示用)。
 			float fFireInterval_;		//! 発射間隔(秒)。小さいほど連射が速い。点射では「点射と点射の間」。
 			EnWeaponSlot enSlot_;		//! 武器の区分(メイン/サブ)。
+			bool bIsDualWield_;			//! 二丁持ちか。見た目が2丁になり、撃つたびに左右の銃口が入れ替わる。
+			EnWeaponType enDualType_;	//! 同じ銃を2丁揃えたときに変化する先。変化しないなら EnWeaponType::Num。
 			EnFireMode enFireMode_;		//! 引き金の挙動(単発/連射/点射)。
 			int iBurstCount_;			//! 点射で1回に撃つ発数(点射のときだけ使う)。
 			float fBurstInterval_;		//! 点射の中の1発ごとの間隔(秒)。
@@ -317,6 +320,19 @@ namespace nsApp
 			//! 点射の残りが撃たれるのを待っているか(持ち主はこれが true の間、引き金を引いていなくても Fire を呼ぶ)。
 			inline bool IsBurstPending() const { return iBurstRemain_ > 0; }
 
+			//! 二丁持ちか。見た目を2丁にするか、銃口を左右へ振り分けるかの判断に使う。
+			inline bool IsDualWield() const { return stStatus_.bIsDualWield_; }
+
+			//! この銃を2丁揃えたときに変化する先。変化しないなら EnWeaponType::Num。
+			inline EnWeaponType GetDualType() const { return stStatus_.enDualType_; }
+
+			/**
+			 * @brief 次の1発がどちらの銃口から出るか。
+			 *        二丁持ちは撃つたびに入れ替わる。1丁の銃は常に右。
+			 * @return 左の銃口から出るなら true。
+			 */
+			inline bool IsNextMuzzleLeft() const { return bIsNextMuzzleLeft_; }
+
 			//! 1発で飛ぶ弾の数(散弾)。普通の銃は1。
 			inline int GetPelletCount() const { return (stStatus_.iPelletCount_ > 1) ? stStatus_.iPelletCount_ : 1; }
 
@@ -394,6 +410,7 @@ namespace nsApp
 			float			fDeployTimer_ = 0.0f;				//! 構え終わるまでの残り時間(秒)。
 			float			fRecoilResetTimer_ = 0.0f;			//! 撃つのをやめてからの経過時間(秒)。一定時間でパターンが最初へ戻る。
 			RecoilStep		stLastRecoilStep_ = { 0.0f, 0.0f };	//! 直前に撃った1発ぶんの跳ね方。
+			bool			bIsNextMuzzleLeft_ = false;			//! 次の1発が左の銃口から出るか(二丁持ちのみ撃つたびに入れ替わる)。
 		};
 	}
 }
