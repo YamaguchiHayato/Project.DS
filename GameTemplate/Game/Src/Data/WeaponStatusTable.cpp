@@ -40,6 +40,11 @@ namespace
 		"Sub",		//! サブ武器。
 	};
 
+	/* キー名の数がEnWeaponSlot::Numと一致しているかをコンパイル時に検査する。*/
+	static_assert(
+		_countof(sSlotNameList_) == static_cast<size_t>(nsApp::nsWeapon::EnWeaponSlot::Num),
+		"sSlotNameList_ の要素数と EnWeaponSlot::Num が一致していません。");
+
 	/**
 	 * @struct WeaponStatusEntry
 	 * @brief  武器1挺ぶんの保管場所。

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "WeaponInventory.h"
+#include "Src/Data/WeaponStatusTable.h"
 
 namespace nsApp
 {
@@ -7,43 +8,45 @@ namespace nsApp
 	{
 		void WeaponInventory::AddWeapon(EnWeaponType enType)
 		{
-			/* 新しい武器を末尾に追加し、種類で初期化する。*/
-			Weapon weapon;
-			weapon.Init(enType);
-			vecWeapons_.push_back(weapon);
+			/* その武器が本来入る枠を、武器データから引く。*/
+			const EnWeaponSlot enSlot = nsData::WeaponStatusTable::Get(enType).enSlot_;
+			const int iSlot = static_cast<int>(enSlot);
+
+			/* 1丁目かどうかは、入れる前に見ておく。*/
+			const bool bWasEmpty = IsEmpty();
+
+			/* 枠へ入れる。すでに何か入っていれば上書きする。*/
+			aWeapons_[iSlot].Init(enType);
+			abHasWeapon_[iSlot] = true;
+
+			/* 最初の1丁はそのまま構えた状態にしておく。*/
+			if (bWasEmpty)
+				enCurrentSlot_ = enSlot;
 		}
 
 
 		bool WeaponInventory::ReplaceWeapon(EnWeaponType enNewType, EnWeaponType& enOutOldType)
 		{
-			/* 新しい武器の区分を調べる。*/
-			Weapon stNewWeapon;
-			stNewWeapon.Init(enNewType);
-			const EnWeaponSlot enSlot = stNewWeapon.GetSlot();
+			/* 入れ先の枠を決める。*/
+			const EnWeaponSlot enSlot = DecideSlot(enNewType);
 
-			/* 同じ区分の武器を探す。*/
-			for (int i = 0; i < static_cast<int>(vecWeapons_.size()); i++)
-			{
-				if (vecWeapons_[i].GetSlot() != enSlot)
-					continue;
+			/* 入れ先が無ければ拾わない。*/
+			if (enSlot == EnWeaponSlot::Num)
+				return false;
 
-				/* すでに同じ銃なら入れ替える意味が無い。*/
-				if (vecWeapons_[i].GetType() == enNewType)
-					return false;
+			const int iSlot = static_cast<int>(enSlot);
 
-				/* 入れ替えて、その銃を構える。*/
-				enOutOldType = vecWeapons_[i].GetType();
-				vecWeapons_[i] = stNewWeapon;
-				iCurrentIndex_ = i;
-				vecWeapons_[iCurrentIndex_].Deploy();
-				return true;
-			}
+			/*
+			 * 手放す銃を呼び出し側へ返す。
+			 * 空いていた枠へ入れた場合は何も手放していないので、落とす銃は無いことを伝える。
+			 */
+			enOutOldType = abHasWeapon_[iSlot] ? aWeapons_[iSlot].GetType() : EnWeaponType::Num;
 
-			/* その区分をまだ持っていなければ追加して構える。*/
-			enOutOldType = enNewType;
-			vecWeapons_.push_back(stNewWeapon);
-			iCurrentIndex_ = static_cast<int>(vecWeapons_.size()) - 1;
-			vecWeapons_[iCurrentIndex_].Deploy();
+			/* 入れ替えて、その銃を構える。*/
+			aWeapons_[iSlot].Init(enNewType);
+			abHasWeapon_[iSlot] = true;
+			EquipSlot(enSlot);
+
 			return true;
 		}
 
@@ -88,50 +91,61 @@ namespace nsApp
 
 		void WeaponInventory::SwitchNext()
 		{
-			/* 未所持なら何もしない。*/
-			if (vecWeapons_.empty())
+			/* 今の枠の次から順に、持っている枠を探す。*/
+			for (int i = 1; i <= iSlotNum_; i++)
+			{
+				const int iSlot = (static_cast<int>(enCurrentSlot_) + i) % iSlotNum_;
+
+				/* 持っていない枠は飛ばす。*/
+				if (!abHasWeapon_[iSlot])
+					continue;
+
+				/* 1丁しか持っていなければ今の枠へ戻ってくる。構え直しは起こさない。*/
+				if (static_cast<EnWeaponSlot>(iSlot) == enCurrentSlot_)
+					return;
+
+				EquipSlot(static_cast<EnWeaponSlot>(iSlot));
 				return;
-
-			/* 末尾なら先頭へ回り込む。*/
-			iCurrentIndex_ = (iCurrentIndex_ + 1) % static_cast<int>(vecWeapons_.size());
-
-			/* 持ち替えたので構える動作を始める(リロード中だった場合は中断される)。*/
-			vecWeapons_[iCurrentIndex_].Deploy();
+			}
 		}
 
 
 		void WeaponInventory::SwitchPrev()
 		{
-			/* 未所持なら何もしない。*/
-			if (vecWeapons_.empty())
+			/* 今の枠の手前から順に、持っている枠を探す。*/
+			for (int i = 1; i <= iSlotNum_; i++)
+			{
+				const int iSlot = (static_cast<int>(enCurrentSlot_) + iSlotNum_ - (i % iSlotNum_)) % iSlotNum_;
+
+				/* 持っていない枠は飛ばす。*/
+				if (!abHasWeapon_[iSlot])
+					continue;
+
+				/* 1丁しか持っていなければ今の枠へ戻ってくる。構え直しは起こさない。*/
+				if (static_cast<EnWeaponSlot>(iSlot) == enCurrentSlot_)
+					return;
+
+				EquipSlot(static_cast<EnWeaponSlot>(iSlot));
 				return;
-
-			/* 先頭なら末尾へ回り込む。*/
-			iCurrentIndex_ = (iCurrentIndex_ - 1 + static_cast<int>(vecWeapons_.size())) % static_cast<int>(vecWeapons_.size());
-
-			/* 持ち替えたので構える動作を始める(リロード中だった場合は中断される)。*/
-			vecWeapons_[iCurrentIndex_].Deploy();
+			}
 		}
 
 
 		void WeaponInventory::SwitchToSlot(EnWeaponSlot enSlot)
 		{
-			/* 所持リストから、指定された区分の武器を探す。*/
-			for (int i = 0; i < static_cast<int>(vecWeapons_.size()); i++)
-			{
-				/* 区分が違えば次へ。*/
-				if (vecWeapons_[i].GetSlot() != enSlot)
-					continue;
-
-				/* すでに持っている武器なら持ち替えない(構え直しを起こさない)。*/
-				if (i == iCurrentIndex_)
-					return;
-
-				/* 見つかったので持ち替える。*/
-				iCurrentIndex_ = i;
-				vecWeapons_[iCurrentIndex_].Deploy();
+			/* どの枠でもない指定は無視する。*/
+			if (enSlot == EnWeaponSlot::Num)
 				return;
-			}
+
+			/* 持っていない区分へは持ち替えられない。*/
+			if (!abHasWeapon_[static_cast<int>(enSlot)])
+				return;
+
+			/* すでに構えているなら持ち替えない(構え直しを起こさない)。*/
+			if (enSlot == enCurrentSlot_)
+				return;
+
+			EquipSlot(enSlot);
 		}
 
 
@@ -140,11 +154,14 @@ namespace nsApp
 			/* 1挺でも補給できたかを覚えておく。*/
 			bool bAdded = false;
 
-			/* 所持している武器を順に見て、余裕があるものへ補給する。*/
-			for (Weapon& weapon : vecWeapons_)
+			/* 持っている枠を順に見て、余裕があるものへ補給する。*/
+			for (int iSlot = 0; iSlot < iSlotNum_; iSlot++)
 			{
+				if (!abHasWeapon_[iSlot])
+					continue;
+
 				/* 満タンの武器と、予備弾が無限のサブ武器は0が返るので数に入れない。*/
-				if (weapon.AddReserveAmmo(iAmount) > 0)
+				if (aWeapons_[iSlot].AddReserveAmmo(iAmount) > 0)
 					bAdded = true;
 			}
 
@@ -158,9 +175,12 @@ namespace nsApp
 			bool bAdded = false;
 
 			/* 上限までのぶんをそのまま足せば満タンになる。満タンの武器と無限のサブ武器は0が返る。*/
-			for (Weapon& weapon : vecWeapons_)
+			for (int iSlot = 0; iSlot < iSlotNum_; iSlot++)
 			{
-				if (weapon.AddReserveAmmo(weapon.GetMaxReserveAmmo()) > 0)
+				if (!abHasWeapon_[iSlot])
+					continue;
+
+				if (aWeapons_[iSlot].AddReserveAmmo(aWeapons_[iSlot].GetMaxReserveAmmo()) > 0)
 					bAdded = true;
 			}
 
@@ -170,11 +190,75 @@ namespace nsApp
 
 		Weapon* WeaponInventory::GetCurrentWeapon()
 		{
-			/* 未所持ならnullptrを返す。*/
-			if (vecWeapons_.empty())
+			return GetWeapon(enCurrentSlot_);
+		}
+
+
+		Weapon* WeaponInventory::GetWeapon(EnWeaponSlot enSlot)
+		{
+			/* どの枠でもない指定と、空の枠は持っていない扱い。*/
+			if (!HasWeapon(enSlot))
 				return nullptr;
 
-			return &vecWeapons_[iCurrentIndex_];
+			return &aWeapons_[static_cast<int>(enSlot)];
+		}
+
+
+		bool WeaponInventory::HasWeapon(EnWeaponSlot enSlot) const
+		{
+			/* どの枠でもない指定は持っていない扱い。*/
+			if (enSlot == EnWeaponSlot::Num)
+				return false;
+
+			return abHasWeapon_[static_cast<int>(enSlot)];
+		}
+
+
+		EnWeaponSlot WeaponInventory::DecideSlot(EnWeaponType enNewType) const
+		{
+			/* その銃が本来入る枠。*/
+			const EnWeaponSlot enNatural = nsData::WeaponStatusTable::Get(enNewType).enSlot_;
+			const int iNatural = static_cast<int>(enNatural);
+
+			/* 空いていれば素直にそこへ入れる。*/
+			if (!abHasWeapon_[iNatural])
+				return enNatural;
+
+			/* 違う銃が入っているなら、いつも通り入れ替える。*/
+			if (aWeapons_[iNatural].GetType() != enNewType)
+				return enNatural;
+
+			/*
+			 * すでに同じ銃を持っている場合。
+			 * サブ武器にかぎり、もう1丁をメイン枠へ回して二丁持ちにできる。
+			 * メイン武器の二丁持ちは本家に無いので認めない。
+			 */
+			if (enNatural == EnWeaponSlot::Sub)
+				return EnWeaponSlot::Main;
+
+			/* 拾っても意味が無いので、その場に残す。*/
+			return EnWeaponSlot::Num;
+		}
+
+
+		void WeaponInventory::EquipSlot(EnWeaponSlot enSlot)
+		{
+			/* 構える枠を変えて、構える動作を始める(リロード中だった場合は中断される)。*/
+			enCurrentSlot_ = enSlot;
+			aWeapons_[static_cast<int>(enSlot)].Deploy();
+		}
+
+
+		bool WeaponInventory::IsEmpty() const
+		{
+			/* どの枠にも入っていなければ未所持。*/
+			for (int iSlot = 0; iSlot < iSlotNum_; iSlot++)
+			{
+				if (abHasWeapon_[iSlot])
+					return false;
+			}
+
+			return true;
 		}
 	}
 }

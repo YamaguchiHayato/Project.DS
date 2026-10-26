@@ -30,11 +30,17 @@ namespace nsApp
 		/**
 		 * @enum  EnWeaponSlot
 		 * @brief 武器の区分。メインは予備弾数に限りがあり、サブは弾切れで詰まないよう無限にする。
+		 *        WeaponInventory では「所持枠」の添字そのものになるので、並び順を変えない。
 		 */
 		enum class EnWeaponSlot : uint8_t
 		{
 			Main,	//! メイン武器(予備弾数に限りがある)。
 			Sub,	//! サブ武器(予備弾数は無限。そのぶん火力は低い)。
+			/*
+			 * ↑ここに区分を追加したら、
+			 * ・Src/Data/WeaponStatusTable.cpp のキー名一覧にも同じ順で1件追加する。
+			 */
+			Num,	//! 区分の数。所持枠の数にも使う。どの枠でもないことを表すのにも使う。
 		};
 
 		/**
