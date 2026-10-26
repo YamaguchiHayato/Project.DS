@@ -142,6 +142,12 @@ namespace nsApp
 			void LoadWeaponModelIfNeeded(nsWeapon::Weapon* pWeapon, int iType);
 
 			/**
+			 * @brief 未ロードなら二丁持ちの左手ぶんのモデルを一度だけ読む。
+			 * @details 同じ武器種でも置き場所が2つ要るので、右手ぶんとは別の ModelRender を持つ。
+			 */
+			void LoadDualWeaponModelIfNeeded(nsWeapon::Weapon* pWeapon);
+
+			/**
 			 * @brief 自分の視点用に、銃を画面手前のビューモデルとして配置する。
 			 * @details 移設元: Player::UpdateViewWeaponModel。
 			 */
@@ -149,13 +155,15 @@ namespace nsApp
 
 			/**
 			 * @brief ビューモデル銃の中心位置を組み立てる。
+			 * @param fSideSign 画面のどちら側へ置くか。右手なら+1、二丁持ちの左手なら-1。
 			 */
-			void BuildViewWeaponCenter(nsWeapon::Weapon* pWeapon);
+			void BuildViewWeaponCenter(nsWeapon::Weapon* pWeapon, float fSideSign);
 
 			/**
 			 * @brief ビューモデル銃の回転を組み立てる。
+			 * @param fSideSign 画面のどちら側へ置くか。傾ける向きが左右で反転する。
 			 */
-			void BuildViewWeaponRotation(nsWeapon::Weapon* pWeapon);
+			void BuildViewWeaponRotation(nsWeapon::Weapon* pWeapon, float fSideSign);
 
 			/**
 			 * @brief ADS中の銃の縮小スケール込みの表示倍率。
@@ -185,9 +193,13 @@ namespace nsApp
 
 			/**
 			 * @brief 武器モデルの中心が指定位置へ来るよう原点ズレを打ち消して配置する。
+			 * @param stModel          配置するモデル。二丁持ちの左手ぶんもここへ渡す。
+			 * @param iType            武器の種類(原点ズレと自動スケールの参照に使う)。
+			 * @param fScale           表示倍率。
+			 * @param bRecordPosition  置いた位置を控えるか。左右で2回呼ぶので、控えるのは右手ぶんだけ。
 			 * @details 移設元: Player::PlaceWeaponModel。
 			 */
-			void PlaceWeaponModel(int iType, float fScale);
+			void PlaceWeaponModel(ModelRender& stModel, int iType, float fScale, bool bRecordPosition);
 
 			/**
 			 * @brief 武器モデルの AABB から中心と自動スケールを計算する。
@@ -217,6 +229,14 @@ namespace nsApp
 			float workReloadLower_ = 0.0f;			//! リロードで銃を下げている度合い。
 			float workReloadInsert_ = 0.0f;			//! リロードで挿し込む度合い。
 			float workReloadSettle_ = 0.0f;			//! リロードで構え直す度合い。
+
+			/*
+			 * 二丁持ちの左手ぶん。weaponModels_ は武器の種類ごとに1つしか無く、
+			 * 1つの ModelRender は1箇所にしか置けないので、同じモデルを2箇所へ出すために別口で持つ。
+			 */
+			ModelRender dualWeaponModel_;			//! 左手に持つ銃のモデル。
+			bool bDualWeaponModelLoaded_ = false;	//! 左手ぶんを読み込み済みか。
+			bool bDrawDualWeapon_ = false;			//! このフレーム、左手ぶんを描くか。
 		};
 	}
 }

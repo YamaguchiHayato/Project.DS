@@ -38,11 +38,18 @@ namespace nsApp
 			if (!workWantFire_)
 				return;
 
-			/* 銃口の位置を計算する。目の位置から右にずらして、照準方向に前方へずらす。さらに下にずらす。*/
+			/*
+			 * この1発がどちらの銃口から出るかを決める。
+			 * 二丁持ちは撃つたびに左右が入れ替わるので、横へずらす向きもそれに合わせる。
+			 * 1丁の銃は常に右のまま。
+			 */
+			workMuzzleSideSign_ = pPlayer->GetWeaponInventory().GetCurrentWeapon()->IsNextMuzzleLeft() ? -1.0f : 1.0f;
+
+			/* 銃口の位置を計算する。目の位置から左右にずらして、照準方向に前方へずらす。さらに下にずらす。*/
 			workEyePos_ = pPlayer->GetEyePosition();
 			workMuzzleRight_ = { cosf(pPlayer->GetCameraYaw()), 0.0f, -sinf(pPlayer->GetCameraYaw()) };
 			workMuzzlePos_ = workEyePos_;
-			workMuzzlePos_ += workMuzzleRight_ * MUZZLE_RIGHT;
+			workMuzzlePos_ += workMuzzleRight_ * (MUZZLE_RIGHT * workMuzzleSideSign_);
 			workMuzzlePos_ += workAimDir_ * MUZZLE_FORWARD;
 			workMuzzlePos_.y += MUZZLE_DOWN;
 

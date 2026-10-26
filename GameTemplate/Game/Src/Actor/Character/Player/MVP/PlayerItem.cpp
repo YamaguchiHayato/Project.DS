@@ -216,10 +216,17 @@ namespace nsApp
 			if (pPlayer_ == nullptr || pPickup == nullptr)
 				return false;
 
-			/* 同じ区分の武器と入れ替える。すでに同じ銃を持っていれば何もしない。*/
-			workOldWeaponType_ = nsWeapon::EnWeaponType::Handgun;
+			/* 枠の中身と入れ替える。入れ先が無ければ拾わない。*/
+			workOldWeaponType_ = nsWeapon::EnWeaponType::Num;
 			if (!pPlayer_->GetWeaponInventory().ReplaceWeapon(pPickup->GetWeaponType(), workOldWeaponType_))
 				return false;
+
+			/*
+			 * 空いていた枠へ入れた場合は何も手放していないので、その場に落とす銃は無い。
+			 * ここで落としてしまうと、拾ったのと同じ銃がその場に残り続けて無限に増える。
+			 */
+			if (workOldWeaponType_ == nsWeapon::EnWeaponType::Num)
+				return true;
 
 			/*
 			 * 手放した銃はその場に落とす(本家と同じく、拾った場所で入れ替わる)。
