@@ -9,6 +9,17 @@ namespace
 	const char* UTF8BOM = "\xEF\xBB\xBF"; //! UTF-8 BOM。
 	const char* Delimiter = "\t"; //! 区切り文字。
 	const char CommentMark_ = '#'; //! この文字で始まる行はコメントとして読み飛ばす。
+
+	/**
+	 * @brief 読み飛ばす行(空白だけの行・コメント行)かを調べる。
+	 * @param line 調べる行。
+	 * @return 読み飛ばす行ならtrue。
+	 */
+	bool IsSkipLine(const std::string& line)
+	{
+		const size_t first = line.find_first_not_of(whitespace);
+		return first == std::string::npos || line[first] == CommentMark_;
+	}
 }
 
 namespace nsK2EngineLow
@@ -36,15 +47,33 @@ namespace nsK2EngineLow
 					ReportError("TSVファイルの読み込みに失敗しました。");
 					return false; 
 				}
-				if (!std::getline(tsvIfstream, line_))
+				/*
+				 * 列名の行を探す。データ行と同じく、手前の空白行やコメント行は読み飛ばす。
+				 * 読み飛ばさないと表の頭に書いた説明が列名として登録され、
+				 * どの列名で引いても「列が無い」扱いになって、全ての行が使えなくなる。
+				 */
+				bool isFirstLine = true;
+				bool isHeaderFound = false;
+				while (std::getline(tsvIfstream, line_))
+				{
+					/* UTF-8 BOMを削除する(BOMはファイルの先頭にしか付かない)。*/
+					if (isFirstLine && line_.compare(0, 3, UTF8BOM) == 0)
+						line_.erase(0, 3);
+					isFirstLine = false;
+
+					if (IsSkipLine(line_))
+						continue;
+
+					isHeaderFound = true;
+					break;
+				}
+
+				/* 列名の行が無い場合、エラーメッセージを出す。*/
+				if (!isHeaderFound)
 				{
 					ReportError("TSVファイルが空です。");
 					return false;
 				}
-
-				/* UTF-8 BOMを削除する。*/
-				if (line_.compare(0, 3, UTF8BOM) == 0)
-					line_.erase(0, 3);
 
 				/* 列から列番号を検索できるように登録する。*/
 				SplitLine(line_, cells_);
@@ -59,8 +88,7 @@ namespace nsK2EngineLow
 				while (std::getline(tsvIfstream, line_))
 				{
 					/* 空白行やコメント行は読み飛ばす。*/
-					const size_t first = line_.find_first_not_of(whitespace);
-					if (first == std::string::npos || line_[first] == CommentMark_)
+					if (IsSkipLine(line_))
 						continue;
 
 					/* TSVファイルの1行分のデータをタブ区切りで分割する。*/

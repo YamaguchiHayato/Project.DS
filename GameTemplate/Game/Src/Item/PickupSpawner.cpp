@@ -63,10 +63,16 @@ namespace nsApp
 	{
 		bool PickupSpawner::Spawn(const char* pFilePath)
 		{
-			/* 配置表を読む。読めなければ物資は置かない(ステージ自体は遊べるようにしておく)。*/
+			/*
+			 * 配置表を読む。読めなければ物資は置かない(ステージ自体は遊べるようにしておく)。
+			 * ただし黙っていると「物資が1つも出ない」原因に気づけないので、知らせてから戻る。
+			 */
 			std::vector<PickupSpawnSetting> vecSettings;
 			if (!nsK2EngineLow::nsSystem::nsTSVFile::TSVTableLoader::LoadList(pFilePath, vecSettings))
+			{
+				DebugPrintW(L"[PickupSpawner] 配置表が読めないか、使える行が1つもありません: %hs\n", pFilePath);
 				return false;
+			}
 
 			/* 1行につき1地点ぶんの抽選をする。*/
 			bool bPlaced = false;
