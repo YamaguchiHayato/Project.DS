@@ -124,17 +124,18 @@ namespace nsApp
 
 			/**
 			 * @brief 銃を持たせるボーンの番号を、名前から一度だけ引く。
-			 * @param stStatus プレイヤーステータス（handBoneName を持つ）。
+			 * @param sBoneName 探すボーンの名前（player.json の handBoneName / leftHandBoneName）。
 			 * @return ボーン番号。モデルに無い名前なら -1。
 			 */
-			int FindHandBoneId(const nsData::PlayerStatus& stStatus);
+			int FindHandBoneId(const std::string& sBoneName);
 
 			/**
 			 * @brief 銃を持たせるボーンのワールド座標を取り出す。
+			 * @param iBoneId      取り出すボーンの番号（FindHandBoneId で引いたもの）。
 			 * @param vOutPosition 取り出した座標の受け取り先（失敗時は触らない）。
 			 * @return 取り出せたら true。ボーンが無いモデルでは false。
 			 */
-			bool TryGetHandBonePosition(Vector3& vOutPosition);
+			bool TryGetHandBonePosition(int iBoneId, Vector3& vOutPosition);
 
 			/**
 			 * @brief 未ロードなら武器モデルを一度だけ読む。
@@ -171,15 +172,18 @@ namespace nsApp
 			float CalcViewWeaponScale(nsWeapon::Weapon* pWeapon, int iType) const;
 
 			/**
-			 * @brief 他人から見た姿用に、銃を右手側へ持たせる。
+			 * @brief 他人から見た姿用に、銃を右手のボーンへ持たせる。二丁持ちなら左手のボーンにも持たせる。
 			 * @details 移設元: Player::UpdateHandWeaponModel。
 			 */
 			void UpdateHandWeaponModel(nsWeapon::Weapon* pWeapon, int iType);
 
 			/**
 			 * @brief 手持ち銃の中心位置を組み立てる。
+			 * @param iBoneId   基準にする手のボーンの番号。
+			 * @param fSideSign 武器データの横のずらしをどちらへ向けるか。右手なら+1、二丁持ちの左手なら-1。
+			 * @return 手のボーンを基準に置けたら true。ボーンが取れず腰のあたりへ置いたら false。
 			 */
-			void BuildHandWeaponCenter(nsWeapon::Weapon* pWeapon);
+			bool BuildHandWeaponCenter(nsWeapon::Weapon* pWeapon, int iBoneId, float fSideSign);
 
 			/**
 			 * @brief 手持ち銃の回転を組み立てる。
@@ -215,6 +219,7 @@ namespace nsApp
 			ANIM_LIST playingAnimation_ = ANIM_LIST::Idle;	//! 再生中のアニメーション。
 			Quaternion bodyAngle_ = Quaternion::Identity;	//! 体の向き。
 			int rightHandBoneId_ = -1;				//! 銃を持たせる右手のボーン番号。
+			int leftHandBoneId_ = -1;				//! 二丁持ちのとき左手の銃を持たせるボーン番号。
 			float bodyModelSize_ = 0.0f;				//! 体モデルの実際の大きさ。
 			float bodyModelScale_ = 1.0f;			//! Init 時に控えた表示スケール。
 			ModelRender weaponModels_[static_cast<int>(nsWeapon::EnWeaponType::Num)];		//! 武器ごとのモデル。
