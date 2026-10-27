@@ -31,6 +31,24 @@ namespace nsK2EngineLow {
 		Vector3 m_groundNormal;
 	};
 
+	/// <summary>
+	/// 屋内ボリューム。この箱の中だけベース光(方向光・環境光・半球光)を弱める。
+	/// </summary>
+	/// <remark>
+	/// シーン全体で1つだけ持つ。モデルごとに持たせると、床は暗いのに手に持った銃だけ
+	/// 明るいといったことが起きるため、ここで一括して管理する。
+	/// ポイントライトとスポットライトは弱めないので、屋内では手持ちライトと
+	/// 据え置きの明かりだけが頼りになる。
+	/// 定数バッファの並びに影響するので SceneLight の中には入れないこと。
+	/// </remark>
+	struct IndoorVolume
+	{
+		Vector3 min = Vector3::Zero;	//! 箱の最小座標(ワールド)。
+		Vector3 max = Vector3::Zero;	//! 箱の最大座標(ワールド)。
+		float scale = 1.0f;				//! 箱の中でのベース光の倍率。1.0で無効。
+		float feather = 300.0f;			//! 箱の端から内側へこの距離で倍率が変わり切る。
+	};
+
 	struct SceneLight
 	{
 		DirectionLight directionLig;
@@ -137,6 +155,23 @@ namespace nsK2EngineLow {
 			}
 
 			/// <summary>
+			/// 屋内ボリュームを設定する。
+			/// </summary>
+			/// <param name="volume">屋内ボリューム。scale を1.0にすると無効になる。</param>
+			void SetIndoorVolume(const IndoorVolume& volume)
+			{
+				m_indoorVolume = volume;
+			}
+
+			/// <summary>
+			/// 屋内ボリュームを取得する。
+			/// </summary>
+			const IndoorVolume& GetIndoorVolume() const
+			{
+				return m_indoorVolume;
+			}
+
+			/// <summary>
 			/// ライトカメラを取得 
 			/// </summary>
 			Camera& GetLightCamera()
@@ -146,6 +181,7 @@ namespace nsK2EngineLow {
 
 		private:
 			SceneLight m_SceneLight;
+			IndoorVolume m_indoorVolume;	//! 屋内ボリューム(シーン全体で1つ)。
 			Camera m_lightCamera;			//ライトカメラ
 			Vector3 m_lightCameraTarget;	//ライトカメラの注視点
 

@@ -107,7 +107,7 @@ cbuffer DirectionLightCb : register(b1)
 
     //屋内ボリューム
     float3 indoorMin; //箱の最小座標(ワールド)
-    float indoorPad0;
+    float indoorFeather; //箱の端から内側へこの距離で倍率が変わり切る
     float3 indoorMax; //箱の最大座標(ワールド)
     float indoorScale; //箱の中でのベース光の倍率(1.0で無効)
 }
@@ -226,13 +226,14 @@ SPSOut PSMain(SPSIn psIn, int isShadowReceiver) : SV_Target0
     float3 hemiLight = CalcLigFromHemiSphereLight(psIn);
 
     //屋内ボリュームによるベース光の倍率を求める。
-    //箱の端から内側へ30進むまでに、倍率が1.0からindoorScaleへ滑らかに変わる。
+    //箱の端から内側へindoorFeather進むまでに、倍率が1.0からindoorScaleへ滑らかに変わる。
+    //出入口でパッと切り替わらないよう、feather は人の身長より大きめにしておく。
     float baseScale = 1.0f;
     if (indoorScale < 1.0f)
     {
         float3 d = min(psIn.worldPos - indoorMin, indoorMax - psIn.worldPos);
         float edge = min(d.x, min(d.y, d.z));
-        baseScale = lerp(1.0f, indoorScale, saturate(edge / 30.0f));
+        baseScale = lerp(1.0f, indoorScale, saturate(edge / max(indoorFeather, 0.001f)));
     }
 
     //最終的な光を求める(ベース光にだけ倍率を掛ける)

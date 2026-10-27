@@ -175,5 +175,18 @@ namespace nsK2EngineLow
                 spot.angle
             );
         }
+
+        // 屋内ボリューム。enabled が false のときは倍率1.0＝無効にしておく。
+        IndoorVolume indoor;
+
+        if (config.indoorVolume.enabled)
+        {
+            indoor.min = ToVector3(config.indoorVolume.min);
+            indoor.max = ToVector3(config.indoorVolume.max);
+            indoor.scale = config.indoorVolume.scale;
+            indoor.feather = config.indoorVolume.feather;
+        }
+
+        light.SetIndoorVolume(indoor);
     }
 }

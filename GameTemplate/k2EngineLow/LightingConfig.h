@@ -103,6 +103,31 @@ namespace nsK2EngineLow
         bool enabled = true;
     };
 
+    // 屋内ボリューム設定
+    // この箱の中だけ、ベース光(方向光・環境光・半球光)を弱めて屋内らしくする。
+    // ポイントライトとスポットライトは弱めないので、屋内では手持ちライトや
+    // 据え置きの明かりだけが頼りになる。
+    struct IndoorVolumeConfig
+    {
+        bool enabled = false;
+
+        // 箱の最小座標と最大座標(ワールド)。
+        LightingVector3 min = {
+            0.0f, 0.0f, 0.0f
+        };
+
+        LightingVector3 max = {
+            0.0f, 0.0f, 0.0f
+        };
+
+        // 箱の中でのベース光の倍率。1.0で無効、小さいほど暗い。
+        float scale = 1.0f;
+
+        // 箱の端から内側へこの距離進むまでに、倍率が1.0からscaleへ滑らかに変わる。
+        // 小さすぎると出入口でパッと切り替わるので、人の身長(175)より大きめにする。
+        float feather = 300.0f;
+    };
+
     // ライティング設定全体
     struct LightingConfig
     {
@@ -119,5 +144,6 @@ namespace nsK2EngineLow
 
         FogConfig fog;
         ShadowConfig shadows;
+        IndoorVolumeConfig indoorVolume;
     };
 }

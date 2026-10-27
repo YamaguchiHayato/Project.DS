@@ -57,10 +57,11 @@ namespace
 	const float fThirdPersonMinSize_ = 50.0f;		//! モデルを測れなかったときに使う大きさ。
 	const float fStageScale_ = 150.0f;
 
-	/*屋内ボリューム確認用に大きな箱*/
-	const Vector3 vIndoorMin_ = { -1891.0f, -344.0f, -7142.0f };
-	const Vector3 vIndoorMax_ = { 1869.0f, 1256.0f, 2650.0f };
-	const float fIndoorScale = 0.2;
+	/*
+	 * 屋内ボリューム(屋内だけ暗くする箱)は、シーン全体で1つの設定になった。
+	 * 場所と暗さは Assets/data/Lighting/overcast.json の indoorVolume で決める。
+	 * ここで個別に指定すると、ステージだけ暗くてキャラや手に持った銃が明るいままになる。
+	 */
 
 	/* 手前中央。敵とは離す。*/
 	const Vector3 vPlayerSpawn_ = { 0.0f, 300.0f, -600.0f };
@@ -126,7 +127,6 @@ namespace nsApp
 			InitCamera();
 
 			/* ステージモデルを読み込み */
-			stStageModel_.SetIndoorVolume(vIndoorMin_, vIndoorMax_, fIndoorScale);//kiryu
 			stStageModel_.Init(sStageModelPath_, nullptr, 0, enModelUpAxisZ);
 			stStageModel_.SetScale(Vector3(fStageScale_, fStageScale_, fStageScale_));
 			stStageModel_.SetPosition(Vector3::Zero);
