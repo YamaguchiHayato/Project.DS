@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RenderingEngine.h";
+#include "RenderingEngine.h"
 namespace nsK2EngineLow {
 	class ModelRender:public IRender
 	{

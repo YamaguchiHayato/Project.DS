@@ -18,6 +18,12 @@
 [Rr]elease/
 [Rr]eleases/
 x64/
+
+# 上の [Dd]ebug/ はビルド出力を除外するためのものだが、
+# フォルダ名で一致するのでソースの Src/Scene/Debug まで巻き込んでしまう。
+# 追跡済みのファイルは影響を受けないが、あのフォルダに新しくファイルを足すと
+# git が黙って無視してコミット漏れになるため、ここで除外から戻しておく。
+!GameTemplate/Game/Src/Scene/Debug/
 x86/
 bld/
 [Bb]in/
