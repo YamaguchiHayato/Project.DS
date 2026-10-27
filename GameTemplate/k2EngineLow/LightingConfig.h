@@ -107,9 +107,10 @@ namespace nsK2EngineLow
     // この箱の中だけ、ベース光(方向光・環境光・半球光)を弱めて屋内らしくする。
     // ポイントライトとスポットライトは弱めないので、屋内では手持ちライトや
     // 据え置きの明かりだけが頼りになる。
+    // 建物ごとに1つ書く。箱が重なった場合は、一番暗い倍率が採用される。
     struct IndoorVolumeConfig
     {
-        bool enabled = false;
+        bool enabled = true;
 
         // 箱の最小座標と最大座標(ワールド)。
         LightingVector3 min = {
@@ -144,6 +145,7 @@ namespace nsK2EngineLow
 
         FogConfig fog;
         ShadowConfig shadows;
-        IndoorVolumeConfig indoorVolume;
+
+        std::vector<IndoorVolumeConfig> indoorVolumes;
     };
 }

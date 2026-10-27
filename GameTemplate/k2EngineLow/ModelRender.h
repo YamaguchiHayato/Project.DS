@@ -17,10 +17,9 @@ namespace nsK2EngineLow {
 
 			//! 屋内ボリューム(model.fx の定数バッファと同じ並びにすること)。
 			//! 中身は RefreshLight がシーン全体の設定から毎フレーム写すので、ここへ直接書かない。
-			Vector3 indoorMin = Vector3::Zero;	//! 箱の最小座標(ワールド)。
-			float indoorFeather = 300.0f;		//! 箱の端から内側へこの距離で倍率が変わり切る。
-			Vector3 indoorMax = Vector3::Zero;	//! 箱の最大座標(ワールド)。
-			float indoorScale = 1.0f;			//! 箱の中でのベース光の倍率(1.0で無効)。
+			IndoorVolume indoorVolumes[kIndoorVolumeMax];	//! 箱の一覧。
+			int indoorVolumeCount = 0;						//! 実際に使っている数。
+			float indoorCountPadding[3] = {};				//! 定数バッファ整列用（中身は使わない）。
 		};
 
 
@@ -195,7 +194,7 @@ namespace nsK2EngineLow {
 		/// </summary>
 		/// <remark>
 		/// 屋内ボリュームはモデルごとではなくシーン全体で1つ持つ。
-		/// 設定は RenderingEngine::SetIndoorVolume(ライティングJSONの indoorVolume)で行う。
+		/// 設定は RenderingEngine::SetIndoorVolumes(ライティングJSONの indoorVolumes)で行う。
 		/// </remark>
 		void RefreshLight();
 

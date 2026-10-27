@@ -15,13 +15,15 @@
     "skyColor": [0.13, 0.16, 0.24],
     "groundNormal": [0.0, 1.0, 0.0]
   },
-  "indoorVolume": {
-    "enabled": false,
-    "min": [-1891.0, -344.0, -7142.0],
-    "max": [1869.0, 1256.0, 2650.0],
-    "scale": 0.10,
-    "feather": 300.0
-  },
+  "indoorVolumes": [
+    {
+      "enabled": false,
+      "min": [-1891.0, -344.0, -7142.0],
+      "max": [1869.0, 1256.0, 2650.0],
+      "scale": 0.10,
+      "feather": 300.0
+    }
+  ],
   "pointLights": [
     {
       "position": [0.0, 150.0, -900.0],

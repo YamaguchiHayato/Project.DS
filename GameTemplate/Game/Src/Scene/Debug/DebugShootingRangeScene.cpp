@@ -59,7 +59,7 @@ namespace
 
 	/*
 	 * 屋内ボリューム(屋内だけ暗くする箱)は、シーン全体で1つの設定になった。
-	 * 場所と暗さは Assets/data/Lighting/overcast.json の indoorVolume で決める。
+	 * 場所と暗さは Assets/data/Lighting/overcast.json の indoorVolumes で決める(建物ごとに1つ)。
 	 * ここで個別に指定すると、ステージだけ暗くてキャラや手に持った銃が明るいままになる。
 	 */
 
