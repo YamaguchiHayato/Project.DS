@@ -114,7 +114,7 @@ namespace nsApp
 			float	fSprintRate_ = 1.6f;			//! スプリント中の移動速度の倍率。
 			float	fEyeHeight_ = 160.0f;			//! 目(カメラ)の高さ。射撃の起点とカメラ位置に使う。
 			float	fWeaponRange_ = 3000.0f;		//! ヒットスキャンの射程。
-			float	fBodyModelScale_ = 2.3f;		//! 体モデルの表示スケール。unityChanは素で身長約76しかないので、世界の想定(175)へ合わせる。
+			float	fBodyModelScale_ = 1.04f;		//! 体モデルの表示スケール。player.tkm(SapphiArt)は素で身長約168なので、世界の想定(175)へ合わせる。
 
 			/*
 			 * 三人称で銃を持たせるボーンの名前。

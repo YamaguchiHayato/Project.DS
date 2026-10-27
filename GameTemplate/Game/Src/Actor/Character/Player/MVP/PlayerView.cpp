@@ -214,10 +214,28 @@ namespace nsApp
 
 		void PlayerView::CalcBodyModelSize(const nsData::PlayerStatus& stStatus)
 		{
-			/* 頂点から実際の大きさを測る。取れなければ測れない。*/
-			/* TODO: CharacterModel から Model が取れたら MeasureModelBounds する。*/
+			/*
+			 * 測れなかったときは0にしておく(三人称カメラは0を見ると決め打ちの大きさで寄る)。
+			 * 決め打ちの大きさは小さいので、体に寄りすぎて足もとしか映らず、手に持った銃が画面の上へ外れる。
+			 */
 			bodyModelSize_ = 0.0f;
-			(void)stStatus;
+
+			/* モデルをまだ読めていなければ測れない。*/
+			ModelRender* pModelRender = model_.GetModelRender();
+			if (pModelRender == nullptr)
+				return;
+
+			/* 頂点から実際の大きさを測る。取れなければ測れない。*/
+			const nsSystem::ModelBounds stBounds = nsSystem::MeasureModelBounds(pModelRender->GetModel());
+			if (!stBounds.bIsValid_)
+				return;
+
+			/* 一番長い辺を大きさとする(モデルの上向き軸に依存しないようにするため)。*/
+			bodyModelSize_ = stBounds.GetLongestEdge() * stStatus.fBodyModelScale_;
+
+			/* デバッグ: 想定の身長(目線の高さ等)と実物の大きさが合っているか確認する。*/
+			const Vector3 vSize = stBounds.GetSize();
+			DebugPrintW(L"[Player] body size(%.1f,%.1f,%.1f) -> 表示サイズ %.1f (目線の高さ %.1f)\n", vSize.x, vSize.y, vSize.z, bodyModelSize_, stStatus.fEyeHeight_);
 		}
 
 
