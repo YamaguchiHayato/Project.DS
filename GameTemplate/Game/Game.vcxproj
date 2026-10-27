@@ -304,6 +304,8 @@
     <ClCompile Include="Src\System\ModelBounds.cpp" />
     <ClCompile Include="Src\Item\PipeBomb.cpp" />
     <ClCompile Include="Src\Item\Pickup.cpp" />
+    <ClCompile Include="Src\Item\PickupSpawner.cpp" />
+    <ClCompile Include="Src\Item\PickupSpawnSetting.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Src\Actor\Actor.cpp" />
     <ClCompile Include="Src\Actor\Character\Common\CharacterAnimation.cpp" />
@@ -404,6 +406,8 @@
     <ClInclude Include="Src\System\ModelBounds.h" />
     <ClInclude Include="Src\Item\PipeBomb.h" />
     <ClInclude Include="Src\Item\Pickup.h" />
+    <ClInclude Include="Src\Item\PickupSpawner.h" />
+    <ClInclude Include="Src\Item\PickupSpawnSetting.h" />
     <ClInclude Include="Src\Actor\Actor.h" />
     <ClInclude Include="Src\Actor\Character\Common\CharacterAnimation.h" />
     <ClInclude Include="Src\Actor\Character\Common\CharacterModel.h" />

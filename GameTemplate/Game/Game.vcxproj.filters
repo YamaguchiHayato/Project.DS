@@ -169,6 +169,12 @@
     <ClCompile Include="Src\Item\Pickup.cpp">
       <Filter>Src\Item</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Item\PickupSpawner.cpp">
+      <Filter>Src\Item</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Item\PickupSpawnSetting.cpp">
+      <Filter>Src\Item</Filter>
+    </ClCompile>
     <ClCompile Include="Src\Scene\InGameScene.cpp">
       <Filter>Src\Scene</Filter>
     </ClCompile>
@@ -406,6 +412,12 @@
       <Filter>Src\Item</Filter>
     </ClInclude>
     <ClInclude Include="Src\Item\Pickup.h">
+      <Filter>Src\Item</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Item\PickupSpawner.h">
+      <Filter>Src\Item</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Item\PickupSpawnSetting.h">
       <Filter>Src\Item</Filter>
     </ClInclude>
     <ClInclude Include="Src\Scene\InGameScene.h">

@@ -9,6 +9,7 @@
 
 #include "Src/Scene/IScene.h"
 #include "Src/Director/EnemyPool.h"
+#include "Src/Item/PickupSpawner.h"
 
 namespace nsApp
 {
@@ -117,6 +118,7 @@ namespace nsApp
 			nsUI::InGameHud* pHud_ = nullptr; //! 本番と同じHUD。体力バーやアイテムスロットの見え方を確かめる。
 			nsDirector::EnemyPool stEnemyPool_; //! 的役の敵をまとめて持つプール。
 			std::vector<nsDirector::EnemySpawner*> vecSpawners_; //! 配置表の行ごとに置いたスポナー。
+			nsItem::PickupSpawner stPickupSpawner_; //! 配置表を読んで物資を撒く係。
 			ModelRender stStageModel_; //! ステージのモデル。
 			ModelRender stStageCollisionModel_; //! ステージの当たり判定用モデル。
 			ModelRender stStageGroundModel_; //! ステージの地面モデル。

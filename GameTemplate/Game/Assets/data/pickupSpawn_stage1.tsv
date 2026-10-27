@@ -1,0 +1,23 @@
+# ステージ1の物資の配置表。1行が「物資が出るかもしれない1地点」。
+#
+# candidates : その地点に置く候補。カンマ区切りで複数書くと、そのうち1つを毎回抽選する。
+#              銃は weapon.json のキー名。Handgun / Magnum / SMG / PumpShotgun /
+#              AssaultRifle / AK47 / CombatRifle / HuntingRifle。
+#              物資は Ammo / Medkit / PipeBomb / Pills / Adrenaline。
+#              同じ名前を2回書くと、そのぶん出やすくなる。
+#              知らない名前の行は、何も置かずに読み飛ばす。
+#              ※DualHandgun は2丁揃えて初めて手に入るものなので、ここには書かないこと。
+# x / y / z  : 置く場所の中心。
+# radius     : この半径の円の中へランダムにずらす。0ならぴったりその場所に置く。
+# chance     : その地点に物資が出る確率(0〜1)。1より小さくすると、毎回同じ場所に揃わなくなる。
+candidates	x	y	z	radius	chance
+Handgun,Magnum	-700	-50	-900	120	1.0
+SMG,PumpShotgun	-400	-50	-900	120	0.8
+AssaultRifle,AK47,CombatRifle,HuntingRifle	-100	-50	-900	120	0.8
+Handgun,SMG,PumpShotgun	200	-50	-900	120	0.6
+AssaultRifle,AK47	500	-50	-900	120	0.6
+Medkit,PipeBomb	-550	-50	-1100	100	0.9
+Pills,Adrenaline	-250	-50	-1100	100	0.9
+Medkit,Pills,Adrenaline	50	-50	-1100	100	0.6
+PipeBomb,PipeBomb,Pills	350	-50	-1100	100	0.6
+Ammo	-800	-50	-1100	0	1.0
