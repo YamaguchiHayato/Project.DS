@@ -131,6 +131,7 @@ namespace nsApp
 			bool bWasPressDamageKey_ = false; //! 前フレームでダメージキーが押されていたか。
 			bool bWasPressRestockKey_ = false; //! 前フレームで補充キーが押されていたか。
 			bool bIsThirdPersonView_ = false; //! 三人称(他人から見た姿)で表示しているか。
+			float fBaseViewAngle_ = 0.0f; //! 覗き込みの倍率を掛ける前の、もとの画角。
 			wchar_t wcHint_[128] = {}; //! ヒント表示の文字列(視点と実測サイズを出す)。
 		};
 	}

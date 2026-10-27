@@ -63,6 +63,10 @@ namespace nsApp
 			/* カメラの傾きを戻す(g_camera3Dは他のシーンと共用なので傾いたままにしない)。*/
 			g_camera3D->SetUp(Vector3::AxisY);
 
+			/* 画角も戻す。覗き込んだまま抜けると、次のシーンがズームしたままになる。*/
+			if (fBaseViewAngle_ > 0.0f)
+				g_camera3D->SetViewAngle(fBaseViewAngle_);
+
 			/* エフェクトを片付け、リストを無効化する。*/
 			nsEffect::EffectList::SetActiveList(nullptr);
 			stEffectList_.Clear();
