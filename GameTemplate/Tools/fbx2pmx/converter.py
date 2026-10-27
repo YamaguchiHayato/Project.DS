@@ -14,14 +14,15 @@ import shutil
 import bonenames
 import fbxscene
 import mat4
+import mmdize
+import physics
 import pmxfile
 import texconv
+import texmatch
 
 # MMD の 1 単位はおよそ 8cm (身長 158cm の標準モデルで約 20 単位)
 MMD_UNITS_PER_METER = 12.5
 
-# MMD が読めるテクスチャ拡張子(優先順)
-_TEXTURE_EXTENSIONS = (".png", ".tga", ".bmp", ".jpg", ".jpeg", ".spa", ".sph", ".dds")
 
 # モーフ名から表示パネルを推測するためのキーワード
 _MORPH_PANELS = (
@@ -45,13 +46,23 @@ class ConvertOptions:
         self.model_name_en = None
         self.comment = None
         self.copy_textures = False
-        self.convert_textures = False   # DDS など MMD が読めない形式を PNG へ
+        self.convert_textures = True    # DDS など MMD が読めない形式を PNG へ
+        self.texture_files = []         # 一緒に渡された画像(割り当ての候補)
+        self.texture_dirs = []          # 画像を探すフォルダ
+        self.texture_map_path = None    # {"材質名": "画像"} の割り当て表
         self.texture_format = "png"
         self.texture_max_size = 0
         self.include_morphs = True
         self.edge = True
         self.double_sided = False
         self.flip_faces = False       # 面の表裏が逆だったときの救済
+        self.rig = "mmd"              # mmd: 標準ボーン構造・足IKを整える / none: そのまま
+        self.arm_angle = "auto"       # auto / off / 度数
+        self.rename_morphs = True     # 表情モーフ名を あ・い・う… へ寄せる
+        self.morph_map_path = None
+        self.winks = True             # まばたきを左右に分けてウィンクを作る
+        self.physics = "auto"         # auto: 揺れものに剛体・ジョイントを付ける / none
+        self.mmd_look = True          # 材質を MMD 向けの値へ調整する
 
 
 def _warn(result, message):
@@ -72,6 +83,11 @@ class ConvertResult:
         self.renamed_bones = 0
         self.missing_textures = []
         self.converted_textures = []
+        self.texture_assignments = []  # [(材質名, PMX に書いたパス, 見つけ方, 元画像)]
+        self.rig = None               # mmdize.RigReport
+        self.physics = None           # physics.PhysicsReport
+        self.renamed_morphs = 0
+        self.winks = 0
         self.warnings = []
 
 
@@ -273,78 +289,138 @@ def _material_color(material, name, default):
     return default
 
 
-def _find_texture_file(fbx_path, relative):
-    """参照先が無い場合は同名の別拡張子も探す。"""
-    found = fbxscene.resolve_texture_file(fbx_path, relative)
-    if found:
-        return found
-    if not relative:
-        return None
-    base = os.path.splitext(relative)[0]
-    for extension in _TEXTURE_EXTENSIONS:
-        found = fbxscene.resolve_texture_file(fbx_path, base + extension)
-        if found:
-            return found
-    return None
+class _TextureContext:
+    """1 回の変換で使うテクスチャまわりの状態。"""
+
+    def __init__(self, fbx_path, output_dir, options):
+        self.fbx_path = fbx_path
+        self.output_dir = output_dir
+        self.options = options
+        self.pool = texmatch.build_pool(fbx_path, options.texture_files, options.texture_dirs)
+        self.texture_map = texmatch.load_texture_map(options.texture_map_path) \
+            if options.texture_map_path else {}
+        self.textures = []      # PMX のテクスチャ表
+        self.index = {}         # テクスチャ表に書くパス -> 番号
+        self.placed = {}        # 元画像 -> テクスチャ表に書くパス
 
 
-def _texture_entry(scene, material, fbx_path, output_dir, options, textures,
-                   texture_index, result):
-    """マテリアルのテクスチャを PMX のテクスチャ表へ登録し番号を返す。"""
+def _resolve_texture(scene, material, mesh_name, context, result):
+    """マテリアルに使う画像を探して (元画像のパス or None, 見つけ方) を返す。"""
+    name = material.name
+    if name in context.texture_map:
+        value = context.texture_map[name]
+        if value is None:
+            return None, "割り当て表でなし"
+        path = value if os.path.isfile(value) else (
+            context.pool.find_name(value) or context.pool.find_stem(value))
+        if path:
+            return path, "割り当て表"
+        _warn(result, "割り当て表の画像が見つかりません: %s → %s" % (name, value))
+
     texture = fbxscene.find_diffuse_texture(scene, material)
-    if texture is None:
-        return -1
-    relative = fbxscene.texture_path(texture)
-    if not relative:
-        return -1
+    relative = fbxscene.texture_path(texture) if texture is not None else None
+    if relative:
+        path = fbxscene.resolve_texture_file(context.fbx_path, relative)
+        if path:
+            return path, "参照どおり"
+        path = context.pool.find_name(relative)
+        if path:
+            return path, "同名ファイル"
+        path = context.pool.find_stem(relative)
+        if path:
+            return path, "拡張子違い"
 
-    source = _find_texture_file(fbx_path, relative)
-    if source is None:
+    if texture is not None:
+        embedded = texmatch.embedded_image(scene, texture)
+        if embedded is not None:
+            return texmatch.write_embedded(context.output_dir, *embedded), "埋め込み"
+
+    keys = [relative, texture.name if texture is not None else None, name, mesh_name]
+    path, _score = context.pool.guess(keys)
+    if path:
+        return path, "名前から推定"
+    path = context.pool.single_explicit_diffuse()
+    if path:
+        return path, "唯一の候補"
+    if relative:
         result.missing_textures.append(relative)
-        entry = os.path.basename(relative)
-    else:
-        entry = _place_texture(source, output_dir, options, result)
-
-    if texconv.needs_conversion(entry):
-        _warn(result, "%s は MMD が読めない形式です。--convert-textures を付けると"
-                      "PNG へ変換できます。" % os.path.basename(entry))
-
-    entry = entry.replace("/", "\\")
-    if entry not in texture_index:
-        texture_index[entry] = len(textures)
-        textures.append(entry)
-    return texture_index[entry]
+        return None, "見つからない: %s" % os.path.basename(relative)
+    return None, "なし"
 
 
-def _place_texture(source, output_dir, options, result):
-    """テクスチャを出力先へ配置し、PMX に書き込む相対パスを返す。"""
+def _texture_entry(scene, material, mesh_name, context, result):
+    """マテリアルのテクスチャを PMX のテクスチャ表へ登録し番号を返す。"""
+    source, method = _resolve_texture(scene, material, mesh_name, context, result)
+    if source is None:
+        result.texture_assignments.append((material.name, None, method, None))
+        return -1
+
+    entry = _place_texture(source, context, result).replace("/", "\\")
+    result.texture_assignments.append((material.name, entry, method, source))
+    if entry not in context.index:
+        context.index[entry] = len(context.textures)
+        context.textures.append(entry)
+    return context.index[entry]
+
+
+def _copy_destination(source, output_dir):
+    """コピー先を決める。同名で中身の違うファイルがあれば別名にする。"""
+    name = os.path.basename(source)
+    stem, extension = os.path.splitext(name)
+    destination = os.path.join(output_dir, name)
+    number = 1
+    while os.path.isfile(destination) and not os.path.samefile(destination, source):
+        if os.path.getsize(destination) == os.path.getsize(source):
+            with open(destination, "rb") as a, open(source, "rb") as b:
+                if a.read() == b.read():
+                    return destination
+        destination = os.path.join(output_dir, "%s_%d%s" % (stem, number, extension))
+        number += 1
+    return destination
+
+
+def _place_texture(source, context, result):
+    """画像を出力先へ配置し、PMX に書き込む相対パスを返す。
+
+    - MMD が読めない形式(DDS など)は PNG / TGA へ変換して出力先へ置く
+    - 出力先の外にある画像は出力先へコピーする(PMX のフォルダだけで完結させる)
+    - --copy-textures なら出力先の中にあってもコピーする
+    """
+    if source in context.placed:
+        return context.placed[source]
+    options = context.options
+    output_dir = context.output_dir
+    entry = None
+
     if options.convert_textures and texconv.needs_conversion(source):
         try:
             converted = texconv.convert_for_mmd(
                 source, output_dir, options.texture_format, options.texture_max_size)
-            entry = (os.path.basename(source), os.path.basename(converted))
-            if entry not in result.converted_textures:
-                result.converted_textures.append(entry)
-            return entry[1]
+            record = (os.path.basename(source), os.path.basename(converted))
+            if record not in result.converted_textures:
+                result.converted_textures.append(record)
+            entry = os.path.basename(converted)
         except Exception as error:
             _warn(result, "テクスチャを変換できませんでした: %s (%s)"
                   % (os.path.basename(source), error))
 
-    if options.copy_textures or options.convert_textures:
-        destination = os.path.join(output_dir, os.path.basename(source))
-        if os.path.abspath(destination) != os.path.abspath(source):
-            shutil.copyfile(source, destination)
-        return os.path.basename(destination)
+    if entry is None:
+        try:
+            relative = os.path.relpath(source, output_dir)
+        except ValueError:  # ドライブが違うと相対パスにできない
+            relative = None
+        if options.copy_textures or relative is None or relative.startswith(".."):
+            destination = _copy_destination(source, output_dir)
+            if not os.path.isfile(destination) or not os.path.samefile(destination, source):
+                shutil.copyfile(source, destination)
+            entry = os.path.basename(destination)
+        else:
+            entry = relative
 
-    try:
-        entry = os.path.relpath(source, output_dir)
-    except ValueError:  # ドライブが違うと相対パスにできない
-        entry = os.path.basename(source)
-    if entry.startswith(".."):
-        _warn(result, "テクスチャ %s は PMX と同じ場所にありません。"
-                      "同じフォルダへ置くか --copy-textures を使ってください。"
-                      % os.path.basename(source))
-        entry = os.path.basename(source)
+    if texconv.needs_conversion(entry):
+        _warn(result, "%s は MMD が読めない形式です(--no-convert-textures を外すと"
+                      "PNG へ変換します)。" % os.path.basename(entry))
+    context.placed[source] = entry
     return entry
 
 
@@ -482,8 +558,7 @@ def convert(fbx_path, output_path, options=None, log=None):
     model.bones = bones
 
     output_dir = os.path.dirname(os.path.abspath(output_path)) or "."
-    textures = []
-    texture_index = {}
+    texture_context = _TextureContext(fbx_path, output_dir, options)
     material_entries = {}   # キー -> [PmxMaterial, 面リスト]
     vertex_cache = {}
     morphs = []
@@ -532,8 +607,9 @@ def convert(fbx_path, output_path, options=None, log=None):
                 material = _build_material(scene, fbx_material, mesh.name, options)
                 if fbx_material is not None:
                     material.texture_index = _texture_entry(
-                        scene, fbx_material, fbx_path, output_dir, options,
-                        textures, texture_index, result)
+                        scene, fbx_material, mesh.name, texture_context, result)
+                if options.mmd_look:
+                    _apply_mmd_look(material, mesh.name)
                 entry = [material, []]
                 material_entries[key] = entry
 
@@ -561,7 +637,7 @@ def convert(fbx_path, output_path, options=None, log=None):
         model.materials.append(material)
         model.faces.extend(faces)
 
-    model.textures = textures
+    model.textures = texture_context.textures
     model.morphs = morphs
 
     name = options.model_name or os.path.splitext(os.path.basename(fbx_path))[0]
@@ -574,9 +650,55 @@ def convert(fbx_path, output_path, options=None, log=None):
             os.path.basename(fbx_path), os.path.basename(fbx_path), scale, yaw))
     model.comment_en = "Converted from %s by fbx2pmx" % os.path.basename(fbx_path)
 
-    _build_display_frames(model)
+    if options.rename_morphs and model.morphs:
+        extra = bonenames.load_bone_map(options.morph_map_path) \
+            if options.morph_map_path else None
+        result.renamed_morphs = mmdize.rename_morphs(model, extra)
+    if options.winks and model.morphs:
+        result.winks = mmdize.add_winks(model)
+
+    if options.rig == "mmd" and options.use_mmd_bone_names and mmdize.is_humanoid(model):
+        result.rig = mmdize.standardize(model, options.arm_angle, log)
+        for message in result.rig.warnings:
+            _warn(result, message)
+    else:
+        _build_display_frames(model)
+
+    if options.physics == "auto":
+        result.physics = physics.generate(model)
     _validate(model, result)
     return result
+
+
+# 輪郭線を付けない材質(目まわり)と、両面描画にする材質(薄い布や髪の板ポリ)の目印
+_NO_EDGE_WORDS = ("eye", "目", "瞳", "hitomi", "iris", "pupil", "highlight", "ハイライト",
+                  "matuge", "まつげ", "lash")
+_DOUBLE_SIDED_WORDS = ("hair", "髪", "ribbon", "リボン", "skirt", "スカート", "frill",
+                       "フリル", "lace", "レース", "sode", "sleeve", "袖", "cape", "マント")
+
+
+def _apply_mmd_look(material, mesh_name):
+    """材質を MMD で自然に見える値へ寄せる。
+
+    MMD の色はおおむね (拡散色 × 照明 0.6 + 環境色) × テクスチャ × トゥーン で
+    決まるため、ゲーム用の値(環境色が黒など)のままだと暗く沈む。
+    """
+    text = (material.name + " " + (mesh_name or "")).lower()
+    alpha = material.diffuse[3]
+    if material.texture_index >= 0:
+        material.diffuse = (1.0, 1.0, 1.0, alpha)  # 色はテクスチャに任せる
+        material.ambient = (0.5, 0.5, 0.5)
+    else:
+        red, green, blue = material.diffuse[:3]
+        material.ambient = (red * 0.5, green * 0.5, blue * 0.5)
+    material.specular = tuple(min(1.0, c) * 0.3 for c in material.specular)
+    material.specular_power = max(5.0, min(material.specular_power, 50.0))
+    material.toon_shared = 1
+    material.toon_index = 0                        # 共有トゥーン toon01.bmp
+    if alpha < 0.999 or any(word in text for word in _NO_EDGE_WORDS):
+        material.flags &= ~pmxfile.MATERIAL_EDGE
+    if any(word in text for word in _DOUBLE_SIDED_WORDS):
+        material.flags |= pmxfile.MATERIAL_DOUBLE_SIDED
 
 
 def _build_display_frames(model):

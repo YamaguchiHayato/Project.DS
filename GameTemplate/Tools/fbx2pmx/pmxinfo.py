@@ -59,6 +59,23 @@ def _check(model):
             warnings.append("マテリアル %s のテクスチャ番号が範囲外です" % material.name)
             break
 
+    body_count = len(model.rigid_bodies)
+    bones_with_body = set()
+    for body in model.rigid_bodies:
+        if not -1 <= body.bone_index < bone_count:
+            warnings.append("剛体 %s の関連ボーンが範囲外です" % body.name)
+            break
+        if body.bone_index >= 0 and body.mode != pmxfile.BODY_FOLLOW_BONE:
+            if body.bone_index in bones_with_body:
+                warnings.append("ボーン %s に物理演算の剛体が複数付いています"
+                                % model.bones[body.bone_index].name)
+            bones_with_body.add(body.bone_index)
+    for joint in model.joints:
+        if not (0 <= joint.body_a < body_count and 0 <= joint.body_b < body_count) \
+                or joint.body_a == joint.body_b:
+            warnings.append("ジョイント %s の剛体番号が不正です" % joint.name)
+            break
+
     if not any(frame.special for frame in model.display_frames):
         warnings.append("特殊表示枠(Root / 表情)がありません")
 
@@ -76,6 +93,7 @@ def _print_summary(model, path):
           % (len(model.vertices), len(model.faces), len(model.materials),
              len(model.bones), len(model.morphs), len(model.display_frames),
              len(model.textures)))
+    print("剛体 %d / ジョイント %d" % (len(model.rigid_bodies), len(model.joints)))
     box = _bounding_box(model.vertices)
     if box:
         low, high = box
@@ -91,6 +109,7 @@ def main(argv=None):
     parser.add_argument("--bones", action="store_true", help="ボーン一覧を表示")
     parser.add_argument("--morphs", action="store_true", help="モーフ一覧を表示")
     parser.add_argument("--frames", action="store_true", help="表示枠を表示")
+    parser.add_argument("--physics", action="store_true", help="剛体とジョイントを表示")
     args = parser.parse_args(argv)
 
     for stream in (sys.stdout, sys.stderr):
@@ -134,6 +153,24 @@ def main(argv=None):
             print("  %-12s 特殊 %s  要素 %d"
                   % (frame.name, "はい" if frame.special else "いいえ",
                      len(frame.elements)))
+
+    if args.physics:
+        shapes = {pmxfile.SHAPE_SPHERE: "球", pmxfile.SHAPE_BOX: "箱",
+                  pmxfile.SHAPE_CAPSULE: "カプセル"}
+        modes = {pmxfile.BODY_FOLLOW_BONE: "ボーン追従", pmxfile.BODY_PHYSICS: "物理",
+                 pmxfile.BODY_PHYSICS_ALIGNED: "物理+位置合わせ"}
+        print("\n[剛体]")
+        for index, body in enumerate(model.rigid_bodies):
+            bone = model.bones[body.bone_index].name if 0 <= body.bone_index < len(model.bones) \
+                else "-"
+            print("  %3d %-18s ボーン %-16s %s 半径 %.2f 長さ %.2f  グループ %d  %s"
+                  % (index, body.name, bone, shapes.get(body.shape, "?"), body.size[0],
+                     body.size[1], body.group + 1, modes.get(body.mode, "?")))
+        print("\n[ジョイント]")
+        for index, joint in enumerate(model.joints):
+            print("  %3d %-18s %s → %s"
+                  % (index, joint.name, model.rigid_bodies[joint.body_a].name,
+                     model.rigid_bodies[joint.body_b].name))
 
     warnings = _check(model)
     if warnings:

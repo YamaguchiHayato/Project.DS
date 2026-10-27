@@ -18,6 +18,7 @@ import zlib
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import converter   # noqa: E402
+import mat4        # noqa: E402
 import pmxfile     # noqa: E402
 
 # 立方体の制御点と面(右手系 Y-up、表から見て反時計回り)
@@ -150,6 +151,8 @@ def _pack_property(kind, value):
     if kind == "S":
         data = value.encode("utf-8")
         return b"S" + struct.pack("<I", len(data)) + data
+    if kind == "R":
+        return b"R" + struct.pack("<I", len(value)) + value
     if kind == "d":
         data = struct.pack("<%dd" % len(value), *value)
         return b"d" + struct.pack("<III", len(value), 0, len(data)) + data
@@ -358,6 +361,356 @@ def _test_textures(failures):
     print("テクスチャ変換: OK (無圧縮 DDS / DXT1 / PNG 書き出し)")
 
 
+def _texture_scene_nodes(embedded_png):
+    """材質ごとにテクスチャの崩れ方が違う、6 材質の立方体シーンを作る。
+
+    Body  : 作者 PC の絶対パス Body_D.tga を参照(候補には body_d.png がある)
+    Face  : テクスチャ未接続(候補には Face_BaseColor.png と Face_Normal.png)
+    Hair  : hair.png を参照するが実体は FBX に埋め込み
+    Eye_L : テクスチャ未接続(候補には eye_l.png)
+    Skin  : テクスチャ未接続で、似た名前の画像も無い
+    Cloth : cloth.dds を参照(DDS なので PNG へ変換されるはず)
+    """
+    nodes = _cube_nodes()
+    objects = [n for n in nodes if n.name == "Objects"][0]
+    connections = [n for n in nodes if n.name == "Connections"][0]
+    geometry = [n for n in objects.children if n.name == "Geometry"][0]
+    layer = [n for n in geometry.children if n.name == "LayerElementMaterial"][0]
+    layer.children = [
+        _Node("Version", [("I", 101)]),
+        _Node("Name", [("S", "")]),
+        _Node("MappingInformationType", [("S", "ByPolygon")]),
+        _Node("ReferenceInformationType", [("S", "IndexToDirect")]),
+        _Node("Materials", [("i", [0, 1, 2, 3, 4, 5])]),
+    ]
+    objects.children = [n for n in objects.children if n.name != "Material"]
+    connections.children = [c for c in connections.children if c.props[1][1] != 300]
+
+    def texture_node(obj_id, name, path):
+        return _Node("Texture", [("L", obj_id), ("S", "Texture::" + name), ("S", "")], [
+            _Node("Type", [("S", "TextureVideoClip")]),
+            _Node("FileName", [("S", path)]),
+            _Node("RelativeFilename", [("S", path)]),
+        ])
+
+    materials = ("Body", "Face", "Hair", "Eye_L", "Skin", "Cloth")
+    for number, name in enumerate(materials):
+        material_id = 310 + number
+        objects.children.append(_Node(
+            "Material", [("L", material_id), ("S", "Material::" + name), ("S", "")],
+            [_Node("Version", [("I", 102)])]))
+        connections.children.append(_Node("C", [("S", "OO"), ("L", material_id), ("L", 200)]))
+
+    textures = (
+        (401, "Body", "C:/Users/someone/Desktop/model/Body_D.tga", 310),
+        (402, "HairTex", "hair.png", 312),
+        (403, "ClothTex", "cloth.dds", 315),
+    )
+    for texture_id, name, path, material_id in textures:
+        objects.children.append(texture_node(texture_id, name, path))
+        connections.children.append(_Node(
+            "C", [("S", "OP"), ("L", texture_id), ("L", material_id), ("S", "DiffuseColor")]))
+    objects.children.append(_Node(
+        "Video", [("L", 502), ("S", "Video::HairTex"), ("S", "Clip")], [
+            _Node("Type", [("S", "Clip")]),
+            _Node("Filename", [("S", "hair.png")]),
+            _Node("RelativeFilename", [("S", "hair.png")]),
+            _Node("Content", [("R", embedded_png)]),
+        ]))
+    connections.children.append(_Node("C", [("S", "OO"), ("L", 502), ("L", 402)]))
+    return nodes
+
+
+def _test_texture_matching(all_failures):
+    """FBX とテクスチャを一緒に渡したときの自動割り当てを検証する。"""
+    import json
+
+    import texconv
+
+    failures = []
+    pixel = bytes([200, 120, 80, 255]) * 4
+    with tempfile.TemporaryDirectory(prefix="fbx2pmx_texmatch_") as directory:
+        model_dir = os.path.join(directory, "model")
+        source_dir = os.path.join(directory, "textures_from_somewhere")
+        out_dir = os.path.join(directory, "out")
+        for path in (model_dir, source_dir, out_dir):
+            os.makedirs(path)
+
+        embedded_path = os.path.join(directory, "embedded.png")
+        texconv.write_png(embedded_path, 2, 2, pixel)
+        with open(embedded_path, "rb") as stream:
+            embedded = stream.read()
+        for name in ("body_d.PNG", "Face_BaseColor.png", "Face_Normal.png", "eye_l.png",
+                     "unrelated_rock.png"):
+            texconv.write_png(os.path.join(source_dir, name), 2, 2, pixel)
+        dds = _dds_header(1, 1, 0x40 | 0x1, b"\x00" * 4, 32,
+                          (0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000), 4)
+        with open(os.path.join(source_dir, "cloth.dds"), "wb") as stream:
+            stream.write(dds + bytes([10, 20, 30, 255]))
+
+        fbx_path = os.path.join(model_dir, "chara.fbx")
+        with open(fbx_path, "wb") as stream:
+            stream.write(_serialize_binary(_texture_scene_nodes(embedded)))
+
+        def run(texture_map=None):
+            options = converter.ConvertOptions()
+            options.texture_dirs = [source_dir]
+            options.texture_map_path = texture_map
+            result = converter.convert(fbx_path, os.path.join(out_dir, "chara.pmx"), options)
+            model = result.model
+            table = {}
+            for material in model.materials:
+                index = material.texture_index
+                table[material.name] = model.textures[index] if index >= 0 else None
+            methods = {name: method for name, _e, method, _s in result.texture_assignments}
+            return table, methods
+
+        table, methods = run()
+        expected = {
+            "Body": ("body_d.PNG", "拡張子違い"),
+            "Face": ("Face_BaseColor.png", "名前から推定"),
+            "Hair": ("hair.png", "埋め込み"),
+            "Eye_L": ("eye_l.png", "名前から推定"),
+            "Skin": (None, "なし"),
+            "Cloth": ("cloth.png", "同名ファイル"),
+        }
+        for name, (texture, method) in expected.items():
+            if table.get(name) != texture or methods.get(name) != method:
+                failures.append("テクスチャ割り当て: %s が %r/%r (期待 %r/%r)"
+                                % (name, table.get(name), methods.get(name), texture, method))
+        for name in ("body_d.PNG", "Face_BaseColor.png", "hair.png", "eye_l.png", "cloth.png"):
+            if not os.path.isfile(os.path.join(out_dir, name)):
+                failures.append("テクスチャ割り当て: 出力先に %s が置かれていない" % name)
+        with open(os.path.join(out_dir, "hair.png"), "rb") as stream:
+            if stream.read() != embedded:
+                failures.append("テクスチャ割り当て: 埋め込み画像の中身が元と違う")
+
+        map_path = os.path.join(directory, "map.json")
+        with open(map_path, "w", encoding="utf-8") as stream:
+            json.dump({"Skin": os.path.join(source_dir, "Face_BaseColor.png"), "Face": None},
+                      stream)
+        table, methods = run(map_path)
+        if table.get("Skin") != "Face_BaseColor.png" or methods.get("Skin") != "割り当て表":
+            failures.append("テクスチャ割り当て: 割り当て表の指定が効いていない (Skin=%r)"
+                            % table.get("Skin"))
+        if table.get("Face") is not None:
+            failures.append("テクスチャ割り当て: 割り当て表の null が効いていない")
+
+    all_failures.extend(failures)
+    if not failures:
+        print("テクスチャ自動割り当て: OK (拡張子違い / 名前推定 / 埋め込み / DDS 変換 / 割り当て表)")
+
+
+def _test_physics(all_failures):
+    """揺れものの剛体・ジョイント生成とウィンク生成、PMX への書き出しを検証する。"""
+    import mmdize
+    import physics
+
+    failures = []
+
+    def check(condition, message):
+        if not condition:
+            failures.append("物理: " + message)
+
+    model = pmxfile.PmxModel()
+
+    def add_bone(name, position, parent):
+        model.bones.append(pmxfile.PmxBone(name, name, position, parent))
+        return len(model.bones) - 1
+
+    root = add_bone("全ての親", (0.0, 0.0, 0.0), -1)
+    lower = add_bone("下半身", (0.0, 10.0, 0.0), root)
+    upper = add_bone("上半身", (0.0, 10.5, 0.0), root)
+    neck = add_bone("首", (0.0, 15.0, 0.0), upper)
+    head = add_bone("頭", (0.0, 16.0, 0.0), neck)
+    hair0 = add_bone("Hair_00", (0.0, 18.0, 2.0), head)
+    hair1 = add_bone("Hair_01", (0.0, 14.0, 3.0), hair0)
+    skirt = add_bone("Skirt_00", (0.0, 10.0, -2.5), lower)
+    for side, x in (("左", 1.0), ("右", -1.0)):
+        leg = add_bone(side + "足", (x, 9.5, 0.0), lower)
+        knee = add_bone(side + "ひざ", (x, 5.0, 0.0), leg)
+        add_bone(side + "足首", (x, 1.0, 0.0), knee)
+
+    def vertex(position, bone):
+        model.vertices.append(pmxfile.PmxVertex(position, (0.0, 1.0, 0.0), (0.0, 0.0),
+                                                [bone], [1.0]))
+        return len(model.vertices) - 1
+
+    for t in range(5):  # 頭・髪・スカートに頂点を乗せる(半径の推定用)
+        vertex((0.8, 16.0 + t * 0.4, 0.0), head)
+        vertex((0.4, 18.0 - t, 2.0 + t * 0.25), hair0)
+        vertex((0.4, 14.0 - t, 3.0), hair1)
+        vertex((0.5, 10.0 - t * 0.5, -2.5), skirt)
+    for index in (lower, upper):
+        vertex(model.bones[index].position, index)
+    left_eye = vertex((1.0, 17.0, -1.0), head)
+    right_eye = vertex((-1.0, 17.0, -1.0), head)
+    blink = pmxfile.PmxMorph("まばたき", "blink", 2)
+    blink.offsets = [(left_eye, (0.0, -0.1, 0.0)), (right_eye, (0.0, -0.1, 0.0))]
+    model.morphs.append(blink)
+
+    created = mmdize.add_winks(model)
+    winks = {m.name: m for m in model.morphs}
+    check(created == 2, "ウィンクが 2 個作られていない (%d)" % created)
+    check([i for i, _ in winks.get("ウィンク", pmxfile.PmxMorph("")).offsets] == [left_eye],
+          "ウィンクがモデルの左目(+X)だけになっていない")
+    check([i for i, _ in winks.get("ウィンク右", pmxfile.PmxMorph("")).offsets] == [right_eye],
+          "ウィンク右がモデルの右目(-X)だけになっていない")
+
+    report = physics.generate(model)
+    bodies = {body.name: (i, body) for i, body in enumerate(model.rigid_bodies)}
+    for name in ("頭", "下半身", "左足", "Hair_00", "Hair_01", "Skirt_00"):
+        check(name in bodies, "%s の剛体が無い" % name)
+    if not failures:
+        check(bodies["頭"][1].mode == pmxfile.BODY_FOLLOW_BONE, "頭がボーン追従になっていない")
+        for name in ("Hair_00", "Hair_01", "Skirt_00"):
+            check(bodies[name][1].mode != pmxfile.BODY_FOLLOW_BONE, "%s が物理演算になっていない" % name)
+        pairs = {(model.rigid_bodies[j.body_a].name, model.rigid_bodies[j.body_b].name)
+                 for j in model.joints}
+        check(pairs == {("頭", "Hair_00"), ("Hair_00", "Hair_01"), ("下半身", "Skirt_00")},
+              "ジョイントのつながりが違う %r" % sorted(pairs))
+        hair = bodies["Hair_00"][1]
+        axis = physics.rotation_axis_y(hair.rotation)
+        direction = mat4.normalize(tuple(model.bones[hair1].position[k]
+                                         - model.bones[hair0].position[k] for k in range(3)))
+        check(sum(axis[k] * direction[k] for k in range(3)) > 0.9999,
+              "髪のカプセルがボーンの向きに沿っていない")
+        check(not hair.collision_mask & (1 << hair.group), "髪が同じグループ同士でぶつかる設定")
+        check(not hair.collision_mask & (1 << bodies["頭"][1].group),
+              "髪の付け根が頭の当たり判定とぶつかる設定")
+        skirt_body = bodies["Skirt_00"][1]
+        check(skirt_body.collision_mask & (1 << bodies["左足"][1].group),
+              "スカートが脚の当たり判定とぶつからない設定")
+        check(report.chains == {"髪": 1, "スカート": 1}, "連鎖の数え方が違う %r" % report.chains)
+
+        with tempfile.TemporaryDirectory(prefix="fbx2pmx_phys_") as directory:
+            path = os.path.join(directory, "phys.pmx")
+            pmxfile.write_pmx(model, path)
+            loaded = pmxfile.read_pmx(path)
+        check(len(loaded.rigid_bodies) == len(model.rigid_bodies)
+              and len(loaded.joints) == len(model.joints), "剛体・ジョイントの読み直しで数が違う")
+        if loaded.rigid_bodies:
+            a, b = loaded.rigid_bodies[-1], model.rigid_bodies[-1]
+            check(a.name == b.name and a.bone_index == b.bone_index and a.mode == b.mode
+                  and a.collision_mask == b.collision_mask
+                  and all(abs(x - y) < 1e-5 for x, y in zip(a.rotation, b.rotation)),
+                  "剛体の読み直しで値が変わった")
+
+    all_failures.extend(failures)
+    if not failures:
+        print("物理・ウィンク: OK (剛体 %d / ジョイント %d / 向き / 衝突設定 / 読み直し)"
+              % (len(model.rigid_bodies), len(model.joints)))
+
+
+def _test_rig(all_failures):
+    """MMD 標準ボーン化(センター周り・足ＩＫ・両目・腕の角度・モーフ名)を検証する。"""
+    import math
+
+    import mmdize
+
+    failures = []
+    try:
+        _check_rig(failures, math, mmdize)
+    finally:
+        all_failures.extend(failures)
+    if not failures:
+        print("MMD 標準ボーン化: OK (足ＩＫ / センター周り / 両目 / A スタンス / モーフ名)")
+
+
+def _check_rig(failures, math, mmdize):
+    model = pmxfile.PmxModel()
+
+    def add_bone(name, position, parent):
+        model.bones.append(pmxfile.PmxBone(name, name, position, parent))
+        return len(model.bones) - 1
+
+    # Mixamo 型の骨格: Hips の下に背骨と脚がぶら下がり、腕は水平(T スタンス)
+    armature = add_bone("Armature", (0.0, 0.0, 0.0), -1)
+    hips = add_bone("センター", (0.0, 10.0, 0.0), armature)
+    spine = add_bone("上半身", (0.0, 11.0, 0.0), hips)
+    neck = add_bone("首", (0.0, 15.0, 0.0), spine)
+    head = add_bone("頭", (0.0, 16.0, 0.0), neck)
+    add_bone("左目", (0.5, 17.0, -0.5), head)
+    add_bone("右目", (-0.5, 17.0, -0.5), head)
+    for side, x in (("左", 1.0), ("右", -1.0)):
+        arm = add_bone(side + "腕", (1.5 * x, 14.5, 0.0), spine)
+        add_bone(side + "手首", (5.5 * x, 14.5, 0.0), arm)
+        leg = add_bone(side + "足", (x, 9.5, 0.0), hips)
+        knee = add_bone(side + "ひざ", (x, 5.0, 0.0), leg)
+        add_bone(side + "足首", (x, 1.0, 0.0), knee)
+
+    # 各ボーンに 1 頂点ずつ + つま先位置の推定用に足先の頂点
+    for index, bone in enumerate(model.bones):
+        model.vertices.append(pmxfile.PmxVertex(bone.position, (0.0, 1.0, 0.0), (0.0, 0.0),
+                                                [index], [1.0]))
+    for side, x in (("左", 1.0), ("右", -1.0)):
+        ankle = [i for i, b in enumerate(model.bones) if b.name == side + "足首"][0]
+        model.vertices.append(pmxfile.PmxVertex((x, 0.0, -2.0), (0.0, 1.0, 0.0), (0.0, 0.0),
+                                                [ankle], [1.0]))
+    for name in ("MTH_aShape", "Blink"):
+        morph = pmxfile.PmxMorph(name, name)
+        morph.offsets = [(0, (0.0, 0.1, 0.0))]
+        model.morphs.append(morph)
+    owners = [id(model.bones[v.bones[0]]) for v in model.vertices]
+
+    mmdize.rename_morphs(model)
+    report = mmdize.standardize(model)
+
+    bones = model.bones
+    index = {bone.name: i for i, bone in enumerate(bones)}
+
+    def check(condition, message):
+        if not condition:
+            failures.append("MMD 化: " + message)
+
+    def parent(name):
+        i = index.get(name)
+        if i is None or bones[i].parent_index < 0:
+            return None
+        return bones[bones[i].parent_index].name
+
+    for name in ("全ての親", "センター", "グルーブ", "下半身", "上半身", "両目",
+                 "左足ＩＫ", "左つま先ＩＫ", "右足ＩＫ", "右つま先ＩＫ", "左つま先", "右つま先"):
+        check(name in index, "%s が作られていない" % name)
+    if failures:
+        return
+    check(bones[0].name == "全ての親" and bones[0].parent_index < 0, "全ての親が根になっていない")
+    check(parent("グルーブ") == "センター", "グルーブの親がセンターでない")
+    check(parent("下半身") == "グルーブ", "下半身の親がグルーブでない")
+    check(parent("上半身") == "グルーブ", "上半身が下半身から切り離されていない")
+    check(not bones[index["下半身"]].flags & pmxfile.BONE_TRANSLATABLE, "下半身が移動可になっている")
+
+    for side in ("左", "右"):
+        ik = bones[index[side + "足ＩＫ"]]
+        chain = [ik.ik.target_index] + [link.bone_index for link in ik.ik.links]
+        check([bones[i].name for i in chain] == [side + "足首", side + "ひざ", side + "足"],
+              "%s足ＩＫの対象とリンクが違う" % side)
+        check(all(i < index[side + "足ＩＫ"] for i in chain),
+              "%s足ＩＫが連鎖より前に並んでいる" % side)
+        check(ik.ik.links[0].has_limit and ik.ik.links[0].limit_max[0] < 0.0,
+              "%sひざの角度制限が無い" % side)
+        check(parent(side + "つま先ＩＫ") == side + "足ＩＫ", "%sつま先ＩＫの親が違う" % side)
+        toe = bones[index[side + "つま先"]].position
+        check(abs(toe[2] + 2.0) < 1e-6 and abs(toe[1]) < 1e-6,
+              "%sつま先が足先の頂点位置に置かれていない %r" % (side, toe))
+        arm = bones[index[side + "腕"]].position
+        hand = bones[index[side + "手首"]].position
+        angle = math.degrees(math.atan2(-(hand[1] - arm[1]), abs(hand[0] - arm[0])))
+        check(abs(angle - mmdize.DEFAULT_ARM_ANGLE) < 0.01,
+              "%s腕が A スタンスになっていない (%.2f 度)" % (side, angle))
+
+    check(index["両目"] < index["左目"] and index["両目"] < index["右目"],
+          "両目が左目・右目より後ろに並んでいる")
+    left_eye = bones[index["左目"]]
+    check(left_eye.flags & pmxfile.BONE_INHERIT_ROTATION
+          and left_eye.inherit_parent_index == index["両目"], "左目が両目から回転付与されていない")
+    check([id(bones[v.bones[0]]) for v in model.vertices] == owners,
+          "ボーンの並べ替え後に頂点のウェイト先がずれている")
+    check([m.name for m in model.morphs] == ["あ", "まばたき"],
+          "モーフ名が変換されていない %r" % [m.name for m in model.morphs])
+    check(not report.warnings, "警告が出ている %r" % report.warnings)
+
+
 def main():
     for stream in (sys.stdout, sys.stderr):
         try:
@@ -390,6 +743,9 @@ def main():
                   % (label, len(result.model.vertices), len(result.model.faces)))
 
     _test_textures(failures)
+    _test_texture_matching(failures)
+    _test_rig(failures)
+    _test_physics(failures)
 
     if failures:
         print("\n失敗:")

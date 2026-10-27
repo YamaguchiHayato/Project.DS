@@ -12,7 +12,8 @@ import json
 import re
 
 # 名前の前に付きがちな装飾
-_STRIP_PREFIXES = ("character1_", "character2_", "mixamorig", "bip001", "bip01", "biped")
+_STRIP_PREFIXES = ("character1_", "character2_", "mixamorig", "bip001", "bip01", "biped",
+                   "bone")
 
 # 左右の接頭辞 / 接尾辞
 _LEFT_WORDS = ("left", "l")
