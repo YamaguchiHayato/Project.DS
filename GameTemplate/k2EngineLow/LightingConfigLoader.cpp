@@ -285,6 +285,42 @@ namespace nsK2EngineLow
                 }
             }
 
+            if (j.contains("indoorVolumes"))
+            {
+                const auto& volumes = j.at("indoorVolumes");
+
+                if (!volumes.is_array())
+                {
+                    outError = "indoorVolumes は配列で指定してください。";
+                    return false;
+                }
+
+                for (const auto& v : volumes)
+                {
+                    IndoorVolumeConfig volume;
+
+                    if (!v.is_object()
+                        || !ReadOptionalBool(v, "enabled", volume.enabled)
+                        || !ReadOptionalVector3(v, "min", volume.min)
+                        || !ReadOptionalVector3(v, "max", volume.max)
+                        || !ReadOptionalFloat(v, "scale", volume.scale)
+                        || !ReadOptionalFloat(v, "feather", volume.feather))
+                    {
+                        outError = "indoorVolumes の設定が不正です。";
+                        return false;
+                    }
+
+                    // enabled が false の箱は読み飛ばす。
+                    // 書いたまま残しておけるので、1つずつ消して確かめられる。
+                    if (!volume.enabled)
+                    {
+                        continue;
+                    }
+
+                    config.indoorVolumes.push_back(volume);
+                }
+            }
+
             if (!ReadPointLights(j, config)
                 || !ReadSpotLights(j, config))
             {

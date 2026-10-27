@@ -181,5 +181,18 @@ void nsK2EngineLow::ModelRender::RefreshLight()
 		l.hemiLig.m_skyColor.z *= s;
 		// pointLig と spotLig は触らない(局所照明は弱めない)
 	}
+
+	// 屋内ボリュームはシーン全体で共有しているので、毎フレームここで写す。
+	// こうしておくと、床も壁もキャラも手に持った銃も同じ条件で暗くなる。
+	{
+		const IndoorVolume* pVolumes = g_renderingEngine->GetIndoorVolumes();
+		const int count = g_renderingEngine->GetIndoorVolumeCount();
+
+		for (int i = 0; i < count; i++)
+			m_expandCB.indoorVolumes[i] = pVolumes[i];
+
+		m_expandCB.indoorVolumeCount = count;
+	}
+
 	m_expandCB.modelAlpha = m_alpha;
 }

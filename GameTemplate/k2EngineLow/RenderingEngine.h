@@ -58,6 +58,24 @@ namespace nsK2EngineLow {
 			m_light.SetLightCameraTarget(target);
 		}
 
+		//屋内ボリュームの設定。箱の中だけベース光を弱める(シーン全体に効く)。
+		void SetIndoorVolumes(const IndoorVolume* pVolumes, int count)
+		{
+			m_light.SetIndoorVolumes(pVolumes, count);
+		}
+
+		//屋内ボリュームの配列の取得。
+		const IndoorVolume* GetIndoorVolumes() const
+		{
+			return m_light.GetIndoorVolumes();
+		}
+
+		//屋内ボリュームの数の取得。
+		int GetIndoorVolumeCount() const
+		{
+			return m_light.GetIndoorVolumeCount();
+		}
+
 		RenderTarget& GetShadow()
 		{
 			return m_shadow.GetShadowTarget();
