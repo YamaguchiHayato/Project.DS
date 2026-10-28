@@ -175,5 +175,25 @@ namespace nsK2EngineLow
                 spot.angle
             );
         }
+
+        // 屋内ボリューム。建物ごとに1つで、上限を超えたぶんは捨てる。
+        IndoorVolume indoorVolumes[kIndoorVolumeMax];
+        int indoorCount = 0;
+
+        for (const auto& volume : config.indoorVolumes)
+        {
+            if (indoorCount >= kIndoorVolumeMax)
+            {
+                break;
+            }
+
+            indoorVolumes[indoorCount].boxMin = ToVector3(volume.min);
+            indoorVolumes[indoorCount].boxMax = ToVector3(volume.max);
+            indoorVolumes[indoorCount].scale = volume.scale;
+            indoorVolumes[indoorCount].feather = volume.feather;
+            indoorCount++;
+        }
+
+        light.SetIndoorVolumes(indoorVolumes, indoorCount);
     }
 }

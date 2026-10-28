@@ -18,6 +18,7 @@ namespace
 		"AK47",			//! AK-47。
 		"CombatRifle",	//! コンバットライフル。
 		"HuntingRifle",	//! ハンティングライフル。
+		"DualHandgun",	//! 二丁拳銃。
 	};
 
 	/* キー名の数がEnWeaponType::Numと一致しているかをコンパイル時に検査する。*/
@@ -39,6 +40,11 @@ namespace
 		"Main",		//! メイン武器。
 		"Sub",		//! サブ武器。
 	};
+
+	/* キー名の数がEnWeaponSlot::Numと一致しているかをコンパイル時に検査する。*/
+	static_assert(
+		_countof(sSlotNameList_) == static_cast<size_t>(nsApp::nsWeapon::EnWeaponSlot::Num),
+		"sSlotNameList_ の要素数と EnWeaponSlot::Num が一致していません。");
 
 	/**
 	 * @struct WeaponStatusEntry
@@ -86,20 +92,26 @@ namespace
 		float fSpreadHip_;						//! 腰だめの拡散(ラジアン)。
 		float fSpreadAds_;						//! 覗き込みの拡散(ラジアン)。
 		float fAdsZoomRate_;					//! 覗き込みの画角倍率。
+		bool bIsDualWield_;						//! 二丁持ちか。
+		nsApp::nsWeapon::EnWeaponType enDualType_;	//! 2丁揃えたときに変化する先。
 	};
+
+	/* 2丁揃えても変化しない武器に使う。表を読みやすくするための別名。*/
+	const nsApp::nsWeapon::EnWeaponType enNoDualType_ = nsApp::nsWeapon::EnWeaponType::Num;
 
 	/* 武器ごとの主要な既定値。EnWeaponTypeの並び順と一致させること。*/
 	const WeaponDefault WEAPON_DEFAULT_TABLE[] =
 	{
-		/*  名前              モデル                                              区分   挙動   間隔    弾  予備  装填  威力 粒 貫通 1発ずつ 長さ   跳ね    腰      ADS     倍率 */
-		{ "Handgun",      "Assets/modelData/gun/subWeapon/m1911.tkm",      nsApp::nsWeapon::EnWeaponSlot::Sub,  nsApp::nsWeapon::EnFireMode::Semi,  0.25f, 15,   0, 2.2f, 18,  1,  0, false, 22.0f, 0.030f, 0.035f, 0.004f, 0.80f },
-		{ "Magnum",       "Assets/modelData/gun/subWeapon/mp r8.tkm",      nsApp::nsWeapon::EnWeaponSlot::Sub,  nsApp::nsWeapon::EnFireMode::Semi,  0.40f,  8,   0, 2.6f, 40,  1,  1, false, 26.0f, 0.060f, 0.030f, 0.003f, 0.75f },
-		{ "SMG",          "Assets/modelData/gun/subWeapon/tec-9.tkm",      nsApp::nsWeapon::EnWeaponSlot::Main, nsApp::nsWeapon::EnFireMode::Auto,  0.06f, 50, 325, 2.2f, 12,  1,  0, false, 40.0f, 0.008f, 0.060f, 0.012f, 0.80f },
-		{ "PumpShotgun",  "Assets/modelData/gun/mainWeapon/HAMR.tkm",      nsApp::nsWeapon::EnWeaponSlot::Main, nsApp::nsWeapon::EnFireMode::Semi,  0.90f,  8,  56, 0.55f, 15, 10,  0, true,  95.0f, 0.070f, 0.090f, 0.070f, 0.90f },
-		{ "AssaultRifle", "Assets/modelData/gun/mainWeapon/M4A1.tkm",      nsApp::nsWeapon::EnWeaponSlot::Main, nsApp::nsWeapon::EnFireMode::Auto,  0.10f, 30, 180, 2.8f, 20,  1,  0, false, 85.0f, 0.014f, 0.050f, 0.008f, 0.70f },
-		{ "AK47",         "Assets/modelData/gun/mainWeapon/AK-47.tkm",     nsApp::nsWeapon::EnWeaponSlot::Main, nsApp::nsWeapon::EnFireMode::Auto,  0.14f, 40, 180, 3.0f, 35,  1,  0, false, 87.0f, 0.022f, 0.065f, 0.012f, 0.70f },
-		{ "CombatRifle",  "Assets/modelData/gun/mainWeapon/SCAR.tkm",      nsApp::nsWeapon::EnWeaponSlot::Main, nsApp::nsWeapon::EnFireMode::Burst, 0.30f, 60, 180, 2.8f, 26,  1,  0, false, 78.0f, 0.012f, 0.040f, 0.006f, 0.70f },
-		{ "HuntingRifle", "Assets/modelData/gun/mainWeapon/L86A2.tkm",     nsApp::nsWeapon::EnWeaponSlot::Main, nsApp::nsWeapon::EnFireMode::Semi,  0.25f, 15, 150, 3.2f, 55,  1, 99, false, 95.0f, 0.050f, 0.045f, 0.001f, 0.35f },
+		/*  名前              モデル                                              区分   挙動   間隔    弾  予備  装填  威力 粒 貫通 1発ずつ 長さ   跳ね    腰      ADS     倍率  2丁  2丁揃えた変化先 */
+		{ "Handgun",      "Assets/modelData/gun/subWeapon/m1911.tkm",      nsApp::nsWeapon::EnWeaponSlot::Sub,  nsApp::nsWeapon::EnFireMode::Semi,  0.25f, 15,   0, 2.2f, 18,  1,  0, false, 22.0f, 0.030f, 0.035f, 0.004f, 0.80f, false, nsApp::nsWeapon::EnWeaponType::DualHandgun },
+		{ "Magnum",       "Assets/modelData/gun/subWeapon/mp r8.tkm",      nsApp::nsWeapon::EnWeaponSlot::Sub,  nsApp::nsWeapon::EnFireMode::Semi,  0.40f,  8,   0, 2.6f, 40,  1,  1, false, 26.0f, 0.060f, 0.030f, 0.003f, 0.75f, false, enNoDualType_ },
+		{ "SMG",          "Assets/modelData/gun/subWeapon/tec-9.tkm",      nsApp::nsWeapon::EnWeaponSlot::Main, nsApp::nsWeapon::EnFireMode::Auto,  0.06f, 50, 325, 2.2f, 12,  1,  0, false, 40.0f, 0.008f, 0.060f, 0.012f, 0.80f, false, enNoDualType_ },
+		{ "PumpShotgun",  "Assets/modelData/gun/mainWeapon/HAMR.tkm",      nsApp::nsWeapon::EnWeaponSlot::Main, nsApp::nsWeapon::EnFireMode::Semi,  0.90f,  8,  56, 0.55f, 15, 10,  0, true,  95.0f, 0.070f, 0.090f, 0.070f, 0.90f, false, enNoDualType_ },
+		{ "AssaultRifle", "Assets/modelData/gun/mainWeapon/M4A1.tkm",      nsApp::nsWeapon::EnWeaponSlot::Main, nsApp::nsWeapon::EnFireMode::Auto,  0.10f, 30, 180, 2.8f, 20,  1,  0, false, 85.0f, 0.014f, 0.050f, 0.008f, 0.70f, false, enNoDualType_ },
+		{ "AK47",         "Assets/modelData/gun/mainWeapon/AK-47.tkm",     nsApp::nsWeapon::EnWeaponSlot::Main, nsApp::nsWeapon::EnFireMode::Auto,  0.14f, 40, 180, 3.0f, 35,  1,  0, false, 87.0f, 0.022f, 0.065f, 0.012f, 0.70f, false, enNoDualType_ },
+		{ "CombatRifle",  "Assets/modelData/gun/mainWeapon/SCAR.tkm",      nsApp::nsWeapon::EnWeaponSlot::Main, nsApp::nsWeapon::EnFireMode::Burst, 0.30f, 60, 180, 2.8f, 26,  1,  0, false, 78.0f, 0.012f, 0.040f, 0.006f, 0.70f, false, enNoDualType_ },
+		{ "HuntingRifle", "Assets/modelData/gun/mainWeapon/L86A2.tkm",     nsApp::nsWeapon::EnWeaponSlot::Main, nsApp::nsWeapon::EnFireMode::Semi,  0.25f, 15, 150, 3.2f, 55,  1, 99, false, 95.0f, 0.050f, 0.045f, 0.001f, 0.35f, false, enNoDualType_ },
+		{ "DualHandgun",  "Assets/modelData/gun/subWeapon/m1911.tkm",      nsApp::nsWeapon::EnWeaponSlot::Sub,  nsApp::nsWeapon::EnFireMode::Semi,  0.14f, 30,   0, 3.0f, 18,  1,  0, false, 22.0f, 0.028f, 0.050f, 0.010f, 0.90f, true,  enNoDualType_ },
 	};
 
 	/* 表の行数がEnWeaponType::Numと一致しているかをコンパイル時に検査する。*/
@@ -178,6 +190,8 @@ namespace
 		stStatus.fSpreadHip_ = stDefault.fSpreadHip_;
 		stStatus.fSpreadAds_ = stDefault.fSpreadAds_;
 		stStatus.fAdsZoomRate_ = stDefault.fAdsZoomRate_;
+		stStatus.bIsDualWield_ = stDefault.bIsDualWield_;
+		stStatus.enDualType_ = stDefault.enDualType_;
 
 		/* 全武器共通の値。*/
 		stStatus.iBurstCount_ = iDefaultBurstCount_;
@@ -259,6 +273,18 @@ namespace
 		const int iFireMode = static_cast<int>(stStatus.enFireMode_);
 		const std::string sFireMode = stFile.GetString("fireMode", sFireModeNameList_[iFireMode]);
 		stStatus.enFireMode_ = static_cast<nsApp::nsWeapon::EnFireMode>(FindNameIndex(sFireModeNameList_, _countof(sFireModeNameList_), sFireMode, iFireMode));
+
+		/* 二丁持ちかどうか。*/
+		stStatus.bIsDualWield_ = stFile.GetBool("isDualWield", stStatus.bIsDualWield_);
+
+		/*
+		 * 2丁揃えたときの変化先は武器名で書く。一覧に無い名前なら「変化しない」扱いにする。
+		 * 変化先が無い武器は添字が範囲外になるので、既定の名前は空文字にしておく。
+		 */
+		const int iNoDualType = static_cast<int>(nsApp::nsWeapon::EnWeaponType::Num);
+		const int iDualType = static_cast<int>(stStatus.enDualType_);
+		const std::string sDualType = stFile.GetString("dualType", (iDualType < iNoDualType) ? sWeaponTypeNameList_[iDualType] : "");
+		stStatus.enDualType_ = static_cast<nsApp::nsWeapon::EnWeaponType>(FindNameIndex(sWeaponTypeNameList_, _countof(sWeaponTypeNameList_), sDualType, iNoDualType));
 
 		stStatus.fFireInterval_ = stFile.GetFloat("fireInterval", stStatus.fFireInterval_);
 		stStatus.iBurstCount_ = stFile.GetInt("burstCount", stStatus.iBurstCount_);

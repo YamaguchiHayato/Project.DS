@@ -31,6 +31,34 @@ namespace nsK2EngineLow {
 		Vector3 m_groundNormal;
 	};
 
+	/// <summary>
+	/// 屋内ボリュームの最大数。建物ごとに1つ使う。
+	/// </summary>
+	/// <remark>
+	/// model.fx の INDOOR_VOLUME_MAX と必ず同じ数にすること。
+	/// 増やすと定数バッファが1つにつき32バイト増える(上限に対しては誤差)。
+	/// </remark>
+	static const int kIndoorVolumeMax = 4;
+
+	/// <summary>
+	/// 屋内ボリューム。この箱の中だけベース光(方向光・環境光・半球光)を弱める。
+	/// </summary>
+	/// <remark>
+	/// シーン全体で持つ。モデルごとに持たせると、床は暗いのに手に持った銃だけ
+	/// 明るいといったことが起きるため、ここで一括して管理する。
+	/// ポイントライトとスポットライトは弱めないので、屋内では手持ちライトと
+	/// 据え置きの明かりだけが頼りになる。
+	/// 並びは model.fx の IndoorVolume と合わせてあるので、順番を入れ替えないこと。
+	/// 定数バッファの並びに影響するので SceneLight の中には入れないこと。
+	/// </remark>
+	struct IndoorVolume
+	{
+		Vector3 boxMin = Vector3::Zero;	//! 箱の最小座標(ワールド)。
+		float feather = 300.0f;			//! 箱の端から内側へこの距離で倍率が変わり切る。
+		Vector3 boxMax = Vector3::Zero;	//! 箱の最大座標(ワールド)。
+		float scale = 1.0f;				//! 箱の中でのベース光の倍率。1.0で無効。
+	};
+
 	struct SceneLight
 	{
 		DirectionLight directionLig;
@@ -137,6 +165,41 @@ namespace nsK2EngineLow {
 			}
 
 			/// <summary>
+			/// 屋内ボリュームをすべて差し替える。
+			/// </summary>
+			/// <param name="pVolumes">屋内ボリュームの配列。</param>
+			/// <param name="count">配列の数。kIndoorVolumeMax を超えたぶんは捨てる。</param>
+			void SetIndoorVolumes(const IndoorVolume* pVolumes, int count)
+			{
+				if (count > kIndoorVolumeMax)
+					count = kIndoorVolumeMax;
+
+				if (count < 0)
+					count = 0;
+
+				for (int i = 0; i < count; i++)
+					m_indoorVolumes[i] = pVolumes[i];
+
+				m_indoorVolumeCount = count;
+			}
+
+			/// <summary>
+			/// 屋内ボリュームの配列の先頭を取得する。
+			/// </summary>
+			const IndoorVolume* GetIndoorVolumes() const
+			{
+				return m_indoorVolumes;
+			}
+
+			/// <summary>
+			/// 設定されている屋内ボリュームの数を取得する。
+			/// </summary>
+			int GetIndoorVolumeCount() const
+			{
+				return m_indoorVolumeCount;
+			}
+
+			/// <summary>
 			/// ライトカメラを取得 
 			/// </summary>
 			Camera& GetLightCamera()
@@ -146,6 +209,8 @@ namespace nsK2EngineLow {
 
 		private:
 			SceneLight m_SceneLight;
+			IndoorVolume m_indoorVolumes[kIndoorVolumeMax];	//! 屋内ボリューム(シーン全体で共有)。
+			int m_indoorVolumeCount = 0;					//! 実際に使っている数。
 			Camera m_lightCamera;			//ライトカメラ
 			Vector3 m_lightCameraTarget;	//ライトカメラの注視点
 

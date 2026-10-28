@@ -10,6 +10,7 @@
 #include "Src/Item/PipeBomb.h"
 #include "Src/Director/EnemySpawner.h"
 #include "Src/Director/EnemySpawnSetting.h"
+#include "Src/Item/PickupSpawner.h"
 
 namespace
 {
@@ -56,18 +57,17 @@ namespace
 	const float fThirdPersonMinSize_ = 50.0f;		//! モデルを測れなかったときに使う大きさ。
 	const float fStageScale_ = 150.0f;
 
-	/*屋内ボリューム確認用に大きな箱*/
-	const Vector3 vIndoorMin_ = { -1891.0f, -344.0f, -7142.0f };
-	const Vector3 vIndoorMax_ = { 1869.0f, 1256.0f, 2650.0f };
-	const float fIndoorScale = 0.2;
+	/*
+	 * 屋内ボリューム(屋内だけ暗くする箱)は、シーン全体で1つの設定になった。
+	 * 場所と暗さは Assets/data/Lighting/overcast.json の indoorVolumes で決める(建物ごとに1つ)。
+	 * ここで個別に指定すると、ステージだけ暗くてキャラや手に持った銃が明るいままになる。
+	 */
 
 	/* 手前中央。敵とは離す。*/
 	const Vector3 vPlayerSpawn_ = { 0.0f, 300.0f, -600.0f };
 
-	/* 拾える物資の置き方。プレイヤーの右手側に、銃を1列に並べる。*/
-	const Vector3 vPickupRowStart_ = { -700.0f, -50.0f, -900.0f };	//! 列の左端。
-	const float fPickupRowStep_ = 200.0f; //! 物資どうしの間隔。
-	const float fPickupItemRowOffset_ = -200.0f; //! 銃の列から見た、物資(弾薬・回復)の列の奥行きのずれ。
+	/* 拾える物資の配置表。どこに何を置くかはすべてこのファイルで決める。*/
+	const char* sPickupSpawnFilePath_ = "Assets/data/pickupSpawn_stage1.tsv"; //! 物資配置表のファイルパス。
 
 	/* TSVファイルを読み込む。*/
 	const char* sEnemySpawnFilePath_ = "Assets/data/enemySpawn_stage1.tsv"; //! 敵配置表のファイルパス。
@@ -125,7 +125,6 @@ namespace nsApp
 			InitCamera();
 
 			/* ステージモデルを読み込み */
-			stStageModel_.SetIndoorVolume(vIndoorMin_, vIndoorMax_, fIndoorScale);//kiryu
 			stStageModel_.Init(sStageModelPath_, nullptr, 0, enModelUpAxisZ);
 			stStageModel_.SetScale(Vector3(fStageScale_, fStageScale_, fStageScale_));
 			stStageModel_.SetPosition(Vector3::Zero);
@@ -355,36 +354,17 @@ namespace nsApp
 
 		void DebugShootingRangeScene::SpawnPickups()
 		{
-			/* 全種類の銃を1列に並べる。Eで拾うと同じ区分の手持ちと入れ替わり、手放した銃がその場に落ちる。*/
-			const int iWeaponCount = static_cast<int>(nsWeapon::EnWeaponType::Num);
-			for (int i = 0; i < iWeaponCount; i++)
-			{
-				Vector3 vPos = vPickupRowStart_;
-				vPos.x += fPickupRowStep_ * static_cast<float>(i);
-
-				nsItem::Pickup* pPickup = NewGO<nsItem::Pickup>(0, "pickup");
-				pPickup->SetupWeapon(static_cast<nsWeapon::EnWeaponType>(i), vPos);
-			}
-
-			/* 銃の列の手前に、弾薬の山・回復・投擲・鎮痛剤・アドレナリンを並べる。*/
-			const nsItem::EnPickupType aItemTypes[] =
-			{
-				nsItem::EnPickupType::Ammo,
-				nsItem::EnPickupType::Medkit,
-				nsItem::EnPickupType::PipeBomb,
-				nsItem::EnPickupType::Pills,
-				nsItem::EnPickupType::Adrenaline,
-			};
-
-			for (int i = 0; i < _countof(aItemTypes); i++)
-			{
-				Vector3 vPos = vPickupRowStart_;
-				vPos.x += fPickupRowStep_ * static_cast<float>(i);
-				vPos.z += fPickupItemRowOffset_;
-
-				nsItem::Pickup* pPickup = NewGO<nsItem::Pickup>(0, "pickup");
-				pPickup->Setup(aItemTypes[i], vPos);
-			}
+			/*
+			 * 物資は配置表から撒く。場所も中身も毎回抽選されるので、
+			 * ニューゲームのたびに配置と落ちている銃の種類が変わる。
+			 *
+			 * 二丁拳銃のように「同じ銃を2丁揃えて初めて手に入る武器」は、
+			 * 配置表に名前を書かなければ出てこない(コード側に除外リストは持たせていない)。
+			 *
+			 * 決め打ちで並べたいときは、表の chance を1.0・radius を0にして
+			 * 1行に1つずつ名前を書けばよい(リビルドは要らない)。
+			 */
+			stPickupSpawner_.Spawn(sPickupSpawnFilePath_);
 		}
 
 

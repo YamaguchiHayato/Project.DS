@@ -114,14 +114,15 @@ namespace nsApp
 			float	fSprintRate_ = 1.6f;			//! スプリント中の移動速度の倍率。
 			float	fEyeHeight_ = 160.0f;			//! 目(カメラ)の高さ。射撃の起点とカメラ位置に使う。
 			float	fWeaponRange_ = 3000.0f;		//! ヒットスキャンの射程。
-			float	fBodyModelScale_ = 2.3f;		//! 体モデルの表示スケール。unityChanは素で身長約76しかないので、世界の想定(175)へ合わせる。
+			float	fBodyModelScale_ = 1.04f;		//! 体モデルの表示スケール。player.tkm(SapphiArt)は素で身長約168なので、世界の想定(175)へ合わせる。
 
 			/*
 			 * 三人称で銃を持たせるボーンの名前。
-			 * ※unityChanは左右の名前が反転していて、"LeftHand" が見た目の右手になる。
+			 * ※tksのボーン名と完全一致させること。見つからない場合は -1 になり、
+			 *   銃は腰の高さのフォールバック位置へ置かれる。
 			 *   モデルを差し替えたら実際に持たせて確かめること。
 			 */
-			std::string sHandBoneName_ = "Character1_LeftHand";	//! 銃を持たせるボーンの名前。
+			std::string sHandBoneName_ = "SapphiArt_19:Hand_R";	//! 銃を持たせるボーンの名前。
 
 			/* ダウンと救助。*/
 			float	fBleedOutTime_ = 15.0f;			//! ダウンしてから死亡するまでの出血時間(秒)。

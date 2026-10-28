@@ -1,21 +1,36 @@
 {
   "version": 1,
-  "presetName": "overcast_dark_indoor",
+  "presetName": "dusk_outdoor",
   "directionalLight": {
     "enabled": true,
-    "direction": [0.0, -0.906, 0.423],
-    "color": [0.05, 0.055, 0.07]
+    "direction": [0.35, -0.30, 0.89],
+    "color": [0.42, 0.28, 0.18]
   },
   "ambientLight": {
-    "color": [0.018, 0.020, 0.028]
+    "color": [0.10, 0.11, 0.15]
   },
   "hemisphereLight": {
     "enabled": true,
-    "groundColor": [0.006, 0.006, 0.008],
-    "skyColor": [0.020, 0.024, 0.035],
+    "groundColor": [0.06, 0.05, 0.04],
+    "skyColor": [0.13, 0.16, 0.24],
     "groundNormal": [0.0, 1.0, 0.0]
   },
-  "pointLights": [],
+  "indoorVolumes": [
+    {
+      "enabled": false,
+      "min": [-1891.0, -344.0, -7142.0],
+      "max": [1869.0, 1256.0, 2650.0],
+      "scale": 0.10,
+      "feather": 300.0
+    }
+  ],
+  "pointLights": [
+    {
+      "position": [0.0, 150.0, -900.0],
+      "color": [1.0, 0.75, 0.45],
+      "range": 600.0
+    }
+  ],
   "spotLights": [],
   "fog": {
     "enabled": false,

@@ -16,10 +16,10 @@ namespace nsK2EngineLow {
 			float alphaPadding[3] = {}; //! 定数バッファ整列用（中身は使わない）。
 
 			//! 屋内ボリューム(model.fx の定数バッファと同じ並びにすること)。
-			Vector3 indoorMin = Vector3::Zero;	//! 箱の最小座標(ワールド)。
-			float indoorPad0 = 0.0f;			//! 定数バッファ整列用（中身は使わない）。
-			Vector3 indoorMax = Vector3::Zero;	//! 箱の最大座標(ワールド)。
-			float indoorScale = 1.0f;			//! 箱の中でのベース光の倍率(1.0で無効)。
+			//! 中身は RefreshLight がシーン全体の設定から毎フレーム写すので、ここへ直接書かない。
+			IndoorVolume indoorVolumes[kIndoorVolumeMax];	//! 箱の一覧。
+			int indoorVolumeCount = 0;						//! 実際に使っている数。
+			float indoorCountPadding[3] = {};				//! 定数バッファ整列用（中身は使わない）。
 		};
 
 
@@ -122,6 +122,19 @@ namespace nsK2EngineLow {
 		}
 
 		/// <summary>
+		/// スケルトンを取得。
+		/// </summary>
+		/// <remark>
+		/// ボーン名からボーン番号を引いたり、ボーンのワールド行列を参照したいときに使います。
+		/// ワールド行列は Update() が計算するので、Update() のあとで参照してください。
+		/// </remark>
+		/// <returns>スケルトン</returns>
+		Skeleton& GetSkeleton()
+		{
+			return m_skeleton;
+		}
+
+		/// <summary>
 		/// スケルトンの初期化。
 		/// </summary>
 		/// <param name="filePath">ファイルパス。</param>
@@ -177,23 +190,12 @@ namespace nsK2EngineLow {
 
 
 		/// <summary>
-		/// 屋内ボリューム(軸に平行な箱)を設定する。
-		/// 箱の中のピクセルだけ、ベースの光(方向光・環境光・半球ライト)が弱まる。
-		/// 箱の端から内側へ30進むまでに、倍率が1.0からscaleへ滑らかに変わる。
+		/// シーンライトと屋内ボリュームを、このモデル用のコピーに写す(倍率と、αも反映する)。
 		/// </summary>
-		/// <param name="minPos">箱の最小座標(ワールド)</param>
-		/// <param name="maxPos">箱の最大座標(ワールド)</param>
-		/// <param name="scale">箱の中での倍率。0.2で暗く、1.0で無効</param>
-		void SetIndoorVolume(const Vector3& minPos, const Vector3& maxPos, float scale)
-		{
-			m_expandCB.indoorMin = minPos;
-			m_expandCB.indoorMax = maxPos;
-			m_expandCB.indoorScale = scale;
-		}
-
-		/// <summary>
-		/// シーンライトを、このモデル用のコピーに写す(倍率と、αも反映する)。
-		/// </summary>
+		/// <remark>
+		/// 屋内ボリュームはモデルごとではなくシーン全体で1つ持つ。
+		/// 設定は RenderingEngine::SetIndoorVolumes(ライティングJSONの indoorVolumes)で行う。
+		/// </remark>
 		void RefreshLight();
 
 		AnimationClip* m_animationClips = nullptr;		//アニメーションクリップ

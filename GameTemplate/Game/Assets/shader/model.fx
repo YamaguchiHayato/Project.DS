@@ -75,6 +75,19 @@ struct SpotLight
 };
 
 //半球ライト
+//屋内ボリュームの最大数。Light.h の kIndoorVolumeMax と必ず同じ数にすること。
+static const int INDOOR_VOLUME_MAX = 4;
+
+//屋内ボリューム(この箱の中だけベース光を弱める)
+//並びは C++ 側の IndoorVolume と合わせてあるので、順番を入れ替えないこと。
+struct IndoorVolume
+{
+    float3 boxMin; //箱の最小座標(ワールド)
+    float feather; //箱の端から内側へこの距離で倍率が変わり切る
+    float3 boxMax; //箱の最大座標(ワールド)
+    float scale; //箱の中でのベース光の倍率(1.0で無効)
+};
+
 struct HemLight
 {
     float3 groundColor; //地面色
@@ -106,10 +119,9 @@ cbuffer DirectionLightCb : register(b1)
     float3 modelAlphaAlignmentPad;
 
     //屋内ボリューム
-    float3 indoorMin; //箱の最小座標(ワールド)
-    float indoorPad0;
-    float3 indoorMax; //箱の最大座標(ワールド)
-    float indoorScale; //箱の中でのベース光の倍率(1.0で無効)
+    IndoorVolume indoorVolumes[INDOOR_VOLUME_MAX];
+    int indoorVolumeCount; //実際に使っている数
+    float3 indoorCountPadding;
 }
 
 ////////////////////////////////////////////////
@@ -226,13 +238,25 @@ SPSOut PSMain(SPSIn psIn, int isShadowReceiver) : SV_Target0
     float3 hemiLight = CalcLigFromHemiSphereLight(psIn);
 
     //屋内ボリュームによるベース光の倍率を求める。
-    //箱の端から内側へ30進むまでに、倍率が1.0からindoorScaleへ滑らかに変わる。
+    //箱の端から内側へfeather進むまでに、倍率が1.0からscaleへ滑らかに変わる。
+    //出入口でパッと切り替わらないよう、feather は人の身長より大きめにしておく。
+    //箱が重なっている場所では、一番暗い倍率を採用する。
     float baseScale = 1.0f;
-    if (indoorScale < 1.0f)
+    for (int v = 0; v < indoorVolumeCount; v++)
     {
-        float3 d = min(psIn.worldPos - indoorMin, indoorMax - psIn.worldPos);
+        //倍率1.0の箱は何もしないので飛ばす。
+        if (indoorVolumes[v].scale >= 1.0f)
+        {
+            continue;
+        }
+
+        float3 d = min(psIn.worldPos - indoorVolumes[v].boxMin,
+                       indoorVolumes[v].boxMax - psIn.worldPos);
         float edge = min(d.x, min(d.y, d.z));
-        baseScale = lerp(1.0f, indoorScale, saturate(edge / 30.0f));
+        float volumeScale = lerp(1.0f, indoorVolumes[v].scale,
+                                 saturate(edge / max(indoorVolumes[v].feather, 0.001f)));
+
+        baseScale = min(baseScale, volumeScale);
     }
 
     //最終的な光を求める(ベース光にだけ倍率を掛ける)
