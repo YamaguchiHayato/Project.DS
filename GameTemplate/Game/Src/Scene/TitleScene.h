@@ -13,6 +13,7 @@ namespace nsApp
 	namespace nsUI {
 		class TitleUI;
 		class KeyConfigUI;
+		class VideoScreen;
 	}
 
 	namespace nsScene
@@ -35,8 +36,9 @@ namespace nsApp
 		private:
 			nsUI::TitleUI* pTitleUI_ = nullptr; //! タイトル本体。
 			nsUI::KeyConfigUI* pKeyConfig_ = nullptr; //! キーコンフィグUI。
-			bool bWasPress1_ = false;			//! 前フレームでキー1が押されていたか。
-			bool bWasPress2_ = false;			//! 前フレームでキー2が押されていたか。
+			nsUI::VideoScreen* pVideoScreen_ = nullptr; //! 動画の再生画面。
+			bool bWasPress1_ = false; //! 前フレームでキー1が押されていたか。
+			bool bWasPress2_ = false; //! 前フレームでキー2が押されていたか。
 		};
 	}
 }

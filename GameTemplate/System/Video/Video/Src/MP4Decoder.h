@@ -49,6 +49,12 @@ namespace nsApp
 			unsigned int GetHeight() const;
 
 			/**
+			 * @brief フレームごとの時間帯を取得。
+			 * @return 
+			 */
+			float GetFrameTime() const;
+
+			/**
 			 * @brief MP4ファイルのフレームを読み取る。
 			 * @return フレームの読み取りに成功した場合はtrue、失敗した場合はfalse。
 			 */
@@ -142,6 +148,9 @@ namespace nsApp
 			IMFMediaBuffer* pBuffer_ = nullptr; //! フレームの画素。
 			unsigned int width_ = 0; //! 映像の幅。
 			unsigned int height_ = 0; //! 映像の高さ。
+			unsigned long long rate_ = 0; //! フレームレートのパック値。
+			unsigned int rateNumerator_ = 0; //! フレームレートの分子。
+			unsigned int rateDenominator_ = 1; //! フレームレートの分母。
 			unsigned char* pFrame_ = nullptr;		//! 画素の先頭。
 			unsigned long flags_ = 0; //! ReadSample の状態。
 			unsigned long frameSize_ = 0; //! 画素のバイト数。

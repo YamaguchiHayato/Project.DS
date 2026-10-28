@@ -29,7 +29,7 @@ namespace nsApp
 			desc_.Height = height_;
 			desc_.DepthOrArraySize = 1;
 			desc_.MipLevels = 1;
-			desc_.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			desc_.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 			desc_.SampleDesc.Count = 1;
 			desc_.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 

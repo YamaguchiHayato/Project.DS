@@ -70,7 +70,9 @@ namespace nsApp
 			result_ = pReader_->GetNativeMediaType(MF_SOURCE_READER_FIRST_VIDEO_STREAM, 0, &pType_);
 			if (Failed())
 				return false;
-
+			/* フレームレートの取得を行う。*/
+			MFGetAttributeRatio(pType_, MF_MT_FRAME_RATE, &rateNumerator_, &rateDenominator_);
+\
 			/* ビデオの幅と高さの取得を行う。*/
 			MFGetAttributeSize(pType_, MF_MT_FRAME_SIZE, &width_, &height_);
 			ReleaseMediaType();
@@ -92,6 +94,7 @@ namespace nsApp
 			/* ビデオの幅と高さの取得を行う。*/
 			return width_ != 0 && height_ != 0;
 		}
+
 
 		bool MP4Decoder::ReadSize()
 		{
@@ -282,6 +285,17 @@ namespace nsApp
 		{
 			/* ビデオの高さを取得する。*/
 			return height_;
+		}
+
+
+		float MP4Decoder::GetFrameTime() const
+		{
+			/* フレームごとの時間帯を取得する。*/
+			if (rateNumerator_ == 0)
+				return 1.0f / 30.0f;
+
+			/* フレームごとの時間帯を取得する。*/
+			return static_cast<float>(rateDenominator_) / static_cast<float>(rateNumerator_);
 		}
 	}
 }

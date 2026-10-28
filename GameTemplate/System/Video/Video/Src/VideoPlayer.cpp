@@ -22,16 +22,24 @@ namespace nsApp
 
 			/* 開けた。*/
 			isOpened_ = true;
+			time_ = decoder_.GetFrameTime();
 			isEnd_ = false;
 			return true;
 		}
 
 
-		bool VideoPlayer::Update(ID3D12GraphicsCommandList* pCommandList)
+		bool VideoPlayer::Update(ID3D12GraphicsCommandList* pCommandList, float deltaTime)
 		{
 			/* 開いていない、または終端なら進めない。*/
 			if (!isOpened_ || isEnd_)
 				return false;
+
+			/* 経過時間を足し、フレーム時間に達していなければ進めない。*/
+			time_ += deltaTime;
+			if (time_ < decoder_.GetFrameTime())
+				return true;
+			/* フレーム時間に達したら、次のフレームへ進める。*/
+			time_ -= decoder_.GetFrameTime();
 
 			/* 次の画素を読み、テクスチャへコピーする。*/
 			if (!decoder_.ReadFrame())

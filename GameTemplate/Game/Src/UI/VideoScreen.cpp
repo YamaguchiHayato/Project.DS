@@ -42,7 +42,7 @@ namespace nsApp
 			if (player_.IsEnd())
 				return;
 
-			player_.Update(g_graphicsEngine->GetCommandList());
+			player_.Update(g_graphicsEngine->GetCommandList(), g_gameTime->GetFrameDeltaTime());
 			sprite_.Update(Vector3::Zero, Quaternion::Identity, Vector3::One);
 		}
 

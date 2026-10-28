@@ -30,7 +30,7 @@ namespace nsApp
 			 * @param pCommandList コピー命令を積むコマンドリスト。
 			 * @return フレームを更新できたら true。終端か失敗なら false。
 			 */
-			bool Update(ID3D12GraphicsCommandList* pCommandList);
+			bool Update(ID3D12GraphicsCommandList* pCommandList, float deltaTime);
 
 			/**
 			 * @brief 再生を終える。
@@ -79,6 +79,7 @@ namespace nsApp
 			FrameTexture frameTexture_; //! 画素をテクスチャへ載せる。
 			bool isOpened_ = false; //! 開けているか。
 			bool isEnd_ = false; //! 終端まで読んだか。
+			float time_ = 0.0f; //! 次のフレームまでの残り時間。
 		};
 	}
 }
