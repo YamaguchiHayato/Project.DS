@@ -92,6 +92,15 @@ namespace nsK2EngineLow {
 		/// <param name="is3DSound">trueなら3Dサウンド。</param>
 		/// <returns>XAudio2のソースボイス。</returns>
 		IXAudio2SourceVoice* CreateXAudio2SourceVoice(WaveFile* waveFile, bool is3DSound);
+
+		/// <summary>
+		/// PCMのソースボイスを追加。
+		/// </summary>
+		/// <param name="channels">チャンネル数。</param>
+		/// <param name="sampleRate">サンプルレート。</param>
+		/// <param name="bitsPerSample">ビット数。</param>
+		/// <returns>XAudio2のソースボイス。</returns>
+		IXAudio2SourceVoice* CreatePCMVoice(unsigned int channels, unsigned int sampleRate, unsigned int bitsPerSample);
 		IXAudio2MasteringVoice* GetMasteringVoice()
 		{
 			return m_masteringVoice;

@@ -16,12 +16,7 @@ namespace nsApp
 			for (int index_ = 0; index_ < count_ && index_ < fontCount_; index_++)
 			{
 				wchar_t line_[96];
-				swprintf_s(
-					line_,
-					L"%hs    %hs",
-					input_.GetActionLabel(index_),
-					input_.GetBindingLabel(index_).c_str()
-				);
+				swprintf_s(line_,L"%hs    %hs",input_.GetActionLabel(index_),input_.GetBindingLabel(index_).c_str());
 
 				font_[index_].SetPosition({ -420.0f, y_, 0.0f });
 				font_[index_].SetScale(0.7f);
@@ -41,6 +36,9 @@ namespace nsApp
 			const bool down_ = (GetAsyncKeyState(VK_DOWN) & 0x8000) != 0;
 			const bool enter_ = (GetAsyncKeyState(VK_RETURN) & 0x8000) != 0;
 			const bool back_ = (GetAsyncKeyState(VK_BACK) & 0x8000) != 0;
+			const bool escape_ = (GetAsyncKeyState(VK_ESCAPE) & 0x8000) != 0;
+			if (escape_ && !wasEscape_)
+				close_ = true;
 
 			/* 入力待ちのあいだは、行を動かさない。*/
 			if (!waiting_)
@@ -84,6 +82,7 @@ namespace nsApp
 			wasDown_ = down_;
 			wasEnter_ = enter_;
 			wasBack_ = back_;
+			wasEscape_ = escape_;
 
 			for (int index_ = 0; index_ < count_ && index_ < fontCount_; index_++)
 			{
