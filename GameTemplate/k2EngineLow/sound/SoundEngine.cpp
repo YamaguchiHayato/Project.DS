@@ -314,4 +314,23 @@ namespace nsK2EngineLow {
 			}
 		}
 	}
+
+
+	IXAudio2SourceVoice* SoundEngine::CreatePCMVoice(unsigned int channels, unsigned int sampleRate, unsigned int bitsPerSample)
+	{
+		WAVEFORMATEX format_ = {};
+		format_.wFormatTag = WAVE_FORMAT_PCM;
+		format_.nChannels = static_cast<WORD>(channels);
+		format_.nSamplesPerSec = sampleRate;
+		format_.wBitsPerSample = static_cast<WORD>(bitsPerSample);
+		format_.nBlockAlign = format_.nChannels * format_.wBitsPerSample / 8;
+		format_.nAvgBytesPerSec = format_.nSamplesPerSec * format_.nBlockAlign;
+
+		/**/
+		IXAudio2SourceVoice* pSourceVoice = nullptr;
+		if (FAILED(m_xAudio2->CreateSourceVoice(&pSourceVoice, &format_)))
+			return nullptr;
+
+		return pSourceVoice;
+	}
 }

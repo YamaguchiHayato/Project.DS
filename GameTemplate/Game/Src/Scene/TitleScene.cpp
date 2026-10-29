@@ -5,6 +5,7 @@
 #include "Src/UI/Title/TitleUI.h"
 #include "Src/UI/KeyConfig/KeyConfigUI.h"
 #include "Src/InputObserver.h"
+#include "Src/UI/VideoScreen.h"
 
 namespace nsApp
 {
@@ -24,22 +25,53 @@ namespace nsApp
 				DeleteGO(pKeyConfig_);
 				pKeyConfig_ = nullptr;
 			}
+
+			if (pVideoScreen_ != nullptr)
+			{
+				DeleteGO(pVideoScreen_);
+				pVideoScreen_ = nullptr;
+			}
 		}
 
 
 		bool TitleScene::Start()
 		{
 			/* タイトル本体を生成する。*/
-			pTitleUI_ = NewGO<nsUI::TitleUI>(0, "title");
+//			pTitleUI_ = NewGO<nsUI::TitleUI>(0, "title");
+
+			pVideoScreen_ = NewGO<nsUI::VideoScreen>(0, "videoScreen");
 			return true;
 		}
 
 
 		void TitleScene::Update()
 		{
+			/* 動画中は、決定キーか再生終了でタイトルへ進む。*/
+			if (pVideoScreen_ != nullptr)
+			{
+				if (nsData::InputObserver::Get().IsTrigger(nsData::EnAction::Confirm) || pVideoScreen_->IsEnd())
+				{
+					DeleteGO(pVideoScreen_);
+					pVideoScreen_ = nullptr;
+
+					if (pTitleUI_ == nullptr)
+						pTitleUI_ = NewGO<nsUI::TitleUI>(0, "title");
+				}
+
+				return;
+			}
+
 			/* すでにキーコンフィグUIが生成されている場合は、キー入力を受け付けない。*/
 			if (pKeyConfig_ != nullptr)
+			{
+				/* キーコンフィグUIが閉じられたら破棄する。*/
+				if (pKeyConfig_->IsClose())
+				{
+					DeleteGO(pKeyConfig_);
+					pKeyConfig_ = nullptr;
+				}
 				return;
+			}
 
 			/* 今フレームのキー状態を取る。*/
 			const bool bPress1 = (GetAsyncKeyState('1') & 0x8000) != 0;

@@ -21,6 +21,16 @@ namespace nsApp
 			void Render(RenderContext& rc) override;
 
 
+		public:
+			/**
+			 * @brief キーコンフィグUIが閉じられたかどうかを返す。
+			 * @return 閉じられたら true。
+			 */
+			bool IsClose() const
+			{
+				return close_;
+			}
+
 		private:
 			static constexpr int fontCount_ = 25; //! 表示できる行数。
 			FontRender font_[fontCount_]; //! 1行ごとの文字。
@@ -30,6 +40,8 @@ namespace nsApp
 			bool wasEnter_ = false;//! 前フレームでEnterが押されていたか。
 			bool waiting_ = false;	//! 次の入力を待っているか。
 			bool wasBack_ = false;	//! 前フレームでBackspaceが押されていたか。
+			bool wasEscape_ = false; //! 前フレームでEscapeが押されていたか。
+			bool close_ = false; //! 一覧を閉じるか。
 		};
 	}
 }
