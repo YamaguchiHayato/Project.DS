@@ -10,37 +10,37 @@ namespace nsApp
 
 		/**
 	      * @file   StateMachine.h
-		 * @brief  ƒXƒe[ƒgƒ}ƒVƒ“‚Ì–{‘ÌƒNƒ‰ƒXB
-		 * @author Yamaguchi HayatoB
-		 * @date   2026/03/05B
+		 * @brief  ã‚¹ãƒ†ãƒ¼ãƒˆãƒã‚·ãƒ³ã®æœ¬ä½“ã‚¯ãƒ©ã‚¹ã€‚
+		 * @author Yamaguchi Hayatoã€‚
+		 * @date   2026/03/05ã€‚
 		 */
 		class StateMachine
 		{
 		public:
 			/**
-			 * @brief ƒRƒ“ƒXƒgƒ‰ƒNƒ^B
-			 * @param pOwner ƒXƒe[ƒgƒ}ƒV[ƒ“‚ª‚ÂÀ‘Ô‚Ö‚Ìƒ|ƒCƒ“ƒ^B
+			 * @brief ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ã€‚
+			 * @param pOwner ã‚¹ãƒ†ãƒ¼ãƒˆãƒã‚·ãƒ¼ãƒ³ãŒæŒã¤å®Ÿæ…‹ã¸ã®ãƒã‚¤ãƒ³ã‚¿ã€‚
 			 */
 			StateMachine(CharacterTemplete* pOwner);
 			virtual ~StateMachine();
 
 			/**
-			 * @brief ƒXƒe[ƒg‚ğ•ÏX‚·‚éB
-			 * @param pNewState V‚µ‚¢ƒXƒe[ƒg‚Ö‚Ìƒ|ƒCƒ“ƒ^B
+			 * @brief ã‚¹ãƒ†ãƒ¼ãƒˆã‚’å¤‰æ›´ã™ã‚‹ã€‚
+			 * @param pNewState æ–°ã—ã„ã‚¹ãƒ†ãƒ¼ãƒˆã¸ã®ãƒã‚¤ãƒ³ã‚¿ã€‚
 			 */
 			void ChangeState(IState<CharacterTemplete>* pNewState);
 
 			/**
-			 * @brief ƒXƒe[ƒgƒ}ƒV[ƒ“‚ğXV‚·‚éB
+			 * @brief ã‚¹ãƒ†ãƒ¼ãƒˆãƒã‚·ãƒ¼ãƒ³ã‚’æ›´æ–°ã™ã‚‹ã€‚
 			 */
 			void Update();
 
 
-		/* ƒQƒbƒ^[B*/
+		/* ã‚²ãƒƒã‚¿ãƒ¼ã€‚*/
 		public:
 			/**
-			 * @brief Œ»İ‚ÌƒXƒe[ƒg‚ğæ“¾‚·‚éB
-			 * @return Œ»İ‚ÌƒXƒe[ƒg‚Ö‚Ìƒ|ƒCƒ“ƒ^B
+			 * @brief ç¾åœ¨ã®ã‚¹ãƒ†ãƒ¼ãƒˆã‚’å–å¾—ã™ã‚‹ã€‚
+			 * @return ç¾åœ¨ã®ã‚¹ãƒ†ãƒ¼ãƒˆã¸ã®ãƒã‚¤ãƒ³ã‚¿ã€‚
 			 */
 			inline IState<CharacterTemplete>* GetCurrentState() const
 			{
@@ -49,10 +49,10 @@ namespace nsApp
 
 
 		private:
-			CharacterTemplete* pOwner_; //! ƒXƒe[ƒgƒ}ƒV[ƒ“‚ª‚ÂÀ‘Ô‚Ö‚Ìƒ|ƒCƒ“ƒ^B
-			IState<CharacterTemplete>* pCurrentState_ = nullptr; //! Œ»İ‚ÌƒXƒe[ƒg‚Ö‚Ìƒ|ƒCƒ“ƒ^B
-			IState<CharacterTemplete>* pNextState_ = nullptr; //! Ÿ‚ÌƒXƒe[ƒg‚Ö‚Ìƒ|ƒCƒ“ƒ^B
-			bool bIsUpdating_ = false; //! ƒXƒe[ƒgƒ}ƒV[ƒ“‚ªXV’†‚©‚Ç‚¤‚©‚Ìƒtƒ‰ƒOB
+			CharacterTemplete* pOwner_; //! ã‚¹ãƒ†ãƒ¼ãƒˆãƒã‚·ãƒ¼ãƒ³ãŒæŒã¤å®Ÿæ…‹ã¸ã®ãƒã‚¤ãƒ³ã‚¿ã€‚
+			IState<CharacterTemplete>* pCurrentState_ = nullptr; //! ç¾åœ¨ã®ã‚¹ãƒ†ãƒ¼ãƒˆã¸ã®ãƒã‚¤ãƒ³ã‚¿ã€‚
+			IState<CharacterTemplete>* pNextState_ = nullptr; //! æ¬¡ã®ã‚¹ãƒ†ãƒ¼ãƒˆã¸ã®ãƒã‚¤ãƒ³ã‚¿ã€‚
+			bool bIsUpdating_ = false; //! ã‚¹ãƒ†ãƒ¼ãƒˆãƒã‚·ãƒ¼ãƒ³ãŒæ›´æ–°ä¸­ã‹ã©ã†ã‹ã®ãƒ•ãƒ©ã‚°ã€‚
 		};
 	}
 }

@@ -83,6 +83,10 @@ namespace nsApp
 			/* カメラの傾きを戻す(g_camera3Dは他のシーンと共用なので傾いたままにしない)。*/
 			g_camera3D->SetUp(Vector3::AxisY);
 
+			/* 画角も戻す。覗き込んだまま抜けると、次のシーンがズームしたままになる。*/
+			if (fBaseViewAngle_ > 0.0f)
+				g_camera3D->SetViewAngle(fBaseViewAngle_);
+
 			/* 倒済みは FindGOs に出ないので二重破棄しない。*/
 			for (nsActor::CommonEnemy* pEnemy : FindGOs<nsActor::CommonEnemy>("commonEnemy"))
 				DeleteGO(pEnemy);
@@ -299,6 +303,9 @@ namespace nsApp
 
 		void DebugShootingRangeScene::InitCamera()
 		{
+			/* 覗き込みで倍率を掛けるため、もとの画角を覚えておく。*/
+			fBaseViewAngle_ = g_camera3D->GetViewAngle();
+
 			/* ニアクリップ・ファークリップを設定する。*/
 			g_camera3D->SetNear(1.0f);
 			g_camera3D->SetFar(10000.0f);
@@ -348,6 +355,16 @@ namespace nsApp
 
 			/* 歩きと横移動に合わせてカメラをわずかに傾ける。*/
 			g_camera3D->SetUp(MakeCameraUp(vLook, pPlayer_->GetViewRoll()));
+
+			/*
+			 * 覗き込むほど画角を狭めて、拡大されたように見せる。
+			 * 本番(InGameScene)と同じ式にしてあるので、ここで詰めた adsZoomRate が
+			 * そのまま本番の見え方になる。
+			 */
+			const float fAdsRate = pPlayer_->GetAdsRate();
+			const float fZoomRate = 1.0f + (pPlayer_->GetAdsZoomRate() - 1.0f) * fAdsRate;
+			g_camera3D->SetViewAngle(fBaseViewAngle_ * fZoomRate);
+
 			g_camera3D->Update();
 		}
 
