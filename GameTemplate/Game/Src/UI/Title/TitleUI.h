@@ -120,15 +120,22 @@ namespace nsApp
 			 */
 			void RefreshMenuColor();
 
+			/**
+			 * @brief 選んでいる行に敷く帯を、その行へ合わせる。
+			 */
+			void UpdateMenuCursor();
+
 
 		private:
 			FontRender stLogoFont_;					//! ロゴの仮置き。@todo ロゴ画像ができたら SpriteRender に差し替える。
 			FontRender stPressAnyKeyFont_;			//! PRESS ANY KEY の点滅表示。
 			FontRender aMenuFont_[iMenuCount_];		//! メニューの各行。
-			FontRender stCreditFont_;				//! クレジット(左下)。
+			SpriteRender stMenuBarSprite_;			//! 選んでいる行に敷く帯。
+			FontRender stCreditFont_;				//! クレジット(下の中央)。
 			FontRender stVersionFont_;				//! バージョン(右下)。
 			EnTitleCommand enDecidedCommand_ = EnTitleCommand::None;	//! 決まった行き先。取り出されるまで持つ。
 			float fBlinkTimer_ = 0.0f;				//! PRESS ANY KEY を点滅させる時計(秒)。
+			float fMenuTextHeight_ = 0.0f;			//! メニューの文字の実寸の高さ。帯を行に合わせるのに使う。
 			float fInputGuardTimer_ = 0.0f;			//! 表示が切り替わった直後に誤って決定しないための猶予(秒)。
 			int iSelectedIndex_ = 0;				//! 今選んでいる行。
 			bool bIsMenuPhase_ = false;				//! メニューを出しているか。

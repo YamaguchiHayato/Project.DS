@@ -16,11 +16,15 @@ namespace
 	 *
 	 * 寄り引きは、モデルの実際の表示サイズに対する倍率で決める。
 	 * 固定の距離にすると、モデルを差し替えて大きさが変わったとき画面から外れてしまうため。
+	 *
+	 * 倍率は、モデルが画面の高さの8割を占め、頭が上から3分の1あたりに来る絵から逆算している。
+	 * 画角は本編より狭くして、近づいても顔が歪まないようにする。
 	 */
-	const float fCameraSideRate_ = -1.05f;	//! カメラを左へずらす量(モデルの大きさに対する倍率)。
-	const float fCameraBackRate_ = 1.90f;	//! カメラを後ろへ引く距離(同上)。
-	const float fCameraUpRate_ = 0.68f;		//! カメラを持ち上げる高さ(同上)。
-	const float fCameraLookRate_ = 0.55f;	//! 注視点の高さ(同上。胸のあたり)。
+	const float fTitleViewAngleDegree_ = 35.0f;	//! タイトルの画角(度)。抜けるときは元へ戻す。
+	const float fCameraSideRate_ = -0.60f;	//! カメラを左へずらす量(モデルの大きさに対する倍率)。大きくするほどモデルが右へ寄る。
+	const float fCameraBackRate_ = 1.98f;	//! カメラを後ろへ引く距離(同上)。
+	const float fCameraUpRate_ = 0.76f;		//! カメラを持ち上げる高さ(同上)。
+	const float fCameraLookRate_ = 0.76f;	//! 注視点の高さ(同上。胸から上のあたり)。
 	const float fModelDefaultSize_ = 150.0f;	//! モデルを測れなかったときに使う大きさ。
 
 	/*
@@ -53,6 +57,7 @@ namespace nsApp
 			/* カメラとライトは他のシーンと共用なので、来たときの状態へ戻してから抜ける。*/
 			g_camera3D->SetPosition(vSavedCameraPosition_);
 			g_camera3D->SetTarget(vSavedCameraTarget_);
+			g_camera3D->SetViewAngle(fSavedViewAngle_);
 			g_camera3D->Update();
 			g_renderingEngine->GetLight() = stSavedLight_;
 		}
@@ -81,6 +86,7 @@ namespace nsApp
 			/* 書き換える前に、戻すための値を控える。*/
 			vSavedCameraPosition_ = g_camera3D->GetPosition();
 			vSavedCameraTarget_ = g_camera3D->GetTarget();
+			fSavedViewAngle_ = g_camera3D->GetViewAngle();
 			stSavedLight_ = g_renderingEngine->GetLight();
 
 			SetUpCamera();
@@ -123,6 +129,7 @@ namespace nsApp
 			g_camera3D->SetTarget(vLookAt);
 			g_camera3D->SetPosition(vEyePosition);
 			g_camera3D->SetUp(Vector3::AxisY);
+			g_camera3D->SetViewAngle(Math::DegToRad(fTitleViewAngleDegree_));
 			g_camera3D->Update();
 		}
 

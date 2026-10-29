@@ -5,26 +5,38 @@
 namespace
 {
 	/*
+	 * 1枚目(PRESS ANY KEY)の配置。
+	 * ロゴを画面の横中央に置き、その下に案内を出す。
 	 * ロゴは画像ができるまで文字で置いておく。
 	 * Assets/image/title/Title.DDS は画面全体の構成を描いたラフなので、ロゴとしては使わない。
 	 */
-	const Vector3 vLogoPosition_ = { -860.0f, 300.0f, 0.0f };	//! ロゴの位置(画面の左上寄り)。
-	const float fLogoFontScale_ = 2.2f;							//! ロゴの文字の大きさ。
-
-	const Vector3 vPressAnyKeyPosition_ = { -700.0f, 60.0f, 0.0f };	//! PRESS ANY KEY の位置(ロゴの下)。
-	const float fPressAnyKeyScale_ = 1.2f;						//! PRESS ANY KEY の大きさ。
+	const float fLogoPositionY_ = 150.0f;						//! ロゴの縦の位置。
+	const float fLogoFontScale_ = 2.6f;							//! ロゴの文字の大きさ。
+	const float fPressAnyKeyPositionY_ = -140.0f;				//! PRESS ANY KEY の縦の位置(ロゴの下)。
+	const float fPressAnyKeyScale_ = 1.1f;						//! PRESS ANY KEY の大きさ。
 	const float fBlinkCycle_ = 1.4f;							//! 点滅の周期(秒)。
 	const float fBlinkMinAlpha_ = 0.25f;						//! 点滅で一番薄くなるときの濃さ。
 	const float fBlinkMaxAlpha_ = 1.0f;							//! 点滅で一番濃くなるときの濃さ。
 	const float fPulseCenter_ = 0.5f;							//! sin波を0〜1へ均すための中心と振れ幅。
 
-	const Vector3 vMenuTopPosition_ = { -700.0f, 60.0f, 0.0f };	//! メニュー1行目の位置。PRESS ANY KEY と同じ場所から並べる。
-	const float fMenuLineHeight_ = 84.0f;						//! メニューの行間。
-	const float fMenuFontScale_ = 1.2f;							//! メニューの文字の大きさ。
+	/* 2枚目(メニュー)の配置。右に立つモデルとぶつからないよう、左下へ寄せる。*/
+	const float fMenuLeft_ = -790.0f;							//! メニューの文字の左端。
+	const float fMenuTopPositionY_ = -146.0f;					//! メニュー1行目の縦の位置。
+	const float fMenuLineHeight_ = 58.0f;						//! メニューの行間。
+	const float fMenuFontScale_ = 1.0f;							//! メニューの文字の大きさ。
 
-	const Vector3 vCreditPosition_ = { -900.0f, -480.0f, 0.0f };	//! クレジットの位置(左下)。
-	const Vector3 vVersionPosition_ = { 700.0f, -480.0f, 0.0f };	//! バージョンの位置(右下)。
-	const float fCornerFontScale_ = 0.7f;						//! 四隅に出す小さい文字の大きさ。
+	/* 選んでいる行に敷く帯。どこを選んでいるかを色だけに頼らずに示す。*/
+	const char* sWhiteSpritePath_ = "Assets/sprite/white.dds";	//! 帯に使う白い画像(色を掛けて使う)。
+	const float fMenuBarWidth_ = 700.0f;						//! 帯の幅。
+	const float fMenuBarHeight_ = 50.0f;						//! 帯の高さ。
+	const float fMenuBarLeft_ = -820.0f;						//! 帯の左端。文字より少し外へ出す。
+	const Vector2 vMenuBarPivotLeft_ = { 0.0f, 0.5f };			//! 帯の基準点を左端に置く。
+
+	/* クレジットは下の中央、バージョンは右下。*/
+	const float fCreditPositionY_ = -470.0f;					//! クレジットの縦の位置。
+	const float fVersionPositionY_ = -470.0f;					//! バージョンの縦の位置。
+	const float fVersionRight_ = 890.0f;						//! バージョンの文字の右端。
+	const float fCornerFontScale_ = 0.7f;						//! 下に出す小さい文字の大きさ。
 
 	const float fInputGuardTime_ = 0.2f;						//! 表示が切り替わった直後に入力を受けない時間(秒)。
 
@@ -52,10 +64,11 @@ namespace
 	static_assert(sizeof(aMenuCommand_) / sizeof(aMenuCommand_[0]) == nsApp::nsUI::TitleUI::iMenuCount_, "メニューの行数と行き先の数を合わせること。");
 
 	/* 表示に使う色。RGBA。*/
-	const Vector4 vWhiteColor_ = { 1.0f, 1.0f, 1.0f, 1.0f };			//! PRESS ANY KEY の白。
-	const Vector4 vMenuNormalColor_ = { 0.85f, 0.85f, 0.85f, 1.0f };	//! 選んでいない行の白。
-	const Vector4 vMenuSelectedColor_ = { 1.0f, 0.85f, 0.25f, 1.0f };	//! 選んでいる行の黄。キーコンフィグと同じ見せ方にそろえている。
-	const Vector4 vCornerColor_ = { 0.7f, 0.7f, 0.7f, 1.0f };			//! クレジットとバージョンの灰。
+	const Vector4 vWhiteColor_ = { 1.0f, 1.0f, 1.0f, 1.0f };			//! ロゴと PRESS ANY KEY の白。
+	const Vector4 vMenuNormalColor_ = { 0.88f, 0.88f, 0.90f, 1.0f };	//! 選んでいない行の白。
+	const Vector4 vMenuSelectedColor_ = { 0.10f, 0.10f, 0.12f, 1.0f };	//! 選んでいる行の黒。明るい帯の上に乗せる。
+	const Vector4 vMenuBarColor_ = { 0.92f, 0.92f, 0.95f, 0.82f };		//! 選んでいる行に敷く帯の白。
+	const Vector4 vCornerColor_ = { 0.80f, 0.80f, 0.82f, 1.0f };		//! クレジットとバージョンの灰。
 
 	/*
 	 * 「何か押されたか」を見るときに走査する仮想キーの範囲。
@@ -79,6 +92,30 @@ namespace
 
 		return false;
 	}
+
+	/**
+	 * @brief 文字を画面の横中央に置く。
+	 * @param stFont 位置を決める文字。文字と大きさを入れてから呼ぶこと。
+	 * @param fPositionY 縦の位置。
+	 * @details FontRender の位置は文字の左上なので、実寸の半分だけ左へずらすと中央に来る。
+	 */
+	void SetCenterPosition(FontRender& stFont, float fPositionY)
+	{
+		const Vector2 vSize = stFont.MeasureText();
+		stFont.SetPosition({ -vSize.x * 0.5f, fPositionY, 0.0f });
+	}
+
+	/**
+	 * @brief 文字の右端をそろえて置く。
+	 * @param stFont 位置を決める文字。文字と大きさを入れてから呼ぶこと。
+	 * @param fRight 右端の位置。
+	 * @param fPositionY 縦の位置。
+	 */
+	void SetRightPosition(FontRender& stFont, float fRight, float fPositionY)
+	{
+		const Vector2 vSize = stFont.MeasureText();
+		stFont.SetPosition({ fRight - vSize.x, fPositionY, 0.0f });
+	}
 }
 
 namespace nsApp
@@ -88,37 +125,44 @@ namespace nsApp
 		bool TitleUI::Start()
 		{
 			/* ロゴを用意する。画像ができるまでは文字で置いておく。*/
-			stLogoFont_.SetPosition(vLogoPosition_);
 			stLogoFont_.SetScale(fLogoFontScale_);
 			stLogoFont_.SetColor(vWhiteColor_);
 			stLogoFont_.SetText(sLogoText_);
+			SetCenterPosition(stLogoFont_, fLogoPositionY_);
 
 			/* PRESS ANY KEY を用意する。濃さは毎フレーム入れ直すので、ここでは位置と大きさだけ決める。*/
-			stPressAnyKeyFont_.SetPosition(vPressAnyKeyPosition_);
 			stPressAnyKeyFont_.SetScale(fPressAnyKeyScale_);
 			stPressAnyKeyFont_.SetColor(vWhiteColor_);
 			stPressAnyKeyFont_.SetText(sPressAnyKeyText_);
+			SetCenterPosition(stPressAnyKeyFont_, fPressAnyKeyPositionY_);
 
-			/* メニューの各行を、上から行間ぶんずつ下げて並べる。*/
+			/* メニューの各行を、左端をそろえて上から行間ぶんずつ下げて並べる。*/
 			for (int iIndex = 0; iIndex < iMenuCount_; iIndex++)
 			{
-				const Vector3 vPosition = { vMenuTopPosition_.x, vMenuTopPosition_.y - fMenuLineHeight_ * iIndex, vMenuTopPosition_.z };
-				aMenuFont_[iIndex].SetPosition(vPosition);
+				aMenuFont_[iIndex].SetPosition({ fMenuLeft_, fMenuTopPositionY_ - fMenuLineHeight_ * iIndex, 0.0f });
 				aMenuFont_[iIndex].SetScale(fMenuFontScale_);
 				aMenuFont_[iIndex].SetColor(vMenuNormalColor_);
 				aMenuFont_[iIndex].SetText(aMenuText_[iIndex]);
 			}
 
-			/* クレジットとバージョンを下の両端に置く。*/
-			stCreditFont_.SetPosition(vCreditPosition_);
+			/* 帯を行の高さに合わせるため、文字の実寸を控えておく。*/
+			fMenuTextHeight_ = aMenuFont_[0].MeasureText().y;
+
+			/* 選んでいる行に敷く帯を用意する。*/
+			stMenuBarSprite_.Init(sWhiteSpritePath_, fMenuBarWidth_, fMenuBarHeight_);
+			stMenuBarSprite_.SetPivot(vMenuBarPivotLeft_);
+			stMenuBarSprite_.SetMulColor(vMenuBarColor_);
+
+			/* クレジットは下の中央、バージョンは右下に置く。*/
 			stCreditFont_.SetScale(fCornerFontScale_);
 			stCreditFont_.SetColor(vCornerColor_);
 			stCreditFont_.SetText(sCreditText_);
+			SetCenterPosition(stCreditFont_, fCreditPositionY_);
 
-			stVersionFont_.SetPosition(vVersionPosition_);
 			stVersionFont_.SetScale(fCornerFontScale_);
 			stVersionFont_.SetColor(vCornerColor_);
 			stVersionFont_.SetText(sVersionText_);
+			SetRightPosition(stVersionFont_, fVersionRight_, fVersionPositionY_);
 
 			/*
 			 * 動画を飛ばした決定キーが、まだ押されたままのことがある。
@@ -126,6 +170,7 @@ namespace nsApp
 			 */
 			bWasAnyKeyPress_ = IsAnyKeyPress();
 			RefreshMenuColor();
+			UpdateMenuCursor();
 			return true;
 		}
 
@@ -161,6 +206,13 @@ namespace nsApp
 				UpdateMenuPhase(bIsPressUp, bIsPressDown);
 			}
 
+			/* 入力を受けない間も出し続けるので、メニューの見た目は段階を見て毎フレーム作り直す。*/
+			if (bIsMenuPhase_)
+			{
+				RefreshMenuColor();
+				UpdateMenuCursor();
+			}
+
 			/* 次フレームの判定用に今の状態を残す。*/
 			bWasAnyKeyPress_ = bIsAnyKeyPress;
 			bWasPressUp_ = bIsPressUp;
@@ -170,16 +222,17 @@ namespace nsApp
 
 		void TitleUI::Render(RenderContext& rc)
 		{
-			/* ロゴはどちらの段階でも出す。*/
-			stLogoFont_.Draw(rc);
-
-			/* 段階に応じて、案内かメニューのどちらかを出す。*/
+			/* 段階に応じて、ロゴと案内か、メニューのどちらかを出す。*/
 			if (!bIsMenuPhase_)
 			{
+				stLogoFont_.Draw(rc);
 				stPressAnyKeyFont_.Draw(rc);
 			}
 			else
 			{
+				/* 帯を先に描いて、その上に文字を重ねる。*/
+				stMenuBarSprite_.Draw(rc);
+
 				for (int iIndex = 0; iIndex < iMenuCount_; iIndex++)
 					aMenuFont_[iIndex].Draw(rc);
 			}
@@ -241,8 +294,6 @@ namespace nsApp
 			if (bIsPressDown && !bWasPressDown_ && iSelectedIndex_ < iMenuCount_ - 1)
 				iSelectedIndex_++;
 
-			RefreshMenuColor();
-
 			/* 決定キーを押した瞬間に、選んでいる行を行き先として控える。*/
 			if (nsData::InputObserver::Get().IsTrigger(nsData::EnAction::Confirm))
 				enDecidedCommand_ = aMenuCommand_[iSelectedIndex_];
@@ -258,6 +309,7 @@ namespace nsApp
 			/* 移るのに使ったキーでそのまま決定しないよう、猶予を入れる。*/
 			fInputGuardTimer_ = 0.0f;
 			RefreshMenuColor();
+			UpdateMenuCursor();
 		}
 
 
@@ -266,6 +318,18 @@ namespace nsApp
 			/* 選んでいる行だけ色を変えて、どこにいるか分かるようにする。*/
 			for (int iIndex = 0; iIndex < iMenuCount_; iIndex++)
 				aMenuFont_[iIndex].SetColor(iIndex == iSelectedIndex_ ? vMenuSelectedColor_ : vMenuNormalColor_);
+		}
+
+
+		void TitleUI::UpdateMenuCursor()
+		{
+			/*
+			 * 帯を、選んでいる行の文字の高さの中心に合わせる。
+			 * 文字の位置は左上なので、実寸の半分だけ下げた所が中心になる。
+			 */
+			const float fRowPositionY = fMenuTopPositionY_ - fMenuLineHeight_ * iSelectedIndex_;
+			stMenuBarSprite_.SetPosition({ fMenuBarLeft_, fRowPositionY - fMenuTextHeight_ * 0.5f, 0.0f });
+			stMenuBarSprite_.Update();
 		}
 	}
 }

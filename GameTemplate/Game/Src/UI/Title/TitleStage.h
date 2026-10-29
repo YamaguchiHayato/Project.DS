@@ -60,6 +60,7 @@ namespace nsApp
 			Vector3 vSavedCameraPosition_ = Vector3::Zero;	//! 来たときのカメラ位置。
 			Vector3 vSavedCameraTarget_ = Vector3::Zero;	//! 来たときのカメラ注視点。
 			float fModelSize_ = 0.0f;					//! 頂点から測ったモデルの大きさ。カメラの寄り引きの基準にする。
+			float fSavedViewAngle_ = 0.0f;				//! 来たときの画角(ラジアン)。
 		};
 	}
 }
