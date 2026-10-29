@@ -1,16 +1,40 @@
 #pragma once
 /**
  * @file   TitleUI.h
- * @brief  タイトルUIクラス。
- * @author Yamaguchi Hayato
- * @date   2026/08/18
- * @details 過去タイトルからクラスを引用予定。
+ * @brief  タイトル画面の2D表示。ロゴ・メニュー・クレジット・バージョンを描く。
+ * @author Izumida Kiryu
+ * @date   2026/10/29
+ * @note   立たせるモデルなどの3D表示は TitleStage が受け持つ。こちらは2D表示と項目選びだけを受け持つ。
  */
+
+#include "stdint.h"
 
 namespace nsApp
 {
 	namespace nsUI
 	{
+		/**
+		 * @enum  EnTitleCommand
+		 * @brief タイトルのメニューで決まった行き先。
+		 */
+		enum class EnTitleCommand : uint8_t
+		{
+			None,		//! まだ決まっていない。
+			StartGame,	//! 本編を始める。
+			Option,		//! 設定(キーコンフィグ)を開く。
+			OpenGitHub,	//! リポジトリのページをブラウザで開く。
+			ExitGame,	//! ゲームを終える。
+		};
+
+
+		/**
+		 * @file   TitleUI.h
+		 * @brief  タイトル画面の2D表示。
+		 * @details 最初は「ロゴ + PRESS ANY KEY」を出し、何か押されたらメニューへ移る。
+		 *          どこへ行くかは決めず、決まった行き先を TitleScene に取りに来てもらう。
+		 * @author Izumida Kiryu
+		 * @date   2026/10/29
+		 */
 		class TitleUI : public IGameObject
 		{
 		public:
@@ -39,10 +63,79 @@ namespace nsApp
 			void Render(RenderContext& rc) override;
 
 
+		public:
+			/**
+			 * @brief 決まった行き先を取り出す。取り出すと未決定に戻る。
+			 * @return 決まった行き先。決まっていなければ EnTitleCommand::None。
+			 */
+			EnTitleCommand PopDecidedCommand();
+
+			/**
+			 * @brief 入力の受け付けを切り替える。設定画面を開いている間は止める。
+			 * @param bIsActive 受け付けるなら true。
+			 */
+			void SetInputActive(bool bIsActive);
+
+			/**
+			 * @brief メニューを出しているかどうかを返す。
+			 * @return メニュー中なら true。PRESS ANY KEY 中なら false。
+			 */
+			inline bool IsMenuPhase() const
+			{
+				/* 今の表示の段階を返す。*/
+				return bIsMenuPhase_;
+			}
+
+
+		public:
+			static constexpr int iMenuCount_ = 4;	//! メニューの行数。表示する文字の数と合わせること。
+
+
 		private:
-			SpriteRender stTitleSprite_;	//! タイトル画像。
-			FontRender stInGameFont_;		//! InGame項目。
-			FontRender stDebugFont_;		//! Debug項目。
+			/**
+			 * @brief PRESS ANY KEY の点滅を進める。
+			 */
+			void UpdateBlink();
+
+			/**
+			 * @brief 何か押されたらメニューへ移る。
+			 * @param bIsAnyKeyPress 今フレームで何か押されているか。
+			 */
+			void UpdateAnyKeyPhase(bool bIsAnyKeyPress);
+
+			/**
+			 * @brief 上下で項目を選び、決定キーで行き先を決める。
+			 * @param bIsPressUp 今フレームで上キーが押されているか。
+			 * @param bIsPressDown 今フレームで下キーが押されているか。
+			 */
+			void UpdateMenuPhase(bool bIsPressUp, bool bIsPressDown);
+
+			/**
+			 * @brief メニューを出す段階へ移る。
+			 */
+			void EnterMenuPhase();
+
+			/**
+			 * @brief 選んでいる行だけ色を変える。
+			 */
+			void RefreshMenuColor();
+
+
+		private:
+			FontRender stLogoFont_;					//! ロゴの仮置き。@todo ロゴ画像ができたら SpriteRender に差し替える。
+			FontRender stPressAnyKeyFont_;			//! PRESS ANY KEY の点滅表示。
+			FontRender aMenuFont_[iMenuCount_];		//! メニューの各行。
+			FontRender stCreditFont_;				//! クレジット(左下)。
+			FontRender stVersionFont_;				//! バージョン(右下)。
+			EnTitleCommand enDecidedCommand_ = EnTitleCommand::None;	//! 決まった行き先。取り出されるまで持つ。
+			float fBlinkTimer_ = 0.0f;				//! PRESS ANY KEY を点滅させる時計(秒)。
+			float fInputGuardTimer_ = 0.0f;			//! 表示が切り替わった直後に誤って決定しないための猶予(秒)。
+			int iSelectedIndex_ = 0;				//! 今選んでいる行。
+			bool bIsMenuPhase_ = false;				//! メニューを出しているか。
+			bool bIsInputActive_ = true;			//! 入力を受け付けるか。
+			bool bWasAnyKeyPress_ = false;			//! 前フレームで何か押されていたか。
+			bool bWasPressUp_ = false;				//! 前フレームで上キーが押されていたか。
+			bool bWasPressDown_ = false;			//! 前フレームで下キーが押されていたか。
 		};
 	}
 }
