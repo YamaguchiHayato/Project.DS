@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.9.12105.275 stable
+VisualStudioVersion = 18.9.12105.275
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Game", "Game.vcxproj", "{282445E9-421F-46C0-9165-6C90D7C7EFC4}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -27,6 +27,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ExEngine", "ExEngine", "{39F110FE-715C-4903-B346-0AB13535AA2F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Input", "..\System\Input\Input.vcxproj", "{B3F58ABC-A65C-4440-B121-0035DB973ED1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Video", "..\System\Video\Video\Video.vcxproj", "{5652DA6D-B2BF-47B8-8D7D-6E52B139836E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -122,6 +124,18 @@ Global
 		{B3F58ABC-A65C-4440-B121-0035DB973ED1}.Release|x64.Build.0 = Release|x64
 		{B3F58ABC-A65C-4440-B121-0035DB973ED1}.Release|x86.ActiveCfg = Release|Win32
 		{B3F58ABC-A65C-4440-B121-0035DB973ED1}.Release|x86.Build.0 = Release|Win32
+		{5652DA6D-B2BF-47B8-8D7D-6E52B139836E}.Debug|x64.ActiveCfg = Debug|x64
+		{5652DA6D-B2BF-47B8-8D7D-6E52B139836E}.Debug|x64.Build.0 = Debug|x64
+		{5652DA6D-B2BF-47B8-8D7D-6E52B139836E}.Debug|x86.ActiveCfg = Debug|Win32
+		{5652DA6D-B2BF-47B8-8D7D-6E52B139836E}.Debug|x86.Build.0 = Debug|Win32
+		{5652DA6D-B2BF-47B8-8D7D-6E52B139836E}.Preview|x64.ActiveCfg = Release|x64
+		{5652DA6D-B2BF-47B8-8D7D-6E52B139836E}.Preview|x64.Build.0 = Release|x64
+		{5652DA6D-B2BF-47B8-8D7D-6E52B139836E}.Preview|x86.ActiveCfg = Release|Win32
+		{5652DA6D-B2BF-47B8-8D7D-6E52B139836E}.Preview|x86.Build.0 = Release|Win32
+		{5652DA6D-B2BF-47B8-8D7D-6E52B139836E}.Release|x64.ActiveCfg = Release|x64
+		{5652DA6D-B2BF-47B8-8D7D-6E52B139836E}.Release|x64.Build.0 = Release|x64
+		{5652DA6D-B2BF-47B8-8D7D-6E52B139836E}.Release|x86.ActiveCfg = Release|Win32
+		{5652DA6D-B2BF-47B8-8D7D-6E52B139836E}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

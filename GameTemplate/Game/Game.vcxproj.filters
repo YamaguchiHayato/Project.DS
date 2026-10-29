@@ -88,6 +88,9 @@
     <Filter Include="Src\Actor\Character\Player\State\AttackState">
       <UniqueIdentifier>{72c6715f-6996-4217-9477-2c7f1efce260}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Src\UI\KeyConfig">
+      <UniqueIdentifier>{1c1008eb-d6bb-4a06-b4b2-cad4afafd61b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
@@ -330,6 +333,12 @@
     </ClCompile>
     <ClCompile Include="Src\Data\EnemyStatusTable.cpp">
       <Filter>Src\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\UI\KeyConfig\KeyConfigUI.cpp">
+      <Filter>Src\UI\KeyConfig</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\UI\VideoScreen.cpp">
+      <Filter>Src\UI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -618,6 +627,12 @@
     </ClInclude>
     <ClInclude Include="Src\Data\EnemyStatus.h">
       <Filter>Src\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\UI\KeyConfig\KeyConfigUI.h">
+      <Filter>Src\UI\KeyConfig</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\UI\VideoScreen.h">
+      <Filter>Src\UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

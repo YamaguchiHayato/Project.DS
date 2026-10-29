@@ -71,6 +71,8 @@ void nsK2EngineLow::ModelRender::InitModel(const char* filePath, EnModelUpAxis e
 	initData.m_fxFilePath = "Assets/shader/model.fx";
 	//ノンスキンメッシュ用の頂点シェーダーのエントリーポイントを指定する。
 	initData.m_vsEntryPointFunc = "VSMain";
+	// キャラを不透明に設定。
+	initData.m_alphaBlendMode = AlphaBlendMode_None;
 
 	//影を描画するか？
 	if (shadowReceiver==true) {
@@ -98,7 +100,7 @@ void nsK2EngineLow::ModelRender::InitModel(const char* filePath, EnModelUpAxis e
 	m_expandCB.modelAlpha = m_alpha;
 	initData.m_expandConstantBuffer = &m_expandCB;
 	initData.m_expandConstantBufferSize = sizeof(m_expandCB);
-	initData.m_alphaBlendMode = AlphaBlendMode_Trans; // 半透明合成。
+	initData.m_alphaBlendMode = AlphaBlendMode_None; // 半透明合成。
 
 	//作成した初期化データをもとにモデルを初期化する、
 	m_model.Init(initData);
@@ -112,7 +114,7 @@ void nsK2EngineLow::ModelRender::Update()
 	m_shadowModel.UpdateWorldMatrix(m_position, m_rotation, m_scale);
 
 	if (m_animation.IsInited()) {
-		m_animation.Progress(g_gameTime->GetFrameDeltaTime());
+		m_animation.Progress(g_gameTime->GetFrameDeltaTime()* 0.5f);
 	}
 	if (m_skeleton.IsInited()) {
 		m_skeleton.Update(m_model.GetWorldMatrix());

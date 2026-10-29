@@ -1,3 +1,4 @@
+#pragma once
 
 namespace nsK2EngineLow {
 	class IShaderResource : public Noncopyable {

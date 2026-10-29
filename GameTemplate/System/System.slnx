@@ -4,4 +4,5 @@
     <Platform Name="x86" />
   </Configurations>
   <Project Path="Input/Input.vcxproj" Id="b3f58abc-a65c-4440-b121-0035db973ed1" />
+  <Project Path="Video/Video/Video.vcxproj" Id="5652da6d-b2bf-47b8-8d7d-6e52b139836e" />
 </Solution>
