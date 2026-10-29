@@ -32,6 +32,8 @@ KNEE_LIMIT_MAX = (math.radians(-0.5), 0.0, 0.0)
 
 # T スタンスとみなす腕の下がり角と、A スタンス化するときの既定角度
 T_STANCE_THRESHOLD = 20.0
+# これより下がっている腕(体の横へ下ろした姿勢)も、配布モーションに合うよう直す
+LOW_ARM_THRESHOLD = 50.0
 DEFAULT_ARM_ANGLE = 35.0
 
 _OPERABLE = pmxfile.BONE_ROTATABLE | pmxfile.BONE_VISIBLE | pmxfile.BONE_ENABLED
@@ -61,7 +63,8 @@ _MORPH_PANELS = {"あ": 3, "い": 3, "う": 3, "え": 3, "お": 3,
 _FRAME_LAYOUT = (
     ("センター", "Center", ("センター", "グルーブ", "腰")),
     ("体(上)", "Upper", ("上半身", "上半身2", "上半身3", "首", "頭", "両目", "左目", "右目")),
-    ("腕", "Arms", ("左肩", "左腕", "左ひじ", "左手首", "右肩", "右腕", "右ひじ", "右手首")),
+    ("腕", "Arms", ("左肩P", "左肩", "左腕", "左腕捩", "左ひじ", "左手捩", "左手首",
+                    "右肩P", "右肩", "右腕", "右腕捩", "右ひじ", "右手捩", "右手首")),
     ("指", "Fingers", tuple(
         side + finger + digit
         for side in ("左", "右")
@@ -69,8 +72,10 @@ _FRAME_LAYOUT = (
                                ("薬指", "１２３"), ("小指", "１２３"))
         for digit in digits)),
     ("体(下)", "Lower", ("下半身",)),
-    ("足", "Legs", ("左足ＩＫ", "左つま先ＩＫ", "右足ＩＫ", "右つま先ＩＫ",
-                   "左足", "左ひざ", "左足首", "右足", "右ひざ", "右足首")),
+    ("足", "Legs", ("左足IK親", "左足ＩＫ", "左つま先ＩＫ", "右足IK親", "右足ＩＫ", "右つま先ＩＫ",
+                   "左足", "左ひざ", "左足首", "右足", "右ひざ", "右足首",
+                   "左足D", "左ひざD", "左足首D", "左足先EX",
+                   "右足D", "右ひざD", "右足首D", "右足先EX")),
 )
 
 
@@ -81,6 +86,9 @@ class RigReport:
         self.added_bones = []
         self.ik_chains = 0
         self.arm_rotation = 0.0
+        # A スタンス化で回した腕: [(回転クォータニオン, 回した PmxBone のリスト)]
+        # モーション変換で、元の姿勢との差を打ち消すのに使う
+        self.arm_rotations = []
         self.renamed_morphs = 0
         self.warnings = []
 
@@ -135,6 +143,14 @@ class _Rig:
             for index, weight in zip(vertex.bones, vertex.weights):
                 if weight > 0.0:
                     self.weighted.add(index)
+        self._next_index = len(self.nodes)
+
+    def register(self, node):
+        """新しいボーンへウェイトを移せるよう、仮の番号を振る(commit で振り直す)。"""
+        if node.old_index < 0:
+            node.old_index = self._next_index
+            self._next_index += 1
+        return node.old_index
 
     # -- 参照 --------------------------------------------------------
     def find(self, name):
@@ -197,10 +213,17 @@ class _Rig:
             in_chain.add(id(ik.ik_target))
             in_chain.update(id(link[0]) for link in ik.ik_links)
 
+        iks_of_member = {}
+        for ik in iks:
+            for member in [ik.ik_target] + [link[0] for link in ik.ik_links]:
+                iks_of_member.setdefault(id(member), []).append(ik)
+
         def dependencies(node):
             result = [node.parent] if node.parent is not None else []
             if node.inherit is not None:
                 result.append(node.inherit)       # 付与親は先に変形させる
+                # 付与親が IK で回るなら IK を解いた後に置く(足D 系)
+                result.extend(iks_of_member.get(id(node.inherit), ()))
             if node.ik_target is not None:
                 result.append(node.ik_target)
                 result.extend(link[0] for link in node.ik_links)
@@ -517,8 +540,265 @@ def _rotate_arms(rig, target_angle, report):
                 node.bone.position = rotate_point(node.bone.position)
             if node.tail is None:
                 node.bone.tail_offset = rotate_vector(node.bone.tail_offset)
+        half = radians * 0.5
+        report.arm_rotations.append(((0.0, 0.0, math.sin(half), math.cos(half)),
+                                     [node.bone for node in nodes]))
         total = max(total, abs(delta))
     report.arm_rotation = total
+
+
+# --------------------------------------------------------------------------
+# 準標準ボーン
+# --------------------------------------------------------------------------
+
+_HIDDEN = pmxfile.BONE_ROTATABLE | pmxfile.BONE_ENABLED   # 表示しない補助ボーン
+_TWIST_HELPER_RATES = (0.25, 0.5, 0.75)
+
+
+def _side_en(side):
+    return "L" if side == "左" else "R"
+
+
+def _is_twist_helper(node):
+    """元のモデルにある「ひねり用」補助ボーンか(J_L_Arm_00_tw / UpperArmTwist など)。"""
+    text = (node.bone.name_en or node.bone.name).lower()
+    words = re.split(r"[^a-z0-9]+", text)
+    return "tw" in words or "twist" in text or "roll" in words or "捩" in text
+
+
+def _merge_influences(pairs):
+    """[(ボーン, 重み)] を同じボーンでまとめ、上位 4 本に正規化する。"""
+    merged = {}
+    for bone, weight in pairs:
+        if weight > 1e-6:
+            merged[bone] = merged.get(bone, 0.0) + weight
+    items = sorted(merged.items(), key=lambda item: -item[1])[:4]
+    total = sum(weight for _bone, weight in items) or 1.0
+    return [bone for bone, _w in items], [weight / total for _b, weight in items]
+
+
+def _set_influences(vertex, pairs):
+    bones, weights = _merge_influences(pairs)
+    if len(bones) > 2:
+        while len(bones) < 4:
+            bones.append(bones[0])
+            weights.append(0.0)
+    vertex.bones = bones
+    vertex.weights = weights
+
+
+def _add_twist(rig, report, side, upper_name, lower_name, twist_name, twist_en):
+    """腕捩 / 手捩 を作り、ひねりが効く範囲のウェイトを位置に応じて振り分ける。
+
+    付け根ではひねらず、先(ひじ・手首)に近いほど大きくひねるよう、
+    upper(腕 / ひじ)と既存のひねり補助ボーンのウェイトを
+    upper → 捩1(25%) → 捩2(50%) → 捩3(75%) → 捩(100%) へ配分する。
+    """
+    upper = rig.find(side + upper_name)
+    lower = rig.find(side + lower_name)
+    if upper is None or lower is None or lower.parent is not upper:
+        return
+    if rig.find(side + twist_name) is not None:
+        return
+    start, end = upper.position, lower.position
+    axis = tuple(end[i] - start[i] for i in range(3))
+    length_sq = sum(c * c for c in axis)
+    if length_sq < 1e-12:
+        return
+    direction = mat4.normalize(axis)
+
+    def along(position):
+        return sum((position[i] - start[i]) * axis[i] for i in range(3)) / length_sq
+
+    def lerp(t):
+        return tuple(start[i] + axis[i] * t for i in range(3))
+
+    twist = rig.add(side + twist_name, "%s_%s" % (twist_en, _side_en(side)), lerp(0.5), upper,
+                    _OPERABLE | pmxfile.BONE_FIXED_AXIS)
+    twist.bone.fixed_axis = direction
+    twist.tail = lower
+    lower.parent = twist
+    rig.register(twist)
+
+    helpers = []
+    for number, rate in enumerate(_TWIST_HELPER_RATES, 1):
+        helper = rig.add(side + twist_name + str(number),
+                         "%s%d_%s" % (twist_en, number, _side_en(side)), lerp(rate), upper,
+                         _HIDDEN | pmxfile.BONE_INHERIT_ROTATION | pmxfile.BONE_FIXED_AXIS)
+        helper.inherit = twist
+        helper.bone.inherit_rate = rate
+        helper.bone.fixed_axis = direction
+        rig.register(helper)
+        helpers.append((rate, helper))
+
+    existing = [child for child in rig.children(upper)
+                if child is not twist and all(child is not h for _r, h in helpers)
+                and _is_twist_helper(child)]
+    sources = {upper.old_index} | {child.old_index for child in existing}
+    stops = [(0.0, upper.old_index)] + [(rate, h.old_index) for rate, h in helpers] \
+        + [(1.0, twist.old_index)]
+
+    # 既存の補助ボーンは、乗っていた頂点の位置に応じた割合で腕捩の回転を受け取る
+    helper_rates = {}
+    for child in existing:
+        total = 0.0
+        weighted_t = 0.0
+        for vertex in rig.model.vertices:
+            for bone, weight in zip(vertex.bones, vertex.weights):
+                if bone == child.old_index and weight > 0.0:
+                    total += weight
+                    weighted_t += weight * max(0.0, min(1.0, along(vertex.position)))
+        helper_rates[id(child)] = max(0.25, min(1.0, weighted_t / total)) if total else 0.5
+
+    for vertex in rig.model.vertices:
+        if not any(bone in sources and weight > 0.0
+                   for bone, weight in zip(vertex.bones, vertex.weights)):
+            continue
+        rate = max(0.0, min(1.0, (along(vertex.position) - 0.1) / 0.9))
+        pairs = []
+        for bone, weight in zip(vertex.bones, vertex.weights):
+            if bone not in sources:
+                pairs.append((bone, weight))
+                continue
+            for (r0, b0), (r1, b1) in zip(stops, stops[1:]):
+                if rate <= r1:
+                    f = (rate - r0) / (r1 - r0)
+                    pairs.extend([(b0, weight * (1.0 - f)), (b1, weight * f)])
+                    break
+        _set_influences(vertex, pairs)
+
+    for child in existing:
+        child.inherit = twist
+        child.bone.flags |= pmxfile.BONE_INHERIT_ROTATION
+        child.bone.inherit_rate = helper_rates[id(child)]
+    report.added_bones.append(side + twist_name)
+
+
+def _add_shoulder_p(rig, report, side):
+    """肩P(肩だけを動かす)と、腕への影響を打ち消す肩C を作る。"""
+    shoulder = rig.find(side + "肩")
+    arm = rig.find(side + "腕")
+    if shoulder is None or arm is None or arm.parent is not shoulder \
+            or rig.find(side + "肩P") is not None:
+        return
+    shoulder_p = rig.add(side + "肩P", "shoulderP_" + _side_en(side), shoulder.position,
+                         shoulder.parent, _OPERABLE)
+    shoulder.parent = shoulder_p
+    cancel = rig.add(side + "肩C", "shoulderC_" + _side_en(side), arm.position, shoulder,
+                     _HIDDEN | pmxfile.BONE_INHERIT_ROTATION)
+    cancel.inherit = shoulder_p
+    cancel.bone.inherit_rate = -1.0
+    arm.parent = cancel
+    report.added_bones.append(side + "肩P")
+
+
+def _add_waist(rig, report):
+    """腰と、脚への影響を打ち消す腰キャンセルを作る。"""
+    lower = rig.find("下半身")
+    upper = rig.find("上半身")
+    groove = rig.find("グルーブ")
+    if lower is None or upper is None or groove is None or rig.find("腰") is not None:
+        return
+    if lower.parent is not groove or upper.parent is not groove:
+        return
+    waist = rig.add("腰", "waist", lower.position, groove, _OPERABLE)
+    waist.bone.tail_offset = (0.0, -abs(lower.bone.tail_offset[1]) or -1.0, 0.0)
+    lower.parent = waist
+    upper.parent = waist
+    for side in ("左", "右"):
+        leg = rig.find(side + "足")
+        if leg is None or leg.parent is not lower:
+            continue
+        cancel = rig.add("腰キャンセル" + side, "waist cancel_" + _side_en(side), leg.position,
+                         lower, _HIDDEN | pmxfile.BONE_INHERIT_ROTATION)
+        cancel.inherit = waist
+        cancel.bone.inherit_rate = -1.0
+        leg.parent = cancel
+    report.added_bones.append("腰")
+
+
+def _add_leg_ik_parent(rig, report):
+    """足IK親(足ＩＫをまとめて動かす親)を作る。"""
+    for side in ("左", "右"):
+        ik = rig.find(side + "足ＩＫ")
+        if ik is None or rig.find(side + "足IK親") is not None:
+            continue
+        parent = rig.add(side + "足IK親", "leg IKP_" + _side_en(side),
+                         (ik.position[0], 0.0, ik.position[2]), ik.parent, _MOVABLE)
+        ik.parent = parent
+        report.added_bones.append(side + "足IK親")
+
+
+def _add_leg_d(rig, report):
+    """足D / ひざD / 足首D / 足先EX を作り、脚のウェイトを D 系へ移す。
+
+    D 系は IK を解いた後の足・ひざ・足首の回転をそのまま受け取るので、見た目は
+    変わらない。モーション側で D 系に追加の回転を入れられるようになる。
+    """
+    model = rig.model
+    for side in ("左", "右"):
+        leg = rig.find(side + "足")
+        knee = rig.find(side + "ひざ")
+        ankle = rig.find(side + "足首")
+        toe = rig.find(side + "つま先")
+        if None in (leg, knee, ankle, toe) or rig.find(side + "足D") is not None:
+            continue
+        en = _side_en(side)
+        flags = _OPERABLE | pmxfile.BONE_INHERIT_ROTATION
+        leg_d = rig.add(side + "足D", "leg_D_" + en, leg.position, leg.parent, flags)
+        knee_d = rig.add(side + "ひざD", "knee_D_" + en, knee.position, leg_d, flags)
+        ankle_d = rig.add(side + "足首D", "ankle_D_" + en, ankle.position, knee_d, flags)
+        for node, source in ((leg_d, leg), (knee_d, knee), (ankle_d, ankle)):
+            node.inherit = source
+            node.bone.inherit_rate = 1.0
+            rig.register(node)
+        leg_d.tail = knee_d
+        knee_d.tail = ankle_d
+        ball = tuple(ankle.position[i] + (toe.position[i] - ankle.position[i]) * 0.65
+                     for i in range(3))
+        ball = (ball[0], toe.position[1] + (ankle.position[1] - toe.position[1]) * 0.25, ball[2])
+        toe_ex = rig.add(side + "足先EX", "toe_EX_" + en, ball, ankle_d, _OPERABLE)
+        toe_ex.bone.tail_offset = tuple(toe.position[i] - ball[i] for i in range(3))
+        rig.register(toe_ex)
+
+        toe_weighted = rig.has_weights(toe)
+        band = max(abs(ankle.position[2] - ball[2]) * 0.3, 1e-3)
+        mapping = {leg.old_index: leg_d.old_index, knee.old_index: knee_d.old_index}
+        for vertex in model.vertices:
+            pairs = []
+            changed = False
+            for bone, weight in zip(vertex.bones, vertex.weights):
+                if bone in mapping:
+                    pairs.append((mapping[bone], weight))
+                    changed = True
+                elif bone == toe.old_index and toe_weighted:
+                    pairs.append((toe_ex.old_index, weight))
+                    changed = True
+                elif bone == ankle.old_index:
+                    changed = True
+                    if toe_weighted:
+                        pairs.append((ankle_d.old_index, weight))
+                        continue
+                    # つま先側(MMD の正面 -Z)の頂点は足先EX へ寄せる
+                    f = max(0.0, min(1.0, (ball[2] + band - vertex.position[2]) / (2 * band)))
+                    pairs.extend([(ankle_d.old_index, weight * (1.0 - f)),
+                                  (toe_ex.old_index, weight * f)])
+                else:
+                    pairs.append((bone, weight))
+            if changed:
+                _set_influences(vertex, pairs)
+        report.added_bones.append(side + "足D")
+
+
+def add_semi_standard(rig, report):
+    """準標準ボーンをまとめて作る。"""
+    for side in ("左", "右"):
+        _add_shoulder_p(rig, report, side)
+        _add_twist(rig, report, side, "腕", "ひじ", "腕捩", "arm twist")
+        _add_twist(rig, report, side, "ひじ", "手首", "手捩", "wrist twist")
+    _add_waist(rig, report)
+    _add_leg_ik_parent(rig, report)
+    _add_leg_d(rig, report)
 
 
 def _canonical_morph(name):
@@ -584,6 +864,15 @@ def add_winks(model):
             model.morphs.extend([left, right])
             names.update((left_name, right_name))
             created += 2
+    # 配布モーションには半角の「ウィンク2」と書いたものもあるので、同じ形の別名も置く
+    for full, half in (("ウィンク２", "ウィンク2"), ("ウィンク２右", "ウィンク2右")):
+        source = next((m for m in model.morphs if m.name == full), None)
+        if source is not None and half not in names:
+            alias = pmxfile.PmxMorph(half, source.name_en, source.panel, source.morph_type)
+            alias.offsets = list(source.offsets)
+            model.morphs.append(alias)
+            names.add(half)
+            created += 1
     return created
 
 
@@ -623,10 +912,11 @@ def is_humanoid(model):
     return "上半身" in names or ("左足" in names and "右足" in names)
 
 
-def standardize(model, arm_angle="auto", log=None):
+def standardize(model, arm_angle="auto", log=None, semi_standard=True):
     """PMX を MMD 標準ボーン構造へ寄せる。RigReport を返す。
 
     arm_angle: "auto"(T スタンスのときだけ A スタンス化) / "off" / 角度(度)
+    semi_standard: 腕捩・手捩・肩P・腰・足IK親・足D 系の準標準ボーンも作るか
     """
     log = log or (lambda message: None)
     report = RigReport()
@@ -643,15 +933,17 @@ def standardize(model, arm_angle="auto", log=None):
         if current:
             average = sum(current) / len(current)
             if arm_angle == "auto":
-                if average < T_STANCE_THRESHOLD:
+                if average < T_STANCE_THRESHOLD or average > LOW_ARM_THRESHOLD:
                     _rotate_arms(rig, DEFAULT_ARM_ANGLE, report)
                 log("  腕の角度: 水平から %.1f 度下がり%s" % (
-                    average, (" → %.0f 度へ A スタンス化" % DEFAULT_ARM_ANGLE)
+                    average, (" → %.0f 度へ直しました" % DEFAULT_ARM_ANGLE)
                     if report.arm_rotation else "(変更なし)"))
             else:
                 _rotate_arms(rig, float(arm_angle), report)
                 log("  腕の角度: %.1f 度 → %.1f 度" % (average, float(arm_angle)))
 
+    if semi_standard:
+        add_semi_standard(rig, report)
     rig.commit()
     build_display_frames(model)
     return report

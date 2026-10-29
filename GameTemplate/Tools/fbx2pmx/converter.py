@@ -12,6 +12,7 @@ import os
 import shutil
 
 import bonenames
+import facial
 import fbxscene
 import mat4
 import mmdize
@@ -19,9 +20,13 @@ import physics
 import pmxfile
 import texconv
 import texmatch
+import uvcheck
 
 # MMD の 1 単位はおよそ 8cm (身長 158cm の標準モデルで約 20 単位)
 MMD_UNITS_PER_METER = 12.5
+# 体格合わせの目標にする脚(股関節 → 足首)の長さ。身長 158cm の人の脚
+# (身長の約 48% ≒ 76cm)を 1 単位 8cm で換算した値
+STANDARD_LEG_LENGTH = 9.5
 
 
 # モーフ名から表示パネルを推測するためのキーワード
@@ -61,8 +66,21 @@ class ConvertOptions:
         self.rename_morphs = True     # 表情モーフ名を あ・い・う… へ寄せる
         self.morph_map_path = None
         self.winks = True             # まばたきを左右に分けてウィンクを作る
+        self.auto_face = True         # 表情モーフが無ければ目・口のモーフを顔の形から作る
+        self.semi_standard = True     # 腕捩・手捩・肩P・腰・足IK親・足D 系を作る
+        self.fit = "auto"             # auto: 脚の長さを標準体格に合わせる / none
+        self.leg_length = STANDARD_LEG_LENGTH
+        self.bust_physics = True      # 胸のボーンにも物理を付ける(揺らす)
+        self.skip_textures = False    # テクスチャを探さない(モーション変換で骨格だけ欲しいとき)
+        self.tk_up = "z"              # ゲームの tkm / tka の上方向の軸(3ds Max の書き出しは z)
         self.physics = "auto"         # auto: 揺れものに剛体・ジョイントを付ける / none
+        # 物理を読み込む側: k2engine(ゲームのエンジン。ボーン追従の剛体を 75% に縮めて使う)/ mmd
+        self.physics_target = "k2engine"
         self.mmd_look = True          # 材質を MMD 向けの値へ調整する
+
+
+# k2Engine 向けに当たり判定を大きめに書き出したことを示すコメント(pmxpreview が読む)
+PHYSICS_K2ENGINE_NOTE = "物理: k2Engine 向け(ボーン追従の剛体は 75% に縮めて使う前提で大きめ)"
 
 
 def _warn(result, message):
@@ -84,10 +102,16 @@ class ConvertResult:
         self.missing_textures = []
         self.converted_textures = []
         self.texture_assignments = []  # [(材質名, PMX に書いたパス, 見つけ方, 元画像)]
+        # モーション変換(motion.py)が使う情報
+        self.scene = None
+        self.matrix = mat4.IDENTITY    # FBX 座標 -> PMX 座標(軸・縮尺・Y 回転)
+        self.bone_sources = {}         # id(PmxBone) -> 元の FBX Model id
+        self.bind_globals = {}         # FBX Model id -> バインド時のグローバル行列
         self.rig = None               # mmdize.RigReport
         self.physics = None           # physics.PhysicsReport
         self.renamed_morphs = 0
         self.winks = 0
+        self.face = None              # facial.FaceReport(表情モーフを自動で作ったとき)
         self.warnings = []
 
 
@@ -154,10 +178,13 @@ def _collect_bone_models(scene, meshes):
     mesh_model_ids = {model.id for model in scene.models("Mesh")}
     bone_ids -= mesh_model_ids
 
+    bind_pose = scene.bind_pose_matrices()
     for bone_id in bone_ids:
         if bone_id not in bind_globals:
             model = scene.objects.get(bone_id)
-            if model is not None:
+            if bone_id in bind_pose:
+                bind_globals[bone_id] = bind_pose[bone_id]
+            elif model is not None:
                 bind_globals[bone_id] = scene.global_matrix(model)
 
     # 親 -> 子の順に並べる
@@ -209,6 +236,37 @@ def _detect_yaw(scene, bone_ids, bind_globals, base_matrix):
 _TRANSLATABLE_BONES = ("全ての親", "センター", "グルーブ", "腰")
 
 
+def _fit_factor(scene, bone_ids, bind_globals, base_matrix, target):
+    """脚(足 → 足首)の長さを target に合わせる倍率を返す。脚が無ければ None。
+
+    配布モーションのセンター移動や足ＩＫの位置は絶対値なので、体格が標準から
+    大きく外れるとステップ幅や足の位置が合わない。そこで脚の長さを基準にそろえる。
+    """
+    positions = {scene.objects[bone_id].name: mat4.get_translation(bind_globals[bone_id])
+                 for bone_id in bone_ids}
+    return fit_factor_from_positions(positions, base_matrix, target)
+
+
+def fit_factor_from_positions(positions, base_matrix, target):
+    """{ボーン名: 元の座標} から、脚の長さを target に合わせる倍率を求める。"""
+    table = bonenames.build_name_table(list(positions))
+    by_mmd = {mmd: name for name, mmd in table.items()}
+    lengths = []
+    for side in ("左", "右"):
+        leg = by_mmd.get(side + "足")
+        ankle = by_mmd.get(side + "足首")
+        if leg and ankle:
+            a = mat4.transform_point(base_matrix, positions[leg])
+            b = mat4.transform_point(base_matrix, positions[ankle])
+            lengths.append(math.dist(a, b))
+    if not lengths or target <= 0.0:
+        return None, 0.0
+    length = sum(lengths) / len(lengths)
+    if length < 1e-6:
+        return None, 0.0
+    return target / length, length
+
+
 def _bone_flags(has_parent, name=""):
     flags = pmxfile.BONE_ROTATABLE | pmxfile.BONE_VISIBLE | pmxfile.BONE_ENABLED
     if not has_parent or name in _TRANSLATABLE_BONES:
@@ -227,7 +285,7 @@ def _build_bones(scene, skeleton, matrix, options, result):
             if options.bone_map_path else None
         name_table = bonenames.build_name_table(
             [scene.objects[bone_id].name for bone_id in bone_ids], extra)
-    result.renamed_bones = len(name_table)
+    result.renamed_bones = sum(1 for v in name_table.values() if any(ord(c) > 127 for c in v))
 
     bones = []
     for bone_id in bone_ids:
@@ -244,6 +302,7 @@ def _build_bones(scene, skeleton, matrix, options, result):
         )
         bone.flags = _bone_flags(parent_index >= 0, bone.name)
         bones.append(bone)
+        result.bone_sources[id(bone)] = bone_id   # モーション変換で元の FBX ボーンを引く
 
     # 接続先(末端)の設定
     for bone_id in bone_ids:
@@ -350,6 +409,8 @@ def _resolve_texture(scene, material, mesh_name, context, result):
 
 def _texture_entry(scene, material, mesh_name, context, result):
     """マテリアルのテクスチャを PMX のテクスチャ表へ登録し番号を返す。"""
+    if context.options.skip_textures:
+        return -1
     source, method = _resolve_texture(scene, material, mesh_name, context, result)
     if source is None:
         result.texture_assignments.append((material.name, None, method, None))
@@ -524,27 +585,39 @@ def _morph_panel(name):
 # 本体
 # --------------------------------------------------------------------------
 
-def convert(fbx_path, output_path, options=None, log=None):
-    """FBX を読み込み PmxModel を組み立てて ConvertResult を返す。"""
+def convert(fbx_path, output_path, options=None, log=None, skeleton_only=False):
+    """FBX を読み込み PmxModel を組み立てて ConvertResult を返す。
+
+    skeleton_only: メッシュが無くても骨格だけで変換する(モーション変換用)
+    """
     options = options or ConvertOptions()
     log = log or (lambda message: None)
 
     scene = fbxscene.FbxScene(fbx_path)
     meshes = fbxscene.build_meshes(scene)
-    if not meshes:
+    if not meshes and not skeleton_only:
         raise ValueError("変換できるメッシュが FBX に含まれていません: %s" % fbx_path)
 
     model = pmxfile.PmxModel()
     result = ConvertResult(model)
+    result.scene = scene
     result.source_meshes = len(meshes)
 
     scale = _resolve_scale(scene, options)
-    result.scale = scale
     axis = _axis_matrix(scene)
     base_matrix = mat4.multiply(mat4.scaling(scale, scale, scale), axis)
 
     skeleton = _collect_bone_models(scene, meshes)
     bone_ids, bind_globals = skeleton[0], skeleton[1]
+    if options.fit == "auto" and options.scale is None:
+        factor, leg = _fit_factor(scene, bone_ids, bind_globals, base_matrix,
+                                  options.leg_length)
+        if factor is not None:
+            scale *= factor
+            base_matrix = mat4.multiply(mat4.scaling(scale, scale, scale), axis)
+            log("  体格合わせ: 脚の長さ %.2f → %.2f (×%.3f)"
+                % (leg, options.leg_length, factor))
+    result.scale = scale
     if options.yaw == "auto":
         yaw, reason = _detect_yaw(scene, bone_ids, bind_globals, base_matrix)
         log("  正面判定: %s" % reason)
@@ -553,6 +626,8 @@ def convert(fbx_path, output_path, options=None, log=None):
     result.yaw = yaw
     matrix = mat4.multiply(mat4.rotation_y(math.radians(yaw)), base_matrix)
     result.mirrored = (_determinant3(matrix) < 0.0) != bool(options.flip_faces)
+    result.matrix = matrix
+    result.bind_globals = bind_globals
 
     bones, bone_index = _build_bones(scene, skeleton, matrix, options, result)
     model.bones = bones
@@ -639,35 +714,57 @@ def convert(fbx_path, output_path, options=None, log=None):
 
     model.textures = texture_context.textures
     model.morphs = morphs
+    if not options.skip_textures:
+        uvcheck.fix_swapped_textures(model, texture_context.output_dir, log)
+    finalize(model, result, options, fbx_path, scale, yaw, log)
+    return result
 
-    name = options.model_name or os.path.splitext(os.path.basename(fbx_path))[0]
+
+def finalize(model, result, options, source_path, scale, yaw, log):
+    """メッシュと骨格を作った後の共通処理(名前・モーフ・MMD 化・物理・検査)。"""
+    name = options.model_name or os.path.splitext(os.path.basename(source_path))[0]
     model.name = name
     model.name_en = options.model_name_en or name
     model.comment = options.comment if options.comment is not None else (
         "%s から fbx2pmx で変換\r\n"
         "元ファイル: %s\r\n"
         "スケール: %.6g 倍 / Y 回転: %.0f 度" % (
-            os.path.basename(fbx_path), os.path.basename(fbx_path), scale, yaw))
-    model.comment_en = "Converted from %s by fbx2pmx" % os.path.basename(fbx_path)
+            os.path.basename(source_path), os.path.basename(source_path), scale, yaw))
+    model.comment_en = "Converted from %s by fbx2pmx" % os.path.basename(source_path)
 
     if options.rename_morphs and model.morphs:
         extra = bonenames.load_bone_map(options.morph_map_path) \
             if options.morph_map_path else None
         result.renamed_morphs = mmdize.rename_morphs(model, extra)
+    used = {morph.name for morph in model.morphs if bonenames.name_bytes(morph.name) <= bonenames.NAME_LIMIT}
+    for morph in model.morphs:   # VMD の名前欄(15 バイト)に入るよう縮める
+        if bonenames.name_bytes(morph.name) > bonenames.NAME_LIMIT:
+            morph.name_en = morph.name_en or morph.name
+            morph.name = bonenames.shorten(morph.name, used)
+            used.add(morph.name)
+    if options.auto_face and not model.morphs:
+        result.face = facial.generate(model)
+        for message in result.face.warnings:
+            _warn(result, message)
     if options.winks and model.morphs:
         result.winks = mmdize.add_winks(model)
 
     if options.rig == "mmd" and options.use_mmd_bone_names and mmdize.is_humanoid(model):
-        result.rig = mmdize.standardize(model, options.arm_angle, log)
+        result.rig = mmdize.standardize(model, options.arm_angle, log, options.semi_standard)
         for message in result.rig.warnings:
             _warn(result, message)
     else:
         _build_display_frames(model)
 
     if options.physics == "auto":
-        result.physics = physics.generate(model)
+        k2engine = options.physics_target == "k2engine"
+        result.physics = physics.generate(
+            model, bust=options.bust_physics,
+            engine_scale=physics.K2ENGINE_FOLLOW_SCALE if k2engine else 1.0)
+        if model.rigid_bodies and k2engine:
+            # プレビューがエンジンと同じ縮小で当たり判定を再現できるよう、コメントに残す
+            model.comment += "\r\n" + PHYSICS_K2ENGINE_NOTE
     _validate(model, result)
-    return result
 
 
 # 輪郭線を付けない材質(目まわり)と、両面描画にする材質(薄い布や髪の板ポリ)の目印

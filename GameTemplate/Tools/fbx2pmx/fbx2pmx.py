@@ -19,8 +19,13 @@ import traceback
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import converter   # noqa: E402
+import fbx2vmd     # noqa: E402
+import fbxscene    # noqa: E402
+import motion      # noqa: E402
 import pmxfile     # noqa: E402
 import texmatch    # noqa: E402
+import tkconvert   # noqa: E402
+import vmdfile     # noqa: E402
 
 
 def _build_parser():
@@ -29,7 +34,7 @@ def _build_parser():
         description="FBX モデルを MMD の PMX 形式へ変換します。",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("inputs", nargs="+", metavar="FBX/画像/フォルダ",
+    parser.add_argument("inputs", nargs="+", metavar="FBX/tkm/tks/画像/フォルダ",
                         help="変換する .fbx。テクスチャ画像やフォルダを一緒に渡すと、"
                              "それも割り当ての候補にする(フォルダ内の .fbx はまとめて変換)")
     parser.add_argument("-o", "--output", metavar="PATH",
@@ -81,35 +86,63 @@ def _build_parser():
                         help='{"FBXのモーフ名": "MMDのモーフ名"} 形式の JSON で名前を上書きする')
     parser.add_argument("--no-wink", action="store_true",
                         help="まばたき・笑いを左右に分けたウィンク系モーフを作らない")
+    parser.add_argument("--no-auto-face", action="store_true",
+                        help="表情モーフが無いモデル(ゲームの tkm など)でも、まばたき・あいうえお "
+                             "などを自動で作らない")
     parser.add_argument("--physics", choices=("auto", "none"), default="auto",
                         help="auto: 髪・スカート・袖などに剛体とジョイントを自動で付ける (既定) "
                              "/ none: 付けない")
+    parser.add_argument("--physics-target", choices=("k2engine", "mmd"), default="k2engine",
+                        help="物理を読み込む側。k2engine(既定)はゲームのエンジンがボーン追従の剛体を "
+                             "75%% に縮めて使う分を見込んで大きめに書き出す / mmd は MMD 用の大きさ")
     parser.add_argument("--keep-material", action="store_true",
                         help="材質の色・トゥーン・輪郭線・両面描画を MMD 向けに調整しない")
+    parser.add_argument("--no-motion", action="store_true",
+                        help="FBX にアニメーションがあっても VMD を書き出さない")
+    parser.add_argument("--skeleton", metavar="TKS",
+                        help="ゲームの tkm / tka を変換するときの骨格(既定: 自動で探す)")
+    parser.add_argument("--tk-up", choices=("z", "y"), default="z",
+                        help="tkm / tka の上方向の軸 (既定: z = 3ds Max の書き出し)")
+    parser.add_argument("--bust-physics", action="store_true",
+                        help="(既定で有効) 胸のボーン(bust / breast / 胸 など)にも揺れを付ける")
+    parser.add_argument("--no-bust-physics", action="store_true",
+                        help="胸を揺らさない(胸には当たり判定だけ付ける)")
+    parser.add_argument("--no-semi-standard", action="store_true",
+                        help="腕捩・手捩・肩P・腰・足IK親・足D 系の準標準ボーンを作らない")
+    parser.add_argument("--fit", choices=("auto", "none"), default="auto",
+                        help="auto: 脚の長さを標準体格に合わせて縮尺を決める (既定。--scale 指定時は無効)")
+    parser.add_argument("--leg-length", type=float, default=converter.STANDARD_LEG_LENGTH,
+                        metavar="N", help="体格合わせで目標にする脚の長さ (既定 %.1f)"
+                        % converter.STANDARD_LEG_LENGTH)
     parser.add_argument("-q", "--quiet", action="store_true", help="経過表示を抑える")
     return parser
 
 
 def _collect_inputs(paths):
-    """指定パスを (FBX の一覧, テクスチャ画像の一覧, フォルダの一覧) に振り分ける。
+    """指定パスを (変換するファイル, テクスチャ画像, フォルダ, 骨格 tks) に振り分ける。
 
     エクスプローラから FBX とテクスチャをまとめて bat へドロップした場合も、
-    画像は変換対象ではなく割り当ての候補として扱う。
+    画像は変換対象ではなく割り当ての候補として扱う。tks は tkm / tka の骨格として使う。
     """
     fbx_files = []
     images = []
     directories = []
+    skeletons = []
     for path in paths:
         if os.path.isdir(path):
             directories.append(path)
             for name in sorted(os.listdir(path)):
-                if name.lower().endswith(".fbx"):
+                if name.lower().endswith((".fbx", ".tkm", ".tka")):
                     fbx_files.append(os.path.join(path, name))
+                elif name.lower().endswith(".tks"):
+                    skeletons.append(os.path.join(path, name))
         elif os.path.splitext(path)[1].lower() in texmatch.IMAGE_EXTENSIONS:
             images.append(path)
+        elif path.lower().endswith(".tks"):
+            skeletons.append(path)
         else:
             fbx_files.append(path)
-    return fbx_files, images, directories
+    return fbx_files, images, directories, skeletons
 
 
 def _resolve_output(fbx_path, output, multiple):
@@ -152,8 +185,15 @@ def _make_options(args):
     options.rename_morphs = not args.keep_morph_names
     options.morph_map_path = args.morph_map
     options.winks = not args.no_wink
+    options.auto_face = not args.no_auto_face
     options.physics = args.physics
+    options.physics_target = args.physics_target
     options.mmd_look = not args.keep_material
+    options.bust_physics = not args.no_bust_physics
+    options.semi_standard = not args.no_semi_standard
+    options.fit = args.fit
+    options.leg_length = args.leg_length
+    options.tk_up = args.tk_up
     return options
 
 
@@ -173,6 +213,10 @@ def _report(result, output_path, size, log):
         log("  IK: %d 本" % result.rig.ik_chains)
     if result.renamed_morphs:
         log("  MMD 標準名へ変換したモーフ: %d 個" % result.renamed_morphs)
+    if result.face is not None and result.face.created:
+        log("  表情モーフを顔の形から作成: %s" % "、".join(result.face.created))
+        if result.face.tongue_tucked:
+            log("  口の前に出ていた舌を口の中へしまいました(「ぺろっ」で出ます)")
     if result.winks:
         log("  ウィンク系モーフを追加: %d 個" % result.winks)
     report = result.physics
@@ -180,6 +224,12 @@ def _report(result, output_path, size, log):
         chains = "、".join("%s %d" % (name, count) for name, count in report.chains.items())
         log("  物理: 揺れもの剛体 %d / 当たり判定 %d / ジョイント %d (連鎖: %s)"
             % (report.swing_bodies, report.collision_bodies, report.joints, chains))
+        if report.layered:
+            log("  物理: 胸の揺れに服がついてくるよう、重ね着の頂点 %d 個に体の重みを写しました"
+                % report.layered)
+        if report.shrunk or report.relaxed:
+            log("  物理: 当たり判定に食い込まないよう細くした剛体 %d / 細くしきれず衝突を外した組 %d"
+                % (report.shrunk, report.relaxed))
     _report_textures(result, output_path, log)
     for message in result.warnings:
         log("  [警告] %s" % message)
@@ -250,9 +300,12 @@ def main(argv=None):
               file=sys.stderr)
         return 2
 
-    files, images, directories = _collect_inputs(args.inputs)
+    files, images, directories, skeletons = _collect_inputs(args.inputs)
     if not files:
-        print("変換対象の FBX が見つかりません。", file=sys.stderr)
+        message = "変換対象のファイル(.fbx / .tkm / .tka)が見つかりません。"
+        if skeletons:
+            message += " .tks は骨格なので、.tkm や .tka と一緒に渡してください。"
+        print(message, file=sys.stderr)
         return 2
 
     options = _make_options(args)
@@ -268,18 +321,80 @@ def main(argv=None):
             continue
         log("変換: %s" % fbx_path)
         output_path = _resolve_output(fbx_path, args.output, len(files) > 1)
+        extension = os.path.splitext(fbx_path)[1].lower()
+        if extension in (".tkm", ".tka"):
+            failed += _convert_tk(fbx_path, extension, output_path, options, args, log, skeletons)
+            continue
+        result = None
         try:
-            result = converter.convert(fbx_path, output_path, options, log)
-            size = pmxfile.write_pmx(result.model, output_path)
+            scene = fbxscene.FbxScene(fbx_path)
+            has_mesh = bool(fbxscene.build_meshes(scene))
+            has_motion = any(take.has_motion() for take in scene.takes())
+            if has_mesh:
+                result = converter.convert(fbx_path, output_path, options, log)
+                size = pmxfile.write_pmx(result.model, output_path)
+            elif not has_motion:
+                raise ValueError("メッシュもアニメーションも含まれていません")
         except Exception as error:  # 1 件失敗しても残りは続ける
             failed += 1
             print("  失敗: %s" % error, file=sys.stderr)
             if os.environ.get("FBX2PMX_DEBUG"):
                 traceback.print_exc()
             continue
-        _report(result, output_path, size, log)
+        if result is not None:
+            _report(result, output_path, size, log)
+
+        # アニメーションがあれば VMD も書き出す(メッシュの無いモーション専用 FBX は VMD だけ)
+        if has_motion and not args.no_motion:
+            vmd_path = os.path.splitext(output_path)[0] + ".vmd"
+            try:
+                data, report, _skeleton = motion.convert_motion(
+                    fbx_path, _motion_options(options), lambda message: None)
+                size = vmdfile.write_vmd(data, vmd_path)
+            except Exception as error:
+                failed += 1
+                print("  モーションの変換に失敗: %s" % error, file=sys.stderr)
+                if os.environ.get("FBX2PMX_DEBUG"):
+                    traceback.print_exc()
+                continue
+            log("  モーションも変換しました:")
+            fbx2vmd.report_motion(report, vmd_path, size, log)
 
     return 1 if failed else 0
+
+
+def _convert_tk(path, extension, output_path, options, args, log, skeletons=()):
+    """ゲーム(k2Engine)の tkm を PMX に、tka を VMD に変換する。失敗数を返す。
+
+    skeletons: 一緒にドロップされた tks(骨格)。--skeleton の指定が優先。
+    """
+    try:
+        if extension == ".tkm":
+            result = tkconvert.convert_tkm(path, output_path, options, log, args.skeleton,
+                                           given=skeletons)
+            size = pmxfile.write_pmx(result.model, output_path)
+            _report(result, output_path, size, log)
+        else:
+            vmd_path = os.path.splitext(output_path)[0] + ".vmd"
+            data, report, _skeleton = tkconvert.convert_tka(
+                path, _motion_options(options), log, args.skeleton, skeletons)
+            size = vmdfile.write_vmd(data, vmd_path)
+            fbx2vmd.report_motion(report, vmd_path, size, log)
+    except Exception as error:
+        print("  失敗: %s" % error, file=sys.stderr)
+        if os.environ.get("FBX2PMX_DEBUG"):
+            traceback.print_exc()
+        return 1
+    return 0
+
+
+def _motion_options(options):
+    """モデル変換と同じ骨格の整え方でモーションを変換する設定を作る。"""
+    motion_options = motion.MotionOptions()
+    for name in ("scale", "unit", "yaw", "arm_angle", "fit", "leg_length", "bone_map_path",
+                 "semi_standard", "use_mmd_bone_names", "rig", "max_weights", "tk_up"):
+        setattr(motion_options.model, name, getattr(options, name))
+    return motion_options
 
 
 if __name__ == "__main__":
