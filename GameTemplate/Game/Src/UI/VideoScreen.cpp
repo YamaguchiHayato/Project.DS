@@ -12,7 +12,7 @@ namespace nsApp
 		bool VideoScreen::Start()
 		{
 			/* 再生したい動画のパスをセットする。*/
-			if (!player_.Open(g_graphicsEngine->GetD3DDevice(), L"Assets/video/解説動画.mp4"))
+			if (!player_.Open(g_graphicsEngine->GetD3DDevice(), /*L"Assets/video/解説動画.mp4"*/))
 				return false;
 
 			init_.m_textures[0] = player_.GetTexture();
@@ -42,7 +42,7 @@ namespace nsApp
 			if (player_.IsEnd())
 				return;
 
-			player_.Update(g_graphicsEngine->GetCommandList(), g_gameTime->GetFrameDeltaTime());
+			player_.Update(g_graphicsEngine->GetCommandList(), 1.0f/60.0f);
 			sprite_.Update(Vector3::Zero, Quaternion::Identity, Vector3::One);
 		}
 

@@ -80,6 +80,10 @@ namespace nsApp
 			bool isOpened_ = false; //! 開けているか。
 			bool isEnd_ = false; //! 終端まで読んだか。
 			float time_ = 0.0f; //! 次のフレームまでの残り時間。
+			long long frequency_ = 0; //! パフォーマンスカウンタの周波数。
+			long long counter_ = 0; //! パフォーマンスカウンタの値。
+			long long now_ = 0; //! パフォーマンスカウンタの現在値。
+			float frameIndex_ = 0.0f; //! 現在のフレーム番号。
 		};
 	}
 }

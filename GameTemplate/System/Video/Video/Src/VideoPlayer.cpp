@@ -22,7 +22,9 @@ namespace nsApp
 
 			/* 開けた。*/
 			isOpened_ = true;
-			time_ = decoder_.GetFrameTime();
+			QueryPerformanceFrequency(reinterpret_cast<LARGE_INTEGER*>(&frequency_));
+			QueryPerformanceCounter(reinterpret_cast<LARGE_INTEGER*>(&counter_));
+			time_ = decoder_.GetFrameTime() + (1.0f / 60.0f);
 			isEnd_ = false;
 			return true;
 		}
@@ -34,21 +36,33 @@ namespace nsApp
 			if (!isOpened_ || isEnd_)
 				return false;
 
-			/* 経過時間を足し、フレーム時間に達していなければ進めない。*/
-			time_ += deltaTime;
+			/* 実際に経過した秒数を足す。*/
+			QueryPerformanceCounter(reinterpret_cast<LARGE_INTEGER*>(&now_));
+			time_ += static_cast<float>(now_ - counter_) / static_cast<float>(frequency_);
+			counter_ = now_;
+
+			/* 大きく遅れたときは、遅れを捨てて今の位置へ付く。*/
+			if (time_ > decoder_.GetFrameTime() * 2.0f)
+				time_ = decoder_.GetFrameTime() * 2.0f;
 			if (time_ < decoder_.GetFrameTime())
 				return true;
-			/* フレーム時間に達したら、次のフレームへ進める。*/
-			time_ -= decoder_.GetFrameTime();
 
-			/* 次の画素を読み、テクスチャへコピーする。*/
-			if (!decoder_.ReadFrame())
+			/* フレームを進める。*/
+			while (time_ >= decoder_.GetFrameTime())
 			{
-				isEnd_ = true;
-				return false;
+				/* フレームを読み取る。*/
+				if (!decoder_.ReadFrame())
+				{
+					isEnd_ = true;
+					return false;
+				}
+
+				/* フレームを進めたので、残り時間を減らす。*/
+				time_ -= decoder_.GetFrameTime();
+				frameIndex_ += 1.0f;
 			}
 
-			/* 読めたらテクスチャへコピーする。*/
+			/* フレームをテクスチャへコピーする。*/
 			return frameTexture_.Copy(pCommandList, decoder_.GetFrame(), decoder_.GetFrameSize());
 		}
 

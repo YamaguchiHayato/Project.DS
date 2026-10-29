@@ -8,7 +8,8 @@ namespace nsApp
 		bool PCMPlayer::Play(PCMDecoder& decoder, IXAudio2SourceVoice* pVoice)
 		{
 			/* ボイスが無ければ鳴らせない。*/
-			pVoice_ = pVoice;
+			pVoice_ = pVoice; 
+			sampleRate_ = decoder.GetSampleRate();
 
 			if (pVoice_ == nullptr)
 				return false;
@@ -40,6 +41,17 @@ namespace nsApp
 			pVoice_->Stop(0);
 			pVoice_->DestroyVoice();
 			pVoice_ = nullptr;
+		}
+
+
+		float PCMPlayer::GetPlayTime() const
+		{
+			/* 再生時間を取得する。*/
+			if(pVoice_ == nullptr || sampleRate_ == 0)
+				return 0.0f;
+
+			pVoice_->GetState(&state_);
+			return static_cast<float>(state_.SamplesPlayed) / static_cast<float>(sampleRate_);
 		}
 	}
 }

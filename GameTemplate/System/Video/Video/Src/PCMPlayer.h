@@ -31,12 +31,20 @@ namespace nsApp
 			 */
 			void Close();
 
+			/**
+			 * @brief 再生時間を取得する。
+			 * @return　
+			 */
+			float GetPlayTime() const;
+			
 
 		private:
 			std::vector<unsigned char> pcm_; //! 再生中に保持するPCM。
 			IXAudio2SourceVoice* pVoice_ = nullptr; //! 再生に使うボイス。
 			XAUDIO2_BUFFER buffer_ = {}; //! ボイスへ渡すバッファ。
 			long result_ = 0; //! XAudio2の戻り値。
+			unsigned int sampleRate_ = 0; //! 1秒あたりのサンプリング数。
+			mutable XAUDIO2_VOICE_STATE state_ = {}; //! 再生時間。
 		};
 	}
 }
