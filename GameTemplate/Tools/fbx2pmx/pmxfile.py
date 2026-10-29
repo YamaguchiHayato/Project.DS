@@ -135,6 +135,60 @@ class PmxDisplayFrame:
         self.elements = []  # [(種別, インデックス), ...]
 
 
+# 剛体の形状
+SHAPE_SPHERE = 0
+SHAPE_BOX = 1
+SHAPE_CAPSULE = 2
+
+# 剛体の物理演算モード
+BODY_FOLLOW_BONE = 0        # ボーン追従(当たり判定・揺れものの付け根)
+BODY_PHYSICS = 1            # 物理演算
+BODY_PHYSICS_ALIGNED = 2    # 物理演算 + ボーン位置合わせ
+
+
+class PmxRigidBody:
+    """剛体。size は球なら (半径, -, -)、カプセルなら (半径, 高さ, -)。
+
+    rotation は MMD と同じく Y → X → Z の順に掛けるオイラー角(ラジアン)で、
+    カプセルはローカル Y 軸方向に伸びる。
+    """
+
+    def __init__(self, name, name_en="", bone_index=-1):
+        self.name = name
+        self.name_en = name_en
+        self.bone_index = bone_index
+        self.group = 0
+        self.collision_mask = 0xFFFF   # 衝突する相手グループのビット(1 = 衝突する)
+        self.shape = SHAPE_SPHERE
+        self.size = (1.0, 0.0, 0.0)
+        self.position = (0.0, 0.0, 0.0)
+        self.rotation = (0.0, 0.0, 0.0)
+        self.mass = 1.0
+        self.linear_damping = 0.5
+        self.angular_damping = 0.5
+        self.restitution = 0.0
+        self.friction = 0.5
+        self.mode = BODY_FOLLOW_BONE
+
+
+class PmxJoint:
+    """ばね付き 6 自由度ジョイント。"""
+
+    def __init__(self, name, name_en="", body_a=-1, body_b=-1):
+        self.name = name
+        self.name_en = name_en
+        self.body_a = body_a
+        self.body_b = body_b
+        self.position = (0.0, 0.0, 0.0)
+        self.rotation = (0.0, 0.0, 0.0)
+        self.translation_min = (0.0, 0.0, 0.0)
+        self.translation_max = (0.0, 0.0, 0.0)
+        self.rotation_min = (0.0, 0.0, 0.0)
+        self.rotation_max = (0.0, 0.0, 0.0)
+        self.spring_translation = (0.0, 0.0, 0.0)
+        self.spring_rotation = (0.0, 0.0, 0.0)
+
+
 class PmxModel:
     def __init__(self, name="model", name_en="model"):
         self.name = name
@@ -346,7 +400,32 @@ class _Writer:
 
     def write_physics(self):
         self.pack("<i", len(self.model.rigid_bodies))
+        for body in self.model.rigid_bodies:
+            self.text(body.name)
+            self.text(body.name_en)
+            self.signed_index(body.bone_index, self.bone_index_size)
+            self.pack("<B", body.group)
+            self.pack("<H", body.collision_mask & 0xFFFF)
+            self.pack("<B", body.shape)
+            self.pack("<3f", *body.size)
+            self.pack("<3f", *body.position)
+            self.pack("<3f", *body.rotation)
+            self.pack("<5f", body.mass, body.linear_damping, body.angular_damping,
+                      body.restitution, body.friction)
+            self.pack("<B", body.mode)
+
         self.pack("<i", len(self.model.joints))
+        for joint in self.model.joints:
+            self.text(joint.name)
+            self.text(joint.name_en)
+            self.pack("<B", 0)  # ばね付き 6DOF
+            self.signed_index(joint.body_a, self.body_index_size)
+            self.signed_index(joint.body_b, self.body_index_size)
+            for vector in (joint.position, joint.rotation,
+                           joint.translation_min, joint.translation_max,
+                           joint.rotation_min, joint.rotation_max,
+                           joint.spring_translation, joint.spring_rotation):
+                self.pack("<3f", *vector)
 
     def run(self):
         self.write_header()
@@ -396,7 +475,7 @@ class _Reader:
 
 
 def read_pmx(path):
-    """PMX を読み込んで PmxModel を返す(剛体・ジョイントは件数のみ)。"""
+    """PMX を読み込んで PmxModel を返す。"""
     with open(path, "rb") as stream:
         reader = _Reader(stream.read())
 
@@ -554,5 +633,31 @@ def read_pmx(path):
                 frame.elements.append((element_type, reader.index(morph_size, True)))
         model.display_frames.append(frame)
 
-    model.rigid_bodies = [None] * reader.unpack("<i")[0]
+    count = reader.unpack("<i")[0]
+    for _ in range(count):
+        body = PmxRigidBody(reader.text(), reader.text())
+        body.bone_index = reader.index(bone_size, True)
+        body.group = reader.unpack("<B")[0]
+        body.collision_mask = reader.unpack("<H")[0]
+        body.shape = reader.unpack("<B")[0]
+        body.size = reader.unpack("<3f")
+        body.position = reader.unpack("<3f")
+        body.rotation = reader.unpack("<3f")
+        (body.mass, body.linear_damping, body.angular_damping,
+         body.restitution, body.friction) = reader.unpack("<5f")
+        body.mode = reader.unpack("<B")[0]
+        model.rigid_bodies.append(body)
+
+    count = reader.unpack("<i")[0]
+    for _ in range(count):
+        joint = PmxJoint(reader.text(), reader.text())
+        joint_type = reader.unpack("<B")[0]
+        if joint_type != 0:
+            raise ValueError("未対応のジョイント種別: %d" % joint_type)
+        joint.body_a = reader.index(body_size, True)
+        joint.body_b = reader.index(body_size, True)
+        (joint.position, joint.rotation, joint.translation_min, joint.translation_max,
+         joint.rotation_min, joint.rotation_max, joint.spring_translation,
+         joint.spring_rotation) = [reader.unpack("<3f") for _vector in range(8)]
+        model.joints.append(joint)
     return model
