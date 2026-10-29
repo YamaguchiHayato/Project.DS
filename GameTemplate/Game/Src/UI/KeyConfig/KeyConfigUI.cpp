@@ -37,7 +37,8 @@ namespace nsApp
 			const bool enter_ = (GetAsyncKeyState(VK_RETURN) & 0x8000) != 0;
 			const bool back_ = (GetAsyncKeyState(VK_BACK) & 0x8000) != 0;
 			const bool escape_ = (GetAsyncKeyState(VK_ESCAPE) & 0x8000) != 0;
-			if (escape_ && !wasEscape_)
+			/* 割り当て待ちの最中は Esc も割り当て対象なので、閉じる操作にしない。*/
+			if (escape_ && !wasEscape_ && !waiting_)
 				close_ = true;
 
 			/* 入力待ちのあいだは、行を動かさない。*/

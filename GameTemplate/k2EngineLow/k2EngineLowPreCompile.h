@@ -116,13 +116,13 @@ static const int MAX_BONE = 512;	// ボーンの最大数。
 #include "SpriteRender.h"
 #include "FontRender.h"
 #include "SkyCube.h"
-#include "RenderingEngine.h";
-#include "Light.h";
-#include"IRender.h";
+#include "RenderingEngine.h"
+#include "Light.h"
+#include"IRender.h"
 
 //JSONファイルの読み込み用。
-#include "nlohmann/json.hpp";
-#include "nlohmann/json_fwd.hpp";
+#include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
 
 //MMDの読み込み用。
 #include "pmxLoader.h"//nlohmannの時と書き方違うから修正必要かも。

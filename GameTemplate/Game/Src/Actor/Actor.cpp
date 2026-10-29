@@ -8,21 +8,21 @@ namespace nsApp
 	{
 		Actor::Actor()
 		{
-			/* ActorƒNƒ‰ƒX‚ğƒI[ƒi[‚Æ‚µAStateMachine‚ğì¬B*/
+			/* Actorã‚¯ãƒ©ã‚¹ã‚’ã‚ªãƒ¼ãƒŠãƒ¼ã¨ã—ã€StateMachineã‚’ä½œæˆã€‚*/
 			pStateMachine_ = new nsState::StateMachine<Actor>(this);
 		}
 
 
 		Actor::~Actor()
 		{
-			/* íœB*/
+			/* å‰Šé™¤ã€‚*/
 			delete pStateMachine_;
 		}
 
 
 		void Actor::Update()
 		{
-			/* ƒXƒe[ƒgƒ}ƒV[ƒ“‚ÌXVB*/
+			/* ã‚¹ãƒ†ãƒ¼ãƒˆãƒã‚·ãƒ¼ãƒ³ã®æ›´æ–°ã€‚*/
 			pStateMachine_->Update();
 		}
 	}

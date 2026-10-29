@@ -243,11 +243,18 @@ class FbxScene:
     # ------------------------------------------------------------------
     # 変換行列
     # ------------------------------------------------------------------
-    def local_matrix(self, model):
-        """FBX の変換式に従ってローカル行列を組み立てる。"""
+    def local_matrix(self, model, take=None, time=None):
+        """FBX の変換式に従ってローカル行列を組み立てる。
+
+        take と time を渡すと、アニメーションのある値はその時刻の値を使う。
+        """
         translation = model.prop_vec3("Lcl Translation")
         rotation = model.prop_vec3("Lcl Rotation")
         scaling = model.prop_vec3("Lcl Scaling", (1.0, 1.0, 1.0))
+        if take is not None:
+            translation = take.vector(model.id, "Lcl Translation", time, translation)
+            rotation = take.vector(model.id, "Lcl Rotation", time, rotation)
+            scaling = take.vector(model.id, "Lcl Scaling", time, scaling)
         rotation_offset = model.prop_vec3("RotationOffset")
         rotation_pivot = model.prop_vec3("RotationPivot")
         pre_rotation = model.prop_vec3("PreRotation")
@@ -281,6 +288,36 @@ class FbxScene:
         self._global_cache[model.id] = result
         return result
 
+    def global_matrix_at(self, model, take, time, cache):
+        """アニメーションの time 時点でのグローバル行列。cache は時刻ごとの辞書。"""
+        cached = cache.get(model.id)
+        if cached is not None:
+            return cached
+        local = self.local_matrix(model, take, time)
+        parent = self.parent_model(model.id)
+        result = local if parent is None else mat4.multiply(
+            self.global_matrix_at(parent, take, time, cache), local)
+        cache[model.id] = result
+        return result
+
+    def bind_pose_matrices(self):
+        """Pose(BindPose) に記録されたグローバル行列を {Model id: 行列} で返す。"""
+        result = {}
+        for pose in self.objects.values():
+            if pose.class_name != "Pose" or pose.sub_class != "BindPose":
+                continue
+            for pose_node in pose.node.find_all("PoseNode"):
+                node_id = pose_node.child_value("Node")
+                matrix = pose_node.child_array("Matrix")
+                if isinstance(node_id, int) and matrix is not None and len(matrix) == 16:
+                    result.setdefault(node_id, mat4.transpose(tuple(float(v) for v in matrix)))
+        return result
+
+    def takes(self):
+        """アニメーション(AnimationStack)の一覧。"""
+        stacks = [obj for obj in self.objects.values() if obj.class_name == "AnimationStack"]
+        return [AnimationTake(self, stack) for stack in stacks]
+
     def geometric_matrix(self, model):
         """ジオメトリにだけ掛かる変換(子ノードには伝播しない)。"""
         translation = model.prop_vec3("GeometricTranslation")
@@ -311,6 +348,116 @@ class FbxScene:
     def meters_per_unit(self):
         """1 FBX 単位が何メートルかを返す。"""
         return float(self.unit_scale_factor) / 100.0
+
+
+# --------------------------------------------------------------------------
+# アニメーション
+# --------------------------------------------------------------------------
+
+# FBX の時間単位(1 秒あたりのカウント)
+FBX_TIME_PER_SECOND = 46186158000
+
+
+class AnimationCurve:
+    """1 チャンネル分のキー列。キーの間は線形(定数補間のキーは階段)で補間する。
+
+    ネットで配布されている FBX モーションは毎フレームにキーが打たれている
+    (ベイク済み)ことがほとんどなので、線形補間で十分な精度になる。
+    """
+
+    _CONSTANT = 0x00000002   # KeyAttrFlags の定数補間ビット
+
+    def __init__(self, node):
+        self.times = [int(t) for t in (node.child_array("KeyTime") or [])]
+        self.values = [float(v) for v in (node.child_array("KeyValueFloat")
+                                          or node.child_array("KeyValueDouble") or [])]
+        count = min(len(self.times), len(self.values))
+        self.times = self.times[:count]
+        self.values = self.values[:count]
+        flags = node.child_array("KeyAttrFlags") or [0]
+        counts = node.child_array("KeyAttrRefCount") or [count]
+        self.constant = []
+        for flag, repeat in zip(flags, counts):
+            self.constant.extend([bool(int(flag) & self._CONSTANT)] * int(repeat))
+
+    def evaluate(self, time, default=0.0):
+        times = self.times
+        if not times:
+            return default
+        if time <= times[0]:
+            return self.values[0]
+        if time >= times[-1]:
+            return self.values[-1]
+        low, high = 0, len(times) - 1
+        while high - low > 1:
+            middle = (low + high) // 2
+            if times[middle] <= time:
+                low = middle
+            else:
+                high = middle
+        if low < len(self.constant) and self.constant[low]:
+            return self.values[low]
+        span = times[high] - times[low]
+        f = (time - times[low]) / float(span) if span else 0.0
+        return self.values[low] + (self.values[high] - self.values[low]) * f
+
+
+class AnimationTake:
+    """AnimationStack 1 本分(最初のレイヤーを使う)。"""
+
+    def __init__(self, scene, stack):
+        self.name = stack.name
+        self.channels = {}          # (Model id, プロパティ名) -> [X, Y, Z の曲線 or None, 既定値]
+        self.morph_curves = {}      # BlendShapeChannel id -> 曲線(DeformPercent)
+        times = []
+        layers = scene.child_objects(stack.id, "AnimationLayer")
+        for layer in layers[:1]:
+            for curve_node in scene.child_objects(layer.id, "AnimationCurveNode"):
+                curves = {}
+                for curve, prop_name in scene.children_of(curve_node.id, "AnimationCurve"):
+                    curves[prop_name or ""] = AnimationCurve(curve.node)
+                    times.extend(curves[prop_name or ""].times[:1] + curves[prop_name or ""].times[-1:])
+                for target_id, prop_name in scene.parent_links.get(curve_node.id, ()):
+                    target = scene.objects.get(target_id)
+                    if target is None or prop_name is None:
+                        continue
+                    if target.class_name == "Model":
+                        defaults = (curve_node.prop_float("d|X"), curve_node.prop_float("d|Y"),
+                                    curve_node.prop_float("d|Z"))
+                        self.channels[(target.id, prop_name)] = [
+                            curves.get("d|X"), curves.get("d|Y"), curves.get("d|Z"), defaults]
+                    elif target.class_name == "Deformer" and "DeformPercent" in prop_name:
+                        curve = curves.get("d|DeformPercent") or next(iter(curves.values()), None)
+                        if curve is not None:
+                            self.morph_curves[target.id] = curve
+        start = stack.prop("LocalStart") or stack.prop("ReferenceStart")
+        stop = stack.prop("LocalStop") or stack.prop("ReferenceStop")
+        self.start = int(start[0]) if start else (min(times) if times else 0)
+        self.stop = int(stop[0]) if stop else (max(times) if times else 0)
+
+    @property
+    def duration_seconds(self):
+        return max(0.0, (self.stop - self.start) / float(FBX_TIME_PER_SECOND))
+
+    def has_motion(self):
+        """キーが 2 個以上ある曲線が 1 本でもあるか。"""
+        for curves in self.channels.values():
+            if any(curve is not None and len(curve.times) > 1 for curve in curves[:3]):
+                return True
+        return any(len(curve.times) > 1 for curve in self.morph_curves.values())
+
+    def vector(self, model_id, prop_name, time, default):
+        channel = self.channels.get((model_id, prop_name))
+        if channel is None:
+            return default
+        result = []
+        for axis in range(3):
+            curve = channel[axis]
+            if curve is None or not curve.times:
+                result.append(default[axis])
+            else:
+                result.append(curve.evaluate(time, default[axis]))
+        return tuple(result)
 
 
 # --------------------------------------------------------------------------
