@@ -9,7 +9,7 @@ namespace
 	const float VIEW_MODEL_RIGHT = 22.0f;		//! ビューモデル銃の右オフセット。
 	const float VIEW_MODEL_DOWN = -26.0f;		//! ビューモデル銃の下オフセット(負で下)。
 	const float TARGET_GUN_SIZE = 45.0f;		//! ビューモデル銃の目標サイズ(一番長い辺をこの長さに自動スケール)。
-	const float HAND_HEIGHT_RATE = 0.55f;		//! 右手のボーンが見つからないときに銃を置く高さ(目線の高さに対する割合)。
+	const float HAND_HEIGHT_RATE = 0.55f;		//! 手のボーンが見つからないときに銃を置く高さ(目線の高さに対する割合)。
 	const float ADS_VIEW_MODEL_RIGHT = 6.0f;	//! 覗き込み時に銃を画面中央へ寄せた後の右オフセット。
 	const float ADS_VIEW_MODEL_DOWN = -12.0f;	//! 覗き込み時の銃の下オフセット。
 	const float SHOVE_MOTION_ANGLE = 0.25f;		//! 押したときに銃口が上を向く角度(ラジアン)。
@@ -54,11 +54,17 @@ namespace nsApp
 			 * 三人称で銃を持たせるボーンを探しておく(毎フレーム名前で探さないため)。
 			 * 名前は player.json の handBoneName。見つからなければ -1 になり、銃は腰のあたりへ置かれる。
 			 */
-			rightHandBoneId_ = FindHandBoneId(stStatus);
+			rightHandBoneId_ = FindHandBoneId(stStatus.sHandBoneName_);
+
+			/*
+			 * 二丁持ちの左手ぶんも同じように引いておく。名前は player.json の leftHandBoneName。
+			 * 見つからなければ -1 になり、三人称では右手の1丁だけになる。
+			 */
+			leftHandBoneId_ = FindHandBoneId(stStatus.sLeftHandBoneName_);
 		}
 
 
-		int PlayerView::FindHandBoneId(const nsData::PlayerStatus& stStatus)
+		int PlayerView::FindHandBoneId(const std::string& sBoneName)
 		{
 			/* モデルをまだ読めていなければ探せない。*/
 			ModelRender* pModelRender = model_.GetModelRender();
@@ -76,16 +82,16 @@ namespace nsApp
 			 * (%s だと wchar_t* 扱いになり文字化けする)。
 			 */
 			wchar_t wcBoneName[HAND_BONE_NAME_MAX];
-			swprintf_s(wcBoneName, L"%hs", stStatus.sHandBoneName_.c_str());
+			swprintf_s(wcBoneName, L"%hs", sBoneName.c_str());
 
 			return skeleton.FindBoneID(wcBoneName);
 		}
 
 
-		bool PlayerView::TryGetHandBonePosition(Vector3& vOutPosition)
+		bool PlayerView::TryGetHandBonePosition(int iBoneId, Vector3& vOutPosition)
 		{
 			/* 名前が見つからなかったモデルでは使えない。*/
-			if (rightHandBoneId_ < 0)
+			if (iBoneId < 0)
 				return false;
 
 			ModelRender* pModelRender = model_.GetModelRender();
@@ -94,10 +100,10 @@ namespace nsApp
 
 			/* モデルを差し替えてボーンが減っている場合に備えて、番号の範囲を確かめる。*/
 			Skeleton& skeleton = pModelRender->GetSkeleton();
-			if (rightHandBoneId_ >= skeleton.GetNumBones())
+			if (iBoneId >= skeleton.GetNumBones())
 				return false;
 
-			Bone* pBone = skeleton.GetBone(rightHandBoneId_);
+			Bone* pBone = skeleton.GetBone(iBoneId);
 			if (pBone == nullptr)
 				return false;
 
@@ -149,7 +155,7 @@ namespace nsApp
 			pPlayer_->SetEquippedType(pPlayer_->GetWeaponInventory().GetCurrentWeapon()->GetType());
 			LoadWeaponModelIfNeeded(pPlayer_->GetWeaponInventory().GetCurrentWeapon(), static_cast<int>(pPlayer_->GetEquippedType()));
 
-			/* 見せ方で銃の置き場所が変わる。自分の視点なら画面手前、他人から見た姿なら右手のボーン。*/
+			/* 見せ方で銃の置き場所が変わる。自分の視点なら画面手前、他人から見た姿なら手のボーン(二丁持ちは両手)。*/
 			if (pPlayer_->GetViewMode() == EnViewMode::ThirdPerson)
 				UpdateHandWeaponModel(pPlayer_->GetWeaponInventory().GetCurrentWeapon(), static_cast<int>(pPlayer_->GetEquippedType()));
 			else
@@ -367,25 +373,40 @@ namespace nsApp
 
 		void PlayerView::UpdateHandWeaponModel(nsWeapon::Weapon* pWeapon, int iType)
 		{
-			/*
-			 * 銃は視線の向きに構える。体の向きではなく視線を使うので、狙っている方向がそのまま出る。
-			 * TODO: 二丁持ちでも三人称では1丁しか出ない。左手のボーンを引いてもう1丁置けるようにする。
-			 */
-			bDrawDualWeapon_ = false;
-			BuildHandWeaponCenter(pWeapon);
+			/* 銃は視線の向きに構える。体の向きではなく視線を使うので、狙っている方向がそのまま出る。*/
+			BuildHandWeaponCenter(pWeapon, rightHandBoneId_, 1.0f);
 			BuildHandWeaponRotation();
 			PlaceWeaponModel(weaponModels_[iType], iType, CalcHandWeaponScale(pWeapon, iType), true);
+
+			/* 1丁の銃はここまで。*/
+			bDrawDualWeapon_ = false;
+			if (!pWeapon->IsDualWield())
+				return;
+
+			/*
+			 * 二丁持ちは左手のボーンへもう1丁置く。
+			 * 横へずらす向きだけ反転させて同じ計算を通すので、グリップの収まり方は左右で揃う。
+			 * 回転は左右とも視線の向きなので組み立て直さない。
+			 * 左手のボーンが無いモデルでは置き場所が無いので、今まで通り右手の1丁だけにする。
+			 */
+			if (!BuildHandWeaponCenter(pWeapon, leftHandBoneId_, -1.0f))
+				return;
+
+			LoadDualWeaponModelIfNeeded(pWeapon);
+			PlaceWeaponModel(dualWeaponModel_, iType, CalcHandWeaponScale(pWeapon, iType), false);
+			bDrawDualWeapon_ = true;
 		}
 
 
-		void PlayerView::BuildHandWeaponCenter(nsWeapon::Weapon* pWeapon)
+		bool PlayerView::BuildHandWeaponCenter(nsWeapon::Weapon* pWeapon, int iBoneId, float fSideSign)
 		{
 			/*
-			 * 銃を置く基準は体の右手のボーン。
+			 * 銃を置く基準は体の手のボーン。
 			 * ボーンのワールド行列は ModelRender::Update が計算しているので、
 			 * 体のモデルを更新したあとに呼ぶこと(Present → PresentWeapon の順で呼んでいる)。
 			 */
-			if (!TryGetHandBonePosition(workWeaponCenter_))
+			const bool bIsOnBone = TryGetHandBonePosition(iBoneId, workWeaponCenter_);
+			if (!bIsOnBone)
 			{
 				/* ボーンが見つからないモデルでは、目線の高さから割合で腰のあたりを出す。*/
 				workWeaponCenter_ = pPlayer_->GetPosition();
@@ -394,8 +415,10 @@ namespace nsApp
 
 			/* 銃ごとにグリップの位置が違うので、武器データのぶんだけずらして手に収める。*/
 			workWeaponCenter_ += pPlayer_->GetLookDirection() * pWeapon->GetHandForward();
-			workWeaponCenter_ += Vector3(cosf(pPlayer_->GetCameraYaw()), 0.0f, -sinf(pPlayer_->GetCameraYaw())) * pWeapon->GetHandRight();
+			workWeaponCenter_ += Vector3(cosf(pPlayer_->GetCameraYaw()), 0.0f, -sinf(pPlayer_->GetCameraYaw())) * (pWeapon->GetHandRight() * fSideSign);	// 右(二丁持ちの左手ぶんは反転)
 			workWeaponCenter_.y += pWeapon->GetHandUp();
+
+			return bIsOnBone;
 		}
 
 

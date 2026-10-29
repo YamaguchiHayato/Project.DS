@@ -118,11 +118,13 @@ namespace nsApp
 
 			/*
 			 * 三人称で銃を持たせるボーンの名前。
-			 * ※tksのボーン名と完全一致させること。見つからない場合は -1 になり、
+			 * ※tksのボーン名と完全一致させること。右手が見つからない場合は -1 になり、
 			 *   銃は腰の高さのフォールバック位置へ置かれる。
+			 *   左手が見つからない場合は、二丁持ちでも右手の1丁だけになる。
 			 *   モデルを差し替えたら実際に持たせて確かめること。
 			 */
-			std::string sHandBoneName_ = "SapphiArt_19:Hand_R";	//! 銃を持たせるボーンの名前。
+			std::string sHandBoneName_ = "SapphiArt_19:Hand_R";	//! 銃を持たせる右手のボーンの名前。
+			std::string sLeftHandBoneName_ = "SapphiArt_19:Hand_L";	//! 二丁持ちのとき左手の銃を持たせるボーンの名前。
 
 			/* ダウンと救助。*/
 			float	fBleedOutTime_ = 15.0f;			//! ダウンしてから死亡するまでの出血時間(秒)。

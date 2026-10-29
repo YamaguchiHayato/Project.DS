@@ -17,7 +17,8 @@
 
 	/* 見た目。三人称(他プレイヤーから見た姿)で使う。*/
 	"bodyModelScale": 1.04,                             //! 体モデルの表示スケール。player.tkm(SapphiArt)は素で身長約168なので世界の想定(175)へ合わせる。
-	"handBoneName": "SapphiArt_19:Hand_R",              //! 銃を持たせるボーン名。player.tksのボーン名と完全一致させる(見つからないと銃は腰の高さへ落ちる)。
+	"handBoneName": "SapphiArt_19:Hand_R",              //! 銃を持たせる右手のボーン名。player.tksのボーン名と完全一致させる(見つからないと銃は腰の高さへ落ちる)。
+	"leftHandBoneName": "SapphiArt_19:Hand_L",          //! 二丁持ちのとき左手の銃を持たせるボーン名。見つからないと三人称では右手の1丁だけになる。
 
 	/* ダウンと救助。*/
 	"bleedOutTime": 15.0,                               //! ダウンしてから死亡するまでの出血時間。

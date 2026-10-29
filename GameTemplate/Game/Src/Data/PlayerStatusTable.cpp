@@ -60,6 +60,14 @@ namespace
 		{ "shoveFatigueCount",	&nsApp::nsData::PlayerStatus::iShoveFatigueCount_ },
 	};
 
+	/* プレイヤーの文字列の項目。*/
+	const ReadEntry<nsApp::nsData::PlayerStatus, std::string> PLAYER_STRING_TABLE[] =
+	{
+		{ "handBoneName",		&nsApp::nsData::PlayerStatus::sHandBoneName_ },
+		{ "leftHandBoneName",	&nsApp::nsData::PlayerStatus::sLeftHandBoneName_ },
+		{ "startQuickItem",		&nsApp::nsData::PlayerStatus::sStartQuickItem_ },
+	};
+
 	/* 姿勢と移動による拡散の項目。*/
 	const ReadEntry<nsApp::nsData::AccuracyStatus, float> ACCURACY_TABLE[] =
 	{
@@ -160,6 +168,20 @@ namespace
 		for (int i = 0; i < iCount; i++)
 			stOwner.*(pTable[i].pMember_) = stFile.GetInt(pTable[i].pKey_, stOwner.*(pTable[i].pMember_));
 	}
+
+	/**
+	 * @brief 表に並べた文字列の項目をまとめて読み込む。
+	 * @param stFile  読み込み位置を合わせたJSONファイル。
+	 * @param stOwner 値を入れる構造体。
+	 * @param pTable  キーとメンバの対応表。
+	 * @param iCount  対応表の行数。
+	 */
+	template<class TOwner>
+	void ReadStringTable(const nsApp::nsData::ParameterFile& stFile, TOwner& stOwner, const ReadEntry<TOwner, std::string>* pTable, int iCount)
+	{
+		for (int i = 0; i < iCount; i++)
+			stOwner.*(pTable[i].pMember_) = stFile.GetString(pTable[i].pKey_, (stOwner.*(pTable[i].pMember_)).c_str());
+	}
 }
 
 
@@ -184,10 +206,7 @@ namespace nsApp
 			/* 基本のステータスを表に従って読み込む。*/
 			ReadFloatTable(stFile, stPlayerStatus_, PLAYER_FLOAT_TABLE, _countof(PLAYER_FLOAT_TABLE));
 			ReadIntTable(stFile, stPlayerStatus_, PLAYER_INT_TABLE, _countof(PLAYER_INT_TABLE));
-
-			/* 文字列は2つだけなので、表にはせず直接読む。*/
-			stPlayerStatus_.sHandBoneName_ = stFile.GetString("handBoneName", stPlayerStatus_.sHandBoneName_.c_str());
-			stPlayerStatus_.sStartQuickItem_ = stFile.GetString("startQuickItem", stPlayerStatus_.sStartQuickItem_.c_str());
+			ReadStringTable(stFile, stPlayerStatus_, PLAYER_STRING_TABLE, _countof(PLAYER_STRING_TABLE));
 
 			/* 歩きと視点移動の揺れ。*/
 			if (stFile.Enter(sViewShakeNodeName_))
