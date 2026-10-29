@@ -70,24 +70,55 @@ namespace
 	const Vector4 vMenuBarColor_ = { 0.92f, 0.92f, 0.95f, 0.82f };		//! 選んでいる行に敷く帯の白。
 	const Vector4 vCornerColor_ = { 0.80f, 0.80f, 0.82f, 1.0f };		//! クレジットとバージョンの灰。
 
-	/*
-	 * 「何か押されたか」を見るときに走査する仮想キーの範囲。
-	 * 0x01 から見るので、マウスのボタンも「何か」に含まれる。
+	/**
+	 * @struct VirtualKeyRange
+	 * @brief 「何か押されたか」を見るときに走査する仮想キーの範囲。
 	 */
-	const int iVirtualKeyMin_ = 0x01;	//! 走査する仮想キーの最初。
-	const int iVirtualKeyMax_ = 0xFE;	//! 走査する仮想キーの最後。
+	struct VirtualKeyRange
+	{
+		int iFirst;	//! 範囲の最初。
+		int iLast;	//! 範囲の最後。
+	};
+
+	/*
+	 * 走査する仮想キーの一覧。
+	 * ※仮想キーを 0x01〜0xFE まで端から見てはいけない。
+	 *   日本語キーボードでは 0xF2(VK_OEM_COPY) と 0xF4(VK_OEM_ENLW) が
+	 *   何も押していなくても「押されている」と返り続ける。
+	 *   そのまま見ると常に押されている扱いになり、「押した瞬間」が永久に来なくなる。
+	 * 実際に押せるキーだけを挙げ、未割り当てと IME/OEM の領域(0xE0以降)は外している。
+	 * マウスのボタンも外している。ウィンドウを前に出すためのクリックで先へ進んでしまうため。
+	 */
+	const VirtualKeyRange aScanKeyRange_[] =
+	{
+		{ VK_BACK, VK_TAB },		//! Backspace と Tab。
+		{ VK_RETURN, VK_RETURN },	//! Enter。
+		{ VK_SHIFT, VK_CAPITAL },	//! Shift / Ctrl / Alt / Pause / CapsLock。
+		{ VK_ESCAPE, VK_ESCAPE },	//! Esc。
+		{ VK_SPACE, VK_DELETE },	//! Space、PageUp/Down、End、Home、方向キー、Insert、Delete など。
+		{ '0', '9' },				//! 数字。
+		{ 'A', 'Z' },				//! 英字。
+		{ VK_NUMPAD0, VK_DIVIDE },	//! テンキー。
+		{ VK_F1, VK_F24 },			//! ファンクションキー。
+		{ VK_LSHIFT, VK_RMENU },	//! 左右の Shift / Ctrl / Alt。
+		{ VK_OEM_1, VK_OEM_3 },		//! 記号キー( ; = , - . / ` )。
+		{ VK_OEM_4, VK_OEM_8 },		//! 記号キー( [ \ ] ' )。
+	};
 
 	/**
-	 * @brief キーかマウスのボタンが1つでも押されているかを調べる。
+	 * @brief キーが1つでも押されているかを調べる。
 	 * @return 1つでも押されていたら true。
 	 */
 	bool IsAnyKeyPress()
 	{
 		/* 押されているものが見つかった時点で打ち切る。*/
-		for (int iKey = iVirtualKeyMin_; iKey <= iVirtualKeyMax_; iKey++)
+		for (const VirtualKeyRange& stRange : aScanKeyRange_)
 		{
-			if ((GetAsyncKeyState(iKey) & 0x8000) != 0)
-				return true;
+			for (int iKey = stRange.iFirst; iKey <= stRange.iLast; iKey++)
+			{
+				if ((GetAsyncKeyState(iKey) & 0x8000) != 0)
+					return true;
+			}
 		}
 
 		return false;
