@@ -24,6 +24,17 @@ namespace nsApp
 			void Render(RenderContext& rc)override;
 
 
+		public:
+			/**
+			 * @brief 動画の再生を終了する。
+			 * @return 
+			 */
+			bool IsEnd() const
+			{
+				return player_.IsEnd();
+			}
+
+
 		private:
 			nsVideo::VideoPlayer player_; //! 動画の再生。
 			Sprite sprite_; //! 映像を描く板。

@@ -46,6 +46,21 @@ namespace nsApp
 
 		void TitleScene::Update()
 		{
+			/* 動画中は、決定キーか再生終了でタイトルへ進む。*/
+			if (pVideoScreen_ != nullptr)
+			{
+				if (nsData::InputObserver::Get().IsTrigger(nsData::EnAction::Confirm) || pVideoScreen_->IsEnd())
+				{
+					DeleteGO(pVideoScreen_);
+					pVideoScreen_ = nullptr;
+
+					if (pTitleUI_ == nullptr)
+						pTitleUI_ = NewGO<nsUI::TitleUI>(0, "title");
+				}
+
+				return;
+			}
+
 			/* すでにキーコンフィグUIが生成されている場合は、キー入力を受け付けない。*/
 			if (pKeyConfig_ != nullptr)
 			{

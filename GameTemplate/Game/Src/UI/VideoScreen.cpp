@@ -12,7 +12,7 @@ namespace nsApp
 		bool VideoScreen::Start()
 		{
 			/* 再生したい動画のパスをセットする。*/
-			if (!player_.Open(g_graphicsEngine->GetD3DDevice(), /*L"Assets/video/解説動画.mp4"*/))
+			if (!player_.Open(g_graphicsEngine->GetD3DDevice(), L"Assets/video/test.mp4"))
 				return false;
 
 			init_.m_textures[0] = player_.GetTexture();
@@ -25,7 +25,7 @@ namespace nsApp
 			sprite_.Update(Vector3::Zero, Quaternion::Identity, Vector3::One);
 
 			/* 音声の再生。*/
-			if (pcmDecoder_.Open(L"Assets/video/解説動画.mp4"))
+			if (pcmDecoder_.Open(L"Assets/video/test.mp4"))
 			{
 				/* PCMの情報を読み込む。*/
 				pcmPlayer_.Play(pcmDecoder_,g_soundEngine->CreatePCMVoice(pcmDecoder_.GetChannelSize(),pcmDecoder_.GetSampleRate(),pcmDecoder_.GetBitsPerSample()));
