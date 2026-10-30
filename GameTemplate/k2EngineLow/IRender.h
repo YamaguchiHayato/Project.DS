@@ -20,6 +20,15 @@ namespace nsK2EngineLow {
 		{
 		}
 
+		/// <summary>
+		/// モデルより奥に描く2D(背景の画像など)。
+		/// メインのレンダリングターゲットをクリアした直後、モデルより先に描かれる。
+		/// OnRender2D はモデルの上にかぶさるので、モデルの後ろに画像を敷きたいときはこちらを使う。
+		/// </summary>
+		virtual void OnRenderBackground2D(RenderContext& rc)
+		{
+		}
+
 		virtual void OnDraw(RenderContext& rc) {
 
 		}
