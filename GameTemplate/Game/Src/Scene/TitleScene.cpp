@@ -62,8 +62,8 @@ namespace nsApp
 
 		bool TitleScene::Start()
 		{
-			/* タイトルの前に動画を流す。タイトル本体は動画が終わってから生成する。*/
-			pVideoScreen_ = NewGO<nsUI::VideoScreen>(0, "videoScreen");
+			/* 起動したらすぐにタイトルを出す。動画はタイトルでしばらく操作が無いときに流す。*/
+			CreateTitle();
 			return true;
 		}
 
@@ -98,15 +98,53 @@ namespace nsApp
 			if (pVideoScreen_ == nullptr)
 				return false;
 
-			/* 決定キーか再生終了までは、動画を流し続ける。*/
-			if (!nsData::InputObserver::Get().IsTrigger(nsData::EnAction::Confirm) && !pVideoScreen_->IsEnd())
+			/* 何かキーを押すか再生が終わるまでは、動画を流し続ける。*/
+			const bool bIsSkip = (pTitleUI_ != nullptr) && pTitleUI_->IsAnyKeyTrigger();
+			if (!bIsSkip && !pVideoScreen_->IsEnd())
 				return true;
 
-			DeleteGO(pVideoScreen_);
-			pVideoScreen_ = nullptr;
-
-			CreateTitle();
+			StopDemoVideo();
 			return true;
+		}
+
+
+		void TitleScene::StartDemoVideo()
+		{
+			/* すでに流していれば何もしない。*/
+			if (pVideoScreen_ != nullptr)
+				return;
+
+			/* タイトルとモデルを隠し、入力も止める。動画を飛ばすキーでメニューが動かないようにするため。*/
+			if (pTitleUI_ != nullptr)
+			{
+				pTitleUI_->SetVisible(false);
+				pTitleUI_->SetInputActive(false);
+			}
+
+			if (pTitleStage_ != nullptr)
+				pTitleStage_->SetVisible(false);
+
+			/* 動画は流すたびに作り直す。VideoScreen は生成時に開いて最後まで読むと終わる作りのため。*/
+			pVideoScreen_ = NewGO<nsUI::VideoScreen>(0, "videoScreen");
+		}
+
+
+		void TitleScene::StopDemoVideo()
+		{
+			/* 動画を片付ける。*/
+			if (pVideoScreen_ != nullptr)
+			{
+				DeleteGO(pVideoScreen_);
+				pVideoScreen_ = nullptr;
+			}
+
+			/* PRESS ANY KEY の画面に戻して、もう一度表示する。モデルは次のフレームで段階に合わせて隠れる。*/
+			if (pTitleUI_ != nullptr)
+			{
+				pTitleUI_->ResetToPressAnyKey();
+				pTitleUI_->SetVisible(true);
+				pTitleUI_->SetInputActive(true);
+			}
 		}
 
 
@@ -170,6 +208,11 @@ namespace nsApp
 			case nsUI::EnTitleCommand::ExitGame:
 				/* ゲームループを抜けてウィンドウを閉じる。*/
 				g_gameLoop.m_isLoop = false;
+				break;
+
+			case nsUI::EnTitleCommand::PlayDemo:
+				/* しばらく操作が無かったので、動画を流す。*/
+				StartDemoVideo();
 				break;
 
 			default:

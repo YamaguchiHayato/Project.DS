@@ -43,6 +43,7 @@ namespace
 	const float fCornerFontScale_ = 0.7f;						//! 下に出す小さい文字の大きさ。
 
 	const float fInputGuardTime_ = 0.2f;						//! 表示が切り替わった直後に入力を受けない時間(秒)。
+	const float fIdleTimeToDemo_ = 30.0f;						//! 何も押されないままこの時間(秒)が過ぎたら、動画を流す。
 
 	/*
 	 * 画面に出す文字。
@@ -220,6 +221,9 @@ namespace nsApp
 			const bool bIsPressUp = (GetAsyncKeyState(VK_UP) & 0x8000) != 0;
 			const bool bIsPressDown = (GetAsyncKeyState(VK_DOWN) & 0x8000) != 0;
 
+			/* 押した瞬間かどうかは、入力を受けない間も調べておく。動画を飛ばす判定に TitleScene が使う。*/
+			bIsAnyKeyTrigger_ = bIsAnyKeyPress && !bWasAnyKeyPress_;
+
 			/*
 			 * 設定画面を開いている間と、表示が切り替わった直後は入力を受けない。
 			 * 受けない間も前フレームの状態は残しておく。
@@ -245,6 +249,9 @@ namespace nsApp
 				UpdateMenuCursor();
 			}
 
+			/* 操作の無い時間を数え、長く放っておかれたら動画を流す。*/
+			UpdateIdle(bIsAnyKeyPress, fDeltaTime);
+
 			/* 次フレームの判定用に今の状態を残す。*/
 			bWasAnyKeyPress_ = bIsAnyKeyPress;
 			bWasPressUp_ = bIsPressUp;
@@ -254,6 +261,10 @@ namespace nsApp
 
 		void TitleUI::Render(RenderContext& rc)
 		{
+			/* 動画を流している間は何も描かない。*/
+			if (!bIsVisible_)
+				return;
+
 			/* 背景はどちらの段階でも敷く。モデルより奥に描かれるので、2枚目でもモデルは隠れない。*/
 			stBackgroundSprite_.Draw(rc);
 
@@ -291,6 +302,50 @@ namespace nsApp
 
 			/* 受け付けを再開した直後は、閉じるのに使ったキーで決定しないよう猶予を入れ直す。*/
 			fInputGuardTimer_ = 0.0f;
+		}
+
+
+		void TitleUI::ResetToPressAnyKey()
+		{
+			/* PRESS ANY KEY の画面へ戻し、一番上の行から選び直せるようにしておく。*/
+			bIsMenuPhase_ = false;
+			iSelectedIndex_ = 0;
+			fBlinkTimer_ = 0.0f;
+			fIdleTimer_ = 0.0f;
+			enDecidedCommand_ = EnTitleCommand::None;
+
+			/* 背景を1枚目の明るさへ戻す。*/
+			stBackgroundSprite_.SetMulColor(vBackgroundTitleColor_);
+
+			/*
+			 * 動画を飛ばしたキーが、まだ押されたままのことがある。
+			 * そのまま押した瞬間と見てメニューへ進まないよう、今の状態を押されていた側として控え、猶予も入れ直す。
+			 */
+			bWasAnyKeyPress_ = IsAnyKeyPress();
+			fInputGuardTimer_ = 0.0f;
+		}
+
+
+		void TitleUI::UpdateIdle(bool bIsAnyKeyPress, float fDeltaTime)
+		{
+			/*
+			 * 設定画面を開いている間や動画を流している間は数えない。
+			 * 何か押されている間も、操作中なので数え直す。
+			 */
+			if (!bIsInputActive_ || bIsAnyKeyPress)
+			{
+				fIdleTimer_ = 0.0f;
+				return;
+			}
+
+			fIdleTimer_ += fDeltaTime;
+			if (fIdleTimer_ < fIdleTimeToDemo_)
+				return;
+
+			/* 一定時間何も押されなかったので、動画を流す。ほかの行き先が先に決まっていれば、そちらを優先する。*/
+			fIdleTimer_ = 0.0f;
+			if (enDecidedCommand_ == EnTitleCommand::None)
+				enDecidedCommand_ = EnTitleCommand::PlayDemo;
 		}
 
 

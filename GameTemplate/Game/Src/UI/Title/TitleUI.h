@@ -16,7 +16,7 @@ namespace nsApp
 	{
 		/**
 		 * @enum  EnTitleCommand
-		 * @brief タイトルのメニューで決まった行き先。
+		 * @brief タイトルで決まった行き先。
 		 */
 		enum class EnTitleCommand : uint8_t
 		{
@@ -25,6 +25,7 @@ namespace nsApp
 			Option,		//! 設定(キーコンフィグ)を開く。
 			OpenGitHub,	//! リポジトリのページをブラウザで開く。
 			ExitGame,	//! ゲームを終える。
+			PlayDemo,	//! 動画を流す。メニューで選ぶものではなく、しばらく操作が無かったときに決まる。
 		};
 
 
@@ -32,6 +33,7 @@ namespace nsApp
 		 * @file   TitleUI.h
 		 * @brief  タイトル画面の2D表示。
 		 * @details 最初は「タイトル画像 + PRESS ANY KEY」だけを出し、何か押されたらメニューへ移る。
+		 *          しばらく何も押されなければ、動画を流す行き先(PlayDemo)を決める。
 		 *          どこへ行くかは決めず、決まった行き先を TitleScene に取りに来てもらう。
 		 * @author Izumida Kiryu
 		 * @date   2026/10/29
@@ -78,6 +80,21 @@ namespace nsApp
 			void SetInputActive(bool bIsActive);
 
 			/**
+			 * @brief 表示するかどうかを切り替える。動画を流している間は隠す。
+			 * @param bIsVisible 表示するなら true。
+			 */
+			inline void SetVisible(bool bIsVisible)
+			{
+				/* 描くかどうかだけを切り替える。更新は止めない。*/
+				bIsVisible_ = bIsVisible;
+			}
+
+			/**
+			 * @brief PRESS ANY KEY の画面へ戻す。動画から戻ってきたときに使う。
+			 */
+			void ResetToPressAnyKey();
+
+			/**
 			 * @brief メニューを出しているかどうかを返す。
 			 * @return メニュー中なら true。PRESS ANY KEY 中なら false。
 			 */
@@ -85,6 +102,17 @@ namespace nsApp
 			{
 				/* 今の表示の段階を返す。*/
 				return bIsMenuPhase_;
+			}
+
+			/**
+			 * @brief 直前のフレームで、何かキーを押した瞬間だったかを返す。
+			 * @return 押した瞬間なら true。
+			 * @details 入力を受け付けていない間も毎フレーム調べている。動画を飛ばす判定に使う。
+			 */
+			inline bool IsAnyKeyTrigger() const
+			{
+				/* 前フレームとの差で見た「押した瞬間」を返す。*/
+				return bIsAnyKeyTrigger_;
 			}
 
 
@@ -97,6 +125,13 @@ namespace nsApp
 			 * @brief PRESS ANY KEY の点滅を進める。
 			 */
 			void UpdateBlink();
+
+			/**
+			 * @brief 操作が無い時間を数え、一定時間を超えたら動画を流す行き先を決める。
+			 * @param bIsAnyKeyPress 今フレームで何か押されているか。
+			 * @param fDeltaTime 前フレームからの時間(秒)。
+			 */
+			void UpdateIdle(bool bIsAnyKeyPress, float fDeltaTime);
 
 			/**
 			 * @brief 何か押されたらメニューへ移る。
@@ -138,9 +173,12 @@ namespace nsApp
 			float fBlinkTimer_ = 0.0f;				//! PRESS ANY KEY を点滅させる時計(秒)。
 			float fMenuTextHeight_ = 0.0f;			//! メニューの文字の実寸の高さ。帯を行に合わせるのに使う。
 			float fInputGuardTimer_ = 0.0f;			//! 表示が切り替わった直後に誤って決定しないための猶予(秒)。
+			float fIdleTimer_ = 0.0f;				//! 何も押されていない時間(秒)。動画を流すかどうかに使う。
 			int iSelectedIndex_ = 0;				//! 今選んでいる行。
 			bool bIsMenuPhase_ = false;				//! メニューを出しているか。
 			bool bIsInputActive_ = true;			//! 入力を受け付けるか。
+			bool bIsVisible_ = true;				//! 表示するか。動画を流している間は隠す。
+			bool bIsAnyKeyTrigger_ = false;			//! このフレームで何かキーを押した瞬間だったか。
 			bool bWasAnyKeyPress_ = false;			//! 前フレームで何か押されていたか。
 			bool bWasPressUp_ = false;				//! 前フレームで上キーが押されていたか。
 			bool bWasPressDown_ = false;			//! 前フレームで下キーが押されていたか。
