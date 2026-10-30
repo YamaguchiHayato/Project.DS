@@ -1,13 +1,14 @@
 #pragma once
 /**
  * @file   TitleUI.h
- * @brief  タイトル画面の2D表示。タイトル画像・メニュー・クレジット・バージョンを描く。
+ * @brief  タイトル画面の2D表示。背景の画像・メニュー・クレジット・バージョンを描く。
  * @author Izumida Kiryu
  * @date   2026/10/29
  * @note   立たせるモデルなどの3D表示は TitleStage が受け持つ。こちらは2D表示と項目選びだけを受け持つ。
  */
 
 #include "stdint.h"
+#include "Src/UI/BackgroundSprite.h"
 
 namespace nsApp
 {
@@ -127,7 +128,7 @@ namespace nsApp
 
 
 		private:
-			SpriteRender stTitleSprite_;			//! 1枚目に画面いっぱいに出すタイトル画像。
+			BackgroundSprite stBackgroundSprite_;	//! 画面いっぱいに敷く背景の画像。モデルより奥に描く。
 			FontRender stPressAnyKeyFont_;			//! PRESS ANY KEY の点滅表示。
 			FontRender aMenuFont_[iMenuCount_];		//! メニューの各行。
 			SpriteRender stMenuBarSprite_;			//! 選んでいる行に敷く帯。

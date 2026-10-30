@@ -313,6 +313,7 @@
     <ClCompile Include="Src\Actor\Character\ICharacter.cpp" />
     <ClCompile Include="Src\StateMachine\StateMachine.cpp" />
     <ClCompile Include="Src\UI\KeyConfig\KeyConfigUI.cpp" />
+    <ClCompile Include="Src\UI\BackgroundSprite.cpp" />
     <ClCompile Include="Src\UI\VideoScreen.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -419,6 +420,7 @@
     <ClInclude Include="Src\StateMachine\NullState.h" />
     <ClInclude Include="Src\StateMachine\StateMachine.h" />
     <ClInclude Include="Src\UI\KeyConfig\KeyConfigUI.h" />
+    <ClInclude Include="Src\UI\BackgroundSprite.h" />
     <ClInclude Include="Src\UI\VideoScreen.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="system\system.h" />

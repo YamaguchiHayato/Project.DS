@@ -5,14 +5,16 @@
 namespace
 {
 	/*
-	 * 1枚目(PRESS ANY KEY)。
-	 * 画面いっぱいのタイトル画像を1枚置き、その上に案内だけを出す。
+	 * 背景の画像。1枚目と2枚目で同じものを敷く。
+	 * モデルより奥に描くので(BackgroundSprite)、2枚目でもモデルが画像に隠れない。
 	 * @todo Assets/image/title/Title.DDS は画面構成のラフ(2880x2880の正方形)なので、
 	 *       画面いっぱいに伸ばすと縦につぶれて見える。本番の画像(1920x1080)ができたら差し替える。
 	 */
-	const char* sTitleImagePath_ = "Assets/image/title/Title.DDS";	//! タイトル画像のパス。
-	const float fTitleImageWidth_ = 1920.0f;					//! タイトル画像の表示幅(画面いっぱい)。
-	const float fTitleImageHeight_ = 1080.0f;					//! タイトル画像の表示高さ(画面いっぱい)。
+	const char* sBackgroundImagePath_ = "Assets/image/title/Title.DDS";	//! 背景の画像のパス。
+	const float fBackgroundWidth_ = 1920.0f;					//! 背景の表示幅(画面いっぱい)。
+	const float fBackgroundHeight_ = 1080.0f;					//! 背景の表示高さ(画面いっぱい)。
+	const Vector4 vBackgroundTitleColor_ = { 1.0f, 1.0f, 1.0f, 1.0f };	//! 1枚目の背景に掛ける色。画像のまま出す。
+	const Vector4 vBackgroundMenuColor_ = { 0.55f, 0.55f, 0.58f, 1.0f };	//! 2枚目の背景に掛ける色。メニューの文字とモデルが浮くよう少し暗くする。
 
 	const float fPressAnyKeyPositionY_ = -250.0f;				//! PRESS ANY KEY の縦の位置(画面の下寄り)。
 	const float fPressAnyKeyScale_ = 1.1f;						//! PRESS ANY KEY の大きさ。
@@ -156,9 +158,9 @@ namespace nsApp
 	{
 		bool TitleUI::Start()
 		{
-			/* 画面いっぱいのタイトル画像を用意する。*/
-			stTitleSprite_.Init(sTitleImagePath_, fTitleImageWidth_, fTitleImageHeight_);
-			stTitleSprite_.Update();
+			/* 画面いっぱいの背景を用意する。1枚目は画像のまま出す。*/
+			stBackgroundSprite_.Init(sBackgroundImagePath_, fBackgroundWidth_, fBackgroundHeight_);
+			stBackgroundSprite_.SetMulColor(vBackgroundTitleColor_);
 
 			/* PRESS ANY KEY を用意する。濃さは毎フレーム入れ直すので、ここでは位置と大きさだけ決める。*/
 			stPressAnyKeyFont_.SetScale(fPressAnyKeyScale_);
@@ -252,10 +254,12 @@ namespace nsApp
 
 		void TitleUI::Render(RenderContext& rc)
 		{
-			/* 1枚目は、タイトル画像とその上の案内だけを出す。*/
+			/* 背景はどちらの段階でも敷く。モデルより奥に描かれるので、2枚目でもモデルは隠れない。*/
+			stBackgroundSprite_.Draw(rc);
+
+			/* 1枚目は、背景の上に案内だけを出す。*/
 			if (!bIsMenuPhase_)
 			{
-				stTitleSprite_.Draw(rc);
 				stPressAnyKeyFont_.Draw(rc);
 				return;
 			}
@@ -334,6 +338,9 @@ namespace nsApp
 			/* メニューを出す段階へ移り、一番上の行から選ばせる。*/
 			bIsMenuPhase_ = true;
 			iSelectedIndex_ = 0;
+
+			/* メニューの文字とモデルが浮くよう、背景を少し暗くする。*/
+			stBackgroundSprite_.SetMulColor(vBackgroundMenuColor_);
 
 			/* 移るのに使ったキーでそのまま決定しないよう、猶予を入れる。*/
 			fInputGuardTimer_ = 0.0f;
