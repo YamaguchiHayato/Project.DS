@@ -4,8 +4,10 @@
  * @brief  タイトル画面に立たせるモデルと、そのためのカメラ・ライトを用意する。
  * @author Izumida Kiryu
  * @date   2026/10/29
- * @note   ロゴやメニューなどの2D表示は TitleUI が受け持つ。こちらは3D表示だけを受け持つ。
+ * @note   タイトル画像やメニューなどの2D表示は TitleUI が受け持つ。こちらは3D表示だけを受け持つ。
  *         カメラとライトはシーンをまたいで共用なので、来たときの値を控えて、抜けるときに戻す。
+ *         モデルはメニューの画面でだけ見せる。読み込みはタイトルに入った時点で済ませておき、
+ *         キーを押した瞬間に読み込みで止まらないようにしている。
  */
 
 namespace nsApp
@@ -40,6 +42,18 @@ namespace nsApp
 			void Render(RenderContext& rc) override;
 
 
+		public:
+			/**
+			 * @brief モデルを見せるかどうかを切り替える。
+			 * @param bIsVisible 見せるなら true。
+			 */
+			inline void SetVisible(bool bIsVisible)
+			{
+				/* 描画するかどうかだけを切り替える。アニメーションは止めない。*/
+				bIsVisible_ = bIsVisible;
+			}
+
+
 		private:
 			/**
 			 * @brief モデルが画面の右側に来るようにカメラを置く。
@@ -61,6 +75,7 @@ namespace nsApp
 			Vector3 vSavedCameraTarget_ = Vector3::Zero;	//! 来たときのカメラ注視点。
 			float fModelSize_ = 0.0f;					//! 頂点から測ったモデルの大きさ。カメラの寄り引きの基準にする。
 			float fSavedViewAngle_ = 0.0f;				//! 来たときの画角(ラジアン)。
+			bool bIsVisible_ = false;					//! モデルを見せるか。メニューの画面になるまでは見せない。
 		};
 	}
 }

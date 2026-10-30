@@ -24,6 +24,18 @@ namespace nsApp
 				font_[index_].SetText(line_);
 				y_ -= 34.0f;
 			}
+
+			/*
+			 * 開いた瞬間に押しっぱなしのキーを、新しく押したものとして扱わない。
+			 * タイトルの OPTION を Enter で選ぶと、その Enter がまだ押されたままここへ来る。
+			 * 前フレームを「押されていない」のままにすると、開いた瞬間に1行目の割り当て待ちへ入り、
+			 * 閉じようとして押した Esc がそのまま割り当てられてしまう。
+			 */
+			wasUp_ = (GetAsyncKeyState(VK_UP) & 0x8000) != 0;
+			wasDown_ = (GetAsyncKeyState(VK_DOWN) & 0x8000) != 0;
+			wasEnter_ = (GetAsyncKeyState(VK_RETURN) & 0x8000) != 0;
+			wasBack_ = (GetAsyncKeyState(VK_BACK) & 0x8000) != 0;
+			wasEscape_ = (GetAsyncKeyState(VK_ESCAPE) & 0x8000) != 0;
 			return true;
 		}
 

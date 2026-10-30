@@ -5,14 +5,16 @@
 namespace
 {
 	/*
-	 * 1枚目(PRESS ANY KEY)の配置。
-	 * ロゴを画面の横中央に置き、その下に案内を出す。
-	 * ロゴは画像ができるまで文字で置いておく。
-	 * Assets/image/title/Title.DDS は画面全体の構成を描いたラフなので、ロゴとしては使わない。
+	 * 1枚目(PRESS ANY KEY)。
+	 * 画面いっぱいのタイトル画像を1枚置き、その上に案内だけを出す。
+	 * @todo Assets/image/title/Title.DDS は画面構成のラフ(2880x2880の正方形)なので、
+	 *       画面いっぱいに伸ばすと縦につぶれて見える。本番の画像(1920x1080)ができたら差し替える。
 	 */
-	const float fLogoPositionY_ = 150.0f;						//! ロゴの縦の位置。
-	const float fLogoFontScale_ = 2.6f;							//! ロゴの文字の大きさ。
-	const float fPressAnyKeyPositionY_ = -140.0f;				//! PRESS ANY KEY の縦の位置(ロゴの下)。
+	const char* sTitleImagePath_ = "Assets/image/title/Title.DDS";	//! タイトル画像のパス。
+	const float fTitleImageWidth_ = 1920.0f;					//! タイトル画像の表示幅(画面いっぱい)。
+	const float fTitleImageHeight_ = 1080.0f;					//! タイトル画像の表示高さ(画面いっぱい)。
+
+	const float fPressAnyKeyPositionY_ = -250.0f;				//! PRESS ANY KEY の縦の位置(画面の下寄り)。
 	const float fPressAnyKeyScale_ = 1.1f;						//! PRESS ANY KEY の大きさ。
 	const float fBlinkCycle_ = 1.4f;							//! 点滅の周期(秒)。
 	const float fBlinkMinAlpha_ = 0.25f;						//! 点滅で一番薄くなるときの濃さ。
@@ -32,7 +34,7 @@ namespace
 	const float fMenuBarLeft_ = -820.0f;						//! 帯の左端。文字より少し外へ出す。
 	const Vector2 vMenuBarPivotLeft_ = { 0.0f, 0.5f };			//! 帯の基準点を左端に置く。
 
-	/* クレジットは下の中央、バージョンは右下。*/
+	/* クレジットは下の中央、バージョンは右下。どちらもメニューの画面でだけ出す。*/
 	const float fCreditPositionY_ = -470.0f;					//! クレジットの縦の位置。
 	const float fVersionPositionY_ = -470.0f;					//! バージョンの縦の位置。
 	const float fVersionRight_ = 890.0f;						//! バージョンの文字の右端。
@@ -45,7 +47,6 @@ namespace
 	 * ※フォントに無い文字を渡すと SpriteFont が例外を投げて落ちる。
 	 *   ほかの画面と同じくASCIIにそろえておくこと。
 	 */
-	const wchar_t* sLogoText_ = L"DEPARTED SOULTAKER";		//! ロゴの仮置き。@todo ロゴ画像ができたら消す。
 	const wchar_t* sPressAnyKeyText_ = L"PRESS ANY KEY";		//! 最初の画面に出す案内。
 	const wchar_t* aMenuText_[] = { L"START", L"OPTION", L"GITHUB", L"END" };	//! メニューの各行。
 	const wchar_t* sCreditText_ = L"(C) 2026 Departed Soultaker";	//! クレジット。@todo 連名の表記が決まったら差し替える。
@@ -64,7 +65,7 @@ namespace
 	static_assert(sizeof(aMenuCommand_) / sizeof(aMenuCommand_[0]) == nsApp::nsUI::TitleUI::iMenuCount_, "メニューの行数と行き先の数を合わせること。");
 
 	/* 表示に使う色。RGBA。*/
-	const Vector4 vWhiteColor_ = { 1.0f, 1.0f, 1.0f, 1.0f };			//! ロゴと PRESS ANY KEY の白。
+	const Vector4 vWhiteColor_ = { 1.0f, 1.0f, 1.0f, 1.0f };			//! PRESS ANY KEY の白。
 	const Vector4 vMenuNormalColor_ = { 0.88f, 0.88f, 0.90f, 1.0f };	//! 選んでいない行の白。
 	const Vector4 vMenuSelectedColor_ = { 0.10f, 0.10f, 0.12f, 1.0f };	//! 選んでいる行の黒。明るい帯の上に乗せる。
 	const Vector4 vMenuBarColor_ = { 0.92f, 0.92f, 0.95f, 0.82f };		//! 選んでいる行に敷く帯の白。
@@ -155,11 +156,9 @@ namespace nsApp
 	{
 		bool TitleUI::Start()
 		{
-			/* ロゴを用意する。画像ができるまでは文字で置いておく。*/
-			stLogoFont_.SetScale(fLogoFontScale_);
-			stLogoFont_.SetColor(vWhiteColor_);
-			stLogoFont_.SetText(sLogoText_);
-			SetCenterPosition(stLogoFont_, fLogoPositionY_);
+			/* 画面いっぱいのタイトル画像を用意する。*/
+			stTitleSprite_.Init(sTitleImagePath_, fTitleImageWidth_, fTitleImageHeight_);
+			stTitleSprite_.Update();
 
 			/* PRESS ANY KEY を用意する。濃さは毎フレーム入れ直すので、ここでは位置と大きさだけ決める。*/
 			stPressAnyKeyFont_.SetScale(fPressAnyKeyScale_);
@@ -253,22 +252,21 @@ namespace nsApp
 
 		void TitleUI::Render(RenderContext& rc)
 		{
-			/* 段階に応じて、ロゴと案内か、メニューのどちらかを出す。*/
+			/* 1枚目は、タイトル画像とその上の案内だけを出す。*/
 			if (!bIsMenuPhase_)
 			{
-				stLogoFont_.Draw(rc);
+				stTitleSprite_.Draw(rc);
 				stPressAnyKeyFont_.Draw(rc);
-			}
-			else
-			{
-				/* 帯を先に描いて、その上に文字を重ねる。*/
-				stMenuBarSprite_.Draw(rc);
-
-				for (int iIndex = 0; iIndex < iMenuCount_; iIndex++)
-					aMenuFont_[iIndex].Draw(rc);
+				return;
 			}
 
-			/* クレジットとバージョンは常に出す。*/
+			/* 2枚目は、帯を先に描いてその上にメニューの文字を重ねる。*/
+			stMenuBarSprite_.Draw(rc);
+
+			for (int iIndex = 0; iIndex < iMenuCount_; iIndex++)
+				aMenuFont_[iIndex].Draw(rc);
+
+			/* クレジットとバージョンもメニューの画面でだけ出す。*/
 			stCreditFont_.Draw(rc);
 			stVersionFont_.Draw(rc);
 		}

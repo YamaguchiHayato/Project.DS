@@ -1,7 +1,7 @@
 #pragma once
 /**
  * @file   TitleUI.h
- * @brief  タイトル画面の2D表示。ロゴ・メニュー・クレジット・バージョンを描く。
+ * @brief  タイトル画面の2D表示。タイトル画像・メニュー・クレジット・バージョンを描く。
  * @author Izumida Kiryu
  * @date   2026/10/29
  * @note   立たせるモデルなどの3D表示は TitleStage が受け持つ。こちらは2D表示と項目選びだけを受け持つ。
@@ -30,7 +30,7 @@ namespace nsApp
 		/**
 		 * @file   TitleUI.h
 		 * @brief  タイトル画面の2D表示。
-		 * @details 最初は「ロゴ + PRESS ANY KEY」を出し、何か押されたらメニューへ移る。
+		 * @details 最初は「タイトル画像 + PRESS ANY KEY」だけを出し、何か押されたらメニューへ移る。
 		 *          どこへ行くかは決めず、決まった行き先を TitleScene に取りに来てもらう。
 		 * @author Izumida Kiryu
 		 * @date   2026/10/29
@@ -127,7 +127,7 @@ namespace nsApp
 
 
 		private:
-			FontRender stLogoFont_;					//! ロゴの仮置き。@todo ロゴ画像ができたら SpriteRender に差し替える。
+			SpriteRender stTitleSprite_;			//! 1枚目に画面いっぱいに出すタイトル画像。
 			FontRender stPressAnyKeyFont_;			//! PRESS ANY KEY の点滅表示。
 			FontRender aMenuFont_[iMenuCount_];		//! メニューの各行。
 			SpriteRender stMenuBarSprite_;			//! 選んでいる行に敷く帯。

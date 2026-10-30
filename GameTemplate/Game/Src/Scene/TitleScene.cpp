@@ -78,6 +78,10 @@ namespace nsApp
 			if (UpdateKeyConfig())
 				return;
 
+			/* モデルは、PRESS ANY KEY を抜けてメニューの画面になってから見せる。*/
+			if (pTitleUI_ != nullptr && pTitleStage_ != nullptr)
+				pTitleStage_->SetVisible(pTitleUI_->IsMenuPhase());
+
 			/* メニューで決まった行き先を実行する。*/
 			if (pTitleUI_ != nullptr)
 				ApplyTitleCommand(pTitleUI_->PopDecidedCommand());
@@ -129,11 +133,14 @@ namespace nsApp
 
 		void TitleScene::CreateTitle()
 		{
-			/* 2D表示(ロゴ・メニュー)を生成する。*/
+			/* 2D表示(タイトル画像・メニュー)を生成する。*/
 			if (pTitleUI_ == nullptr)
 				pTitleUI_ = NewGO<nsUI::TitleUI>(0, "title");
 
-			/* 3D表示(立たせるモデル)を生成する。*/
+			/*
+			 * 3D表示(立たせるモデル)を生成する。
+			 * 見せるのはメニューの画面からだが、キーを押した瞬間に読み込みで止まらないよう、ここで先に読んでおく。
+			 */
 			if (pTitleStage_ == nullptr)
 				pTitleStage_ = NewGO<nsUI::TitleStage>(0, "titleStage");
 		}

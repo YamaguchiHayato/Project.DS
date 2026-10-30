@@ -104,6 +104,10 @@ namespace nsApp
 
 		void TitleStage::Render(RenderContext& rc)
 		{
+			/* メニューの画面になるまでは描かない。*/
+			if (!bIsVisible_)
+				return;
+
 			/* モデルを描画する。*/
 			stModelRender_.Draw(rc);
 		}
