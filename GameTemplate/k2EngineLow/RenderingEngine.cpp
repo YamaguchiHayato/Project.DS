@@ -279,6 +279,12 @@ void nsK2EngineLow::RenderingEngine::ModelDraw(RenderContext& rc)
 	// ターゲットのクリア
 	rc.ClearRenderTargetView(m_mainRenderingTarget);
 
+	// モデルより奥に描く2D(背景の画像など)を先に描く。
+	// 深度を書かないので、このあと描くモデルは必ずこの上に乗る。
+	for (auto BobjData : m_renderObjects) {
+		BobjData->OnRenderBackground2D(rc);
+	}
+
 	// まとめてモデルレンダーを描画
 	for (auto MobjData : m_renderObjects) {
 		MobjData->OnRenderModel(rc);

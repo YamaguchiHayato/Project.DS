@@ -1,11 +1,30 @@
 #include "stdafx.h"
 #include "TitleScene.h"
+#include "system/system.h"
 #include "Src/Scene/GameFlow.h"
 #include "Src/Scene/IScene.h"
 #include "Src/UI/Title/TitleUI.h"
+#include "Src/UI/Title/TitleStage.h"
 #include "Src/UI/KeyConfig/KeyConfigUI.h"
 #include "Src/InputObserver.h"
 #include "Src/UI/VideoScreen.h"
+
+#pragma comment(lib, "Shell32.lib")
+
+namespace
+{
+	/* GITHUB の行で開くページ。@todo 公開用のページを分けるなら差し替える。*/
+	const wchar_t* sRepositoryUrl_ = L"https://github.com/YamaguchiHayato/Project.DS";
+
+	/**
+	 * @brief 既定のブラウザでリポジトリのページを開く。
+	 * @details 開けなくてもタイトルはそのまま続ける。ゲームを止めるほどのことではないため。
+	 */
+	void OpenRepositoryPage()
+	{
+		ShellExecuteW(nullptr, L"open", sRepositoryUrl_, nullptr, nullptr, SW_SHOWNORMAL);
+	}
+}
 
 namespace nsApp
 {
@@ -18,6 +37,13 @@ namespace nsApp
 			{
 				DeleteGO(pTitleUI_);
 				pTitleUI_ = nullptr;
+			}
+
+			/* 立たせていたモデルを破棄する。カメラとライトはこの中で元へ戻る。*/
+			if (pTitleStage_ != nullptr)
+			{
+				DeleteGO(pTitleStage_);
+				pTitleStage_ = nullptr;
 			}
 
 			if (pKeyConfig_ != nullptr)
@@ -36,54 +62,163 @@ namespace nsApp
 
 		bool TitleScene::Start()
 		{
-			/* タイトル本体を生成する。*/
-//			pTitleUI_ = NewGO<nsUI::TitleUI>(0, "title");
-
-			pVideoScreen_ = NewGO<nsUI::VideoScreen>(0, "videoScreen");
+			/* 起動したらすぐにタイトルを出す。動画はタイトルでしばらく操作が無いときに流す。*/
+			CreateTitle();
 			return true;
 		}
 
 
 		void TitleScene::Update()
 		{
-			/* 動画中は、決定キーか再生終了でタイトルへ進む。*/
-			if (pVideoScreen_ != nullptr)
-			{
-				if (nsData::InputObserver::Get().IsTrigger(nsData::EnAction::Confirm) || pVideoScreen_->IsEnd())
-				{
-					DeleteGO(pVideoScreen_);
-					pVideoScreen_ = nullptr;
-
-					if (pTitleUI_ == nullptr)
-						pTitleUI_ = NewGO<nsUI::TitleUI>(0, "title");
-				}
-
+			/* 動画の再生中は、タイトルの入力を受け付けない。*/
+			if (UpdateVideo())
 				return;
-			}
 
-			/* すでにキーコンフィグUIが生成されている場合は、キー入力を受け付けない。*/
-			if (pKeyConfig_ != nullptr)
-			{
-				/* キーコンフィグUIが閉じられたら破棄する。*/
-				if (pKeyConfig_->IsClose())
-				{
-					DeleteGO(pKeyConfig_);
-					pKeyConfig_ = nullptr;
-				}
+			/* 設定画面を開いている間も、タイトルの入力を受け付けない。*/
+			if (UpdateKeyConfig())
 				return;
-			}
 
-			/* 1キーが押された瞬間なら InGame へ切り替える。*/
-			if (nsData::InputObserver::Get().IsTrigger(nsData::EnAction::StartGame))
-				pGameFlow_->ChangeScene(EnSceneID::InGame);
+			/* モデルは、PRESS ANY KEY を抜けてメニューの画面になってから見せる。*/
+			if (pTitleUI_ != nullptr && pTitleStage_ != nullptr)
+				pTitleStage_->SetVisible(pTitleUI_->IsMenuPhase());
 
-			/* 2キーが押された瞬間なら Debug へ切り替える。*/
+			/* メニューで決まった行き先を実行する。*/
+			if (pTitleUI_ != nullptr)
+				ApplyTitleCommand(pTitleUI_->PopDecidedCommand());
+
+			/* デバッグシーンへの近道。メニューには出していないので、キーだけで入れるようにしている。*/
 			if (nsData::InputObserver::Get().IsTrigger(nsData::EnAction::OpenDebug))
 				pGameFlow_->ChangeScene(EnSceneID::Debug);
+		}
 
-			/* 3キーが押された瞬間なら KeyConfigUI を生成する。*/
-			if (pKeyConfig_ == nullptr && nsData::InputObserver::Get().IsTrigger(nsData::EnAction::OpenKeyConfig))
+
+		bool TitleScene::UpdateVideo()
+		{
+			/* 動画を流していなければ、何もせずに先へ進ませる。*/
+			if (pVideoScreen_ == nullptr)
+				return false;
+
+			/* 何かキーを押すか再生が終わるまでは、動画を流し続ける。*/
+			const bool bIsSkip = (pTitleUI_ != nullptr) && pTitleUI_->IsAnyKeyTrigger();
+			if (!bIsSkip && !pVideoScreen_->IsEnd())
+				return true;
+
+			StopDemoVideo();
+			return true;
+		}
+
+
+		void TitleScene::StartDemoVideo()
+		{
+			/* すでに流していれば何もしない。*/
+			if (pVideoScreen_ != nullptr)
+				return;
+
+			/* タイトルとモデルを隠し、入力も止める。動画を飛ばすキーでメニューが動かないようにするため。*/
+			if (pTitleUI_ != nullptr)
+			{
+				pTitleUI_->SetVisible(false);
+				pTitleUI_->SetInputActive(false);
+			}
+
+			if (pTitleStage_ != nullptr)
+				pTitleStage_->SetVisible(false);
+
+			/* 動画は流すたびに作り直す。VideoScreen は生成時に開いて最後まで読むと終わる作りのため。*/
+			pVideoScreen_ = NewGO<nsUI::VideoScreen>(0, "videoScreen");
+		}
+
+
+		void TitleScene::StopDemoVideo()
+		{
+			/* 動画を片付ける。*/
+			if (pVideoScreen_ != nullptr)
+			{
+				DeleteGO(pVideoScreen_);
+				pVideoScreen_ = nullptr;
+			}
+
+			/* PRESS ANY KEY の画面に戻して、もう一度表示する。モデルは次のフレームで段階に合わせて隠れる。*/
+			if (pTitleUI_ != nullptr)
+			{
+				pTitleUI_->ResetToPressAnyKey();
+				pTitleUI_->SetVisible(true);
+				pTitleUI_->SetInputActive(true);
+			}
+		}
+
+
+		bool TitleScene::UpdateKeyConfig()
+		{
+			/* 設定画面を開いていなければ、何もせずに先へ進ませる。*/
+			if (pKeyConfig_ == nullptr)
+				return false;
+
+			/* 閉じられるまでは開いたままにする。*/
+			if (!pKeyConfig_->IsClose())
+				return true;
+
+			DeleteGO(pKeyConfig_);
+			pKeyConfig_ = nullptr;
+
+			/* 閉じたので、タイトルの入力を元に戻す。*/
+			if (pTitleUI_ != nullptr)
+				pTitleUI_->SetInputActive(true);
+
+			return true;
+		}
+
+
+		void TitleScene::CreateTitle()
+		{
+			/* 2D表示(タイトル画像・メニュー)を生成する。*/
+			if (pTitleUI_ == nullptr)
+				pTitleUI_ = NewGO<nsUI::TitleUI>(0, "title");
+
+			/*
+			 * 3D表示(立たせるモデル)を生成する。
+			 * 見せるのはメニューの画面からだが、キーを押した瞬間に読み込みで止まらないよう、ここで先に読んでおく。
+			 */
+			if (pTitleStage_ == nullptr)
+				pTitleStage_ = NewGO<nsUI::TitleStage>(0, "titleStage");
+		}
+
+
+		void TitleScene::ApplyTitleCommand(nsUI::EnTitleCommand enCommand)
+		{
+			switch (enCommand)
+			{
+			case nsUI::EnTitleCommand::StartGame:
+				/* 本編へ切り替える。*/
+				pGameFlow_->ChangeScene(EnSceneID::InGame);
+				break;
+
+			case nsUI::EnTitleCommand::Option:
+				/* 設定はキーコンフィグを開く。開いている間はタイトルの入力を止める。*/
 				pKeyConfig_ = NewGO<nsUI::KeyConfigUI>(0, "keyConfig");
+				if (pTitleUI_ != nullptr)
+					pTitleUI_->SetInputActive(false);
+				break;
+
+			case nsUI::EnTitleCommand::OpenGitHub:
+				/* リポジトリのページをブラウザで開く。ゲームはタイトルのまま続ける。*/
+				OpenRepositoryPage();
+				break;
+
+			case nsUI::EnTitleCommand::ExitGame:
+				/* ゲームループを抜けてウィンドウを閉じる。*/
+				g_gameLoop.m_isLoop = false;
+				break;
+
+			case nsUI::EnTitleCommand::PlayDemo:
+				/* しばらく操作が無かったので、動画を流す。*/
+				StartDemoVideo();
+				break;
+
+			default:
+				/* まだ何も決まっていないときは何もしない。*/
+				break;
+			}
 		}
 	}
 }
