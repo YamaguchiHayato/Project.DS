@@ -3,6 +3,7 @@
 #include "Src/Actor/Character/Player/Player.h"
 #include "Tracer.h"
 #include "Src/Actor/Character/Enemy/CommonEnemy.h"
+#include "Src/Actor/Stage/Stage.h"
 #include "Src/Scene/GameFlow.h"
 #include "Src/Event/EventBus.h"
 #include "Src/Rule/ResolveGameWinner.h"
@@ -92,6 +93,13 @@ namespace nsApp
 				pPlayer_ = nullptr;
 			}
 
+			/** ステージ破棄 */
+			if (pStage_ != nullptr)
+			{
+				DeleteGO(pStage_);
+				pStage_ = nullptr;
+			}
+
 			/* HUDを破棄する。*/
 			if (pHud_ != nullptr)
 			{
@@ -162,11 +170,14 @@ namespace nsApp
 			/* 戦績を数えるため、シーン自身も通知を購読する。*/
 			pEventBus_->Subscribe(this);
 
+			/** ステージ生成 */
+			pStage_ = NewGO<nsActor::Stage>(0, "stage");
+
 			/* 地面を読み込んで大きく敷く。*/
-			stGroundModel_.Init(sGroundModelPath_, nullptr, 0, enModelUpAxisY);
+			/*stGroundModel_.Init(sGroundModelPath_, nullptr, 0, enModelUpAxisY);
 			stGroundModel_.SetScale(Vector3(fGroundScale_, fGroundScale_, fGroundScale_));
 			stGroundModel_.SetPosition(Vector3(0.0f, 0.0f, 0.0f));
-			stGroundModel_.Update();
+			stGroundModel_.Update();*/
 
 			/*
 			 * 地面の当たり判定は、床のあるステージが入ってから用意する。
@@ -247,7 +258,7 @@ namespace nsApp
 		void InGameScene::Render(RenderContext& rc)
 		{
 			/* 地面を描画する。*/
-			stGroundModel_.Draw(rc);
+			//stGroundModel_.Draw(rc);
 
 			/* ゴールの目印を描画する。*/
 			stSafeRoomModel_.Draw(rc);
