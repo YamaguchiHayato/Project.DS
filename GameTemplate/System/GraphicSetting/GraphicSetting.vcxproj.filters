@@ -21,10 +21,13 @@
     <ClInclude Include="pch.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="GraphicsSetting.h">
+    <ClInclude Include="Src\FOVSetting.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="FOVSetting.h">
+    <ClInclude Include="Src\GraphicsSetting.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\SensitivitySetting.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
@@ -32,10 +35,13 @@
     <ClCompile Include="pch.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="GraphicsSetting.cpp">
+    <ClCompile Include="Src\GraphicsSetting.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="FOVSetting.cpp">
+    <ClCompile Include="Src\SensitivitySetting.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\FOVSetting.cpp">
       <Filter>Src</Filter>
     </ClCompile>
   </ItemGroup>

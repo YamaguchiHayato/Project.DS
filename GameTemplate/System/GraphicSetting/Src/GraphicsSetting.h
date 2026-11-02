@@ -1,5 +1,8 @@
 #pragma once
 #include "FOVSetting.h"
+#include "SensitivitySetting.h"
+#include "BrightnessSetting.h"
+#include "WindowSetting.h"
 
 
 namespace nsApp
@@ -11,7 +14,7 @@ namespace nsApp
 		 * @brief: 画角、感度、明るさ、ウィンドウサイズを所持。
 		 * @details: Get()を返す。
 		 * @author: Yamaguchi Hayato
-		 * @date: 2026/10/29
+		 * @date: 2026/11/02: 最終更新日。
 		 */
 		class GraphicsSetting
 		{
@@ -83,7 +86,7 @@ namespace nsApp
 			 */
 			inline float GetSensitivity()const
 			{
-				return sensitivity_;
+				return sensitivity_.Get();
 			}
 
 			/**
@@ -92,7 +95,7 @@ namespace nsApp
 			 */
 			inline float GetBrightness()const
 			{
-				return brightness_;
+				return brightnessSetting_.Get();
 			}
 
 			/**
@@ -101,7 +104,7 @@ namespace nsApp
 			 */
 			inline unsigned int GetWindowWidth()const
 			{
-				return windowWidth_;
+				return windowSetting_.GetWidth();
 			}
 
 			/**
@@ -110,16 +113,15 @@ namespace nsApp
 			 */
 			inline unsigned int GetWindowHeight()const
 			{
-				return windowHeight_;
+				return windowSetting_.GetHeight();
 			}
 
 
 		private:
-			float sensitivity_ = 1.0f; //! マウス感度の倍率。
-			float brightness_ = 1.0f; //! 画面の明るさ。
-			unsigned int windowWidth_ = 1920; //! ウィンドウの幅。
-			unsigned int windowHeight_ = 1080; //! ウィンドウの高さ。
 			FOVSetting fov_; //! 画角の設定を管理。
+			SensitivitySetting sensitivity_; //! マウス感度の設定を管理。
+			BrightnessSetting brightnessSetting_; //! 画面の明るさの設定を管理。
+			WindowSetting windowSetting_; //! ウィンドウの設定を管理。
 		};
 	}
 }

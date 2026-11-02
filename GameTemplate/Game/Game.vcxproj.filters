@@ -346,6 +346,7 @@
     <ClCompile Include="Src\UI\VideoScreen.cpp">
       <Filter>Src\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Actor\Stage\Stage.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -646,6 +647,7 @@
     <ClInclude Include="Src\UI\VideoScreen.h">
       <Filter>Src\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Src\Actor\Stage\Stage.h" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Assets\shader\PMX_PS.hlsl" />

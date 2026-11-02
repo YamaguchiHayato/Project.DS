@@ -3,6 +3,7 @@
 #include "Src/Scene/GameFlow.h"
 #include "Src/InputObserver.h"
 #include "Game.h"
+#include "../System/GraphicSetting/Src/GraphicsSetting.h"
 
 // K2EngineLowのグローバルアクセスポイント。
 K2EngineLow* g_k2EngineLow = nullptr;
@@ -52,6 +53,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 {
 	// ★アセット読み込み・セーブより前に作業フォルダを確定させる。
 	FixWorkingDirectoryToAssetsRoot();
+
+	// 拡張分。
+	// グラフィックスの設定をロードする。
+	nsApp::nsData::GraphicsSetting::Get().Load();
 
 	// ★乱数シードを初期化する。
 	// これが無いと rand()（クリティカル抽選・スキル発動抽選など）が毎起動まったく

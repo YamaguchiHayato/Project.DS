@@ -10,10 +10,9 @@ namespace nsApp
 		void GraphicsSetting::FillDefault()
 		{
 			fov_.FillDefault();
-			sensitivity_ = 1.0f;
-			brightness_ = 1.0f;
-			windowWidth_ = 1980;
-			windowHeight_ = 1080;
+			sensitivity_.FillDefault();
+			brightnessSetting_.FillDefault();
+			windowSetting_.FillDefault();
 		}
 
 
@@ -49,13 +48,13 @@ namespace nsApp
 				if (name == "fov")
 					fov_.Set(std::stof(value));
 				else if (name == "sensitivity")
-					sensitivity_ = std::stof(value);
+					sensitivity_.Set(std::stof(value));
 				else if (name == "brightness")
-					brightness_ = std::stof(value);
+					brightnessSetting_.Set(std::stof(value));
 				else if (name == "windowWidth")
-					windowWidth_ = static_cast<unsigned int>(std::stoul(value));
+					windowSetting_.SetWidth(static_cast<unsigned int>(std::stoul(value)));
 				else if (name == "windowHeight")
-					windowHeight_ = static_cast<unsigned int>(std::stoul(value));
+					windowSetting_.SetHeight(static_cast<unsigned int>(std::stoul(value)));
 			}
 
 
@@ -73,10 +72,10 @@ namespace nsApp
 			/* ヘッダー行を書き込む。*/
 			file << "name\tvalue\n";
 			file << "fov\t" << fov_.Get() << "\n";
-			file << "sensitivity\t" << sensitivity_ << "\n";
-			file << "brightness\t" << brightness_ << "\n";
-			file << "windowWidth\t" << windowWidth_ << "\n";
-			file << "windowHeight\t" << windowHeight_ << "\n";
+			file << "sensitivity\t" << sensitivity_.Get() << "\n";
+			file << "brightness\t" << brightnessSetting_.Get() << "\n";
+			file << "windowWidth\t" << windowSetting_.GetWidth() << "\n";
+			file << "windowHeight\t" << windowSetting_.GetHeight() << "\n";
 
 			return true;
 		}
@@ -90,20 +89,19 @@ namespace nsApp
 
 		void GraphicsSetting::SetSensitivity(float sensitivity)
 		{
-			sensitivity_ = sensitivity;
+			sensitivity_.Set(sensitivity);
 		}
 
 
 		void GraphicsSetting::SetBrightness(float brightness)
 		{
-			brightness_ = brightness;
+			brightnessSetting_.Set(brightness);	
 		}
 
 
 		void GraphicsSetting::SetWindowSize(unsigned int width, unsigned int height)
 		{
-			windowWidth_ = width;
-			windowHeight_ = height;
+			windowSetting_.Set(width, height);
 		}
 	}
 }
