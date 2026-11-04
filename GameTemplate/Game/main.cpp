@@ -3,6 +3,7 @@
 #include "Src/Scene/GameFlow.h"
 #include "Src/InputObserver.h"
 #include "Game.h"
+#include "../System/GraphicSetting/Src/GraphicsSetting.h"
 
 // K2EngineLowのグローバルアクセスポイント。
 K2EngineLow* g_k2EngineLow = nullptr;
@@ -53,13 +54,17 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	// ★アセット読み込み・セーブより前に作業フォルダを確定させる。
 	FixWorkingDirectoryToAssetsRoot();
 
+	// 拡張分。
+	// グラフィックスの設定をロードする。
+	nsApp::nsData::GraphicsSetting::Get().Load();
+
 	// ★乱数シードを初期化する。
 	// これが無いと rand()（クリティカル抽選・スキル発動抽選など）が毎起動まったく
 	// 同じ出目になり、「確率」が固定パターンになってしまう。起動時に一度だけ種を蒔く。
 	srand(static_cast<unsigned int>(time(nullptr)));
 
 	// ゲームの初期化。
-	InitGame(hInstance, hPrevInstance, lpCmdLine, nCmdShow, TEXT("Game"));
+	InitGame(hInstance, hPrevInstance, lpCmdLine, nCmdShow, TEXT("RUST GUB BULLET REQUIEM_Window"));
 	
 	// k2EngineLowの初期化。
 	g_k2EngineLow = new K2EngineLow();
@@ -69,8 +74,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	// ゲームフローを生成。
 	NewGO<nsApp::nsScene::GameFlow>(0, "gameFlow");
 
-	// ここからゲームループ。
-	while (DispatchWindowMessage()&&g_gameLoop.m_isLoop==true)
+	while (DispatchWindowMessage() && g_gameLoop.m_isLoop == true)
 	{
 		// フレームの開始時に呼び出す必要がある処理を実行
 		g_k2EngineLow->BeginFrame();
@@ -80,6 +84,37 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 
 		// ゲームオブジェクトマネージャーの更新処理を呼び出す。
 		g_k2EngineLow->ExecuteUpdate();
+
+		/* 設定画面で変えた値を、その場で画面と音へ反映する。 */
+		nsApp::nsData::GraphicsSetting& setting = nsApp::nsData::GraphicsSetting::Get();
+		g_renderingEngine->SetSceneBrightness(setting.GetBrightness());
+		g_renderingEngine->isMotionBlurEnabled = setting.GetVideo().IsON(nsApp::nsData::VideoItem::MotionBlur);
+
+		// 音量設定を反映する。
+		if (g_soundEngine != nullptr)
+		{
+			const float master = setting.GetSound().IsON(nsApp::nsData::SoundItem::Mute) ? 0.0f : setting.GetSound().Get(nsApp::nsData::SoundItem::Master);
+			g_soundEngine->SetMasterVolume(master);
+			g_soundEngine->SetBgmVolume(setting.GetSound().Get(nsApp::nsData::SoundItem::Bgm));
+			g_soundEngine->SetSeVolume(setting.GetSound().Get(nsApp::nsData::SoundItem::Se));
+		}
+
+		/* 振動オフのときはモーターを止める。オンでも、今は振動を出す処理がゲーム側に無い。 */
+		if (!setting.GetControl().IsON(nsApp::nsData::ControlItem::Vibration))
+		{
+			XINPUT_VIBRATION vibration = {};
+			for (int pad = 0; pad < nsK2EngineLow::GamePad::CONNECT_PAD_MAX; pad++)
+				XInputSetState(pad, &vibration);
+		}
+
+		// フレームレート設定を反映する。
+		const int frameRate = setting.GetVideo().GetIndex(nsApp::nsData::VideoItem::FrameRate);
+		if (frameRate == 0)
+			g_k2EngineLow->SetFrameRateMode(K2EngineLow::enFrameRateMode_Fix, 30);
+		else if (frameRate == 1)
+			g_k2EngineLow->SetFrameRateMode(K2EngineLow::enFrameRateMode_Fix, 60);
+		else
+			g_k2EngineLow->SetFrameRateMode(K2EngineLow::enFrameRateMode_Variable, 240);
 
 		// ゲームオブジェクトマネージャーの描画処理を呼び出す。
 		g_k2EngineLow->ExecuteRender();

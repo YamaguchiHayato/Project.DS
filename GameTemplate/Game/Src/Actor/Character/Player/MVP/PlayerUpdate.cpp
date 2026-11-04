@@ -3,6 +3,7 @@
 #include "Src/Actor/Character/Player/Player.h"
 #include "Src/Actor/Character/Player/PlayerIntent.h"
 #include <algorithm>
+#include "GraphicsSetting.h"
 
 namespace
 {
@@ -26,12 +27,15 @@ namespace nsApp
 			if (pPlayer_ == nullptr)
 				return;
 
+			/* 覗き込み中は ADS_SENSITIVITY_RATE を掛けて視点移動を鈍らせる。 */
+			const float adsSensitivity = nsData::GraphicsSetting::Get().GetControl().Get(nsData::ControlItem::AdsSensitivity);
+			const float lookRate = 1.0f - (1.0f - adsSensitivity) * pPlayer_->GetAdsRate();
+
 			/* マウスの横移動量でカメラのヨー(左右)を更新する。*/
-			pPlayer_->AddCameraYaw(stIntent.fLookYawDelta_ * (1.0f - (1.0f - ADS_SENSITIVITY_RATE) * pPlayer_->GetAdsRate()));
+			pPlayer_->AddCameraYaw(stIntent.fLookYawDelta_ * lookRate);
 
 			/* マウスの縦移動量でカメラのピッチ(上下)を更新し、真上/真下付近で止める。*/
-			pPlayer_->AddCameraPitch(stIntent.fLookPitchDelta_ * (1.0f - (1.0f - ADS_SENSITIVITY_RATE) * pPlayer_->GetAdsRate()));
-
+			pPlayer_->AddCameraPitch(stIntent.fLookPitchDelta_ * lookRate);
 			/* 真上の限界を超えたら止める。*/
 			if (pPlayer_->GetCameraPitch() > MAX_PITCH)
 				pPlayer_->SetCameraPitch(MAX_PITCH);

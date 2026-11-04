@@ -7,12 +7,11 @@
  */
 
 #include "Src/Scene/IScene.h"
+#include "Src/UI/Title/TitleUI.h"
 
 namespace nsApp
 {
 	namespace nsUI {
-		class TitleUI;
-		class KeyConfigUI;
 		class VideoScreen;
 	}
 
@@ -34,9 +33,37 @@ namespace nsApp
 
 
 		private:
+			/**
+			 * @brief 動画の再生中の更新。何かキーを押すか再生が終わったら、タイトルへ戻る。
+			 * @return 動画の再生中なら true。
+			 */
+			bool UpdateVideo();
+
+			/**
+			 * @brief タイトルを隠して動画を流し始める。
+			 */
+			void StartDemoVideo();
+
+			/**
+			 * @brief 動画を止めて、PRESS ANY KEY の画面へ戻す。
+			 */
+			void StopDemoVideo();
+
+			/**
+			 * @brief タイトルの表示を生成する。
+			 */
+			void CreateTitle();
+
+			/**
+			 * @brief タイトルで決まった行き先を実行する。
+			 * @param enCommand 決まった行き先。
+			 */
+			void ApplyTitleCommand(nsUI::EnTitleCommand enCommand);
+
+
+		private:
 			nsUI::TitleUI* pTitleUI_ = nullptr; //! タイトル本体。
-			nsUI::KeyConfigUI* pKeyConfig_ = nullptr; //! キーコンフィグUI。
-			nsUI::VideoScreen* pVideoScreen_ = nullptr; //! 動画の再生画面。
+			nsUI::VideoScreen* pVideoScreen_ = nullptr; //! 動画の再生画面。タイトルでしばらく操作が無いときだけ作る。
 		};
 	}
 }

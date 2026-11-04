@@ -26,6 +26,7 @@ namespace nsApp
 			bFirePress_ = input_.IsPress(nsData::EnAction::Fire);
 			bFireTrigger_ = input_.IsTrigger(nsData::EnAction::Fire);
 			bAdsPress_ = input_.IsPress(nsData::EnAction::Ads);
+			bAdsTrigger_ = input_.IsTrigger(nsData::EnAction::Ads);
 			bWeaponSwitchNextTrigger_ = input_.IsTrigger(nsData::EnAction::WeaponNext);
 			bWeaponSwitchPrevTrigger_ = input_.IsTrigger(nsData::EnAction::WeaponPrev);
 

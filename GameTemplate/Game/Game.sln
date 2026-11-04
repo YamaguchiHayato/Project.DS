@@ -30,6 +30,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Input", "..\System\Input\In
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Video", "..\System\Video\Video\Video.vcxproj", "{5652DA6D-B2BF-47B8-8D7D-6E52B139836E}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GraphicSetting", "..\System\GraphicSetting\GraphicSetting.vcxproj", "{5F06DADF-35EB-4BD4-AA64-C975EF3E881A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -136,6 +138,18 @@ Global
 		{5652DA6D-B2BF-47B8-8D7D-6E52B139836E}.Release|x64.Build.0 = Release|x64
 		{5652DA6D-B2BF-47B8-8D7D-6E52B139836E}.Release|x86.ActiveCfg = Release|Win32
 		{5652DA6D-B2BF-47B8-8D7D-6E52B139836E}.Release|x86.Build.0 = Release|Win32
+		{5F06DADF-35EB-4BD4-AA64-C975EF3E881A}.Debug|x64.ActiveCfg = Debug|x64
+		{5F06DADF-35EB-4BD4-AA64-C975EF3E881A}.Debug|x64.Build.0 = Debug|x64
+		{5F06DADF-35EB-4BD4-AA64-C975EF3E881A}.Debug|x86.ActiveCfg = Debug|Win32
+		{5F06DADF-35EB-4BD4-AA64-C975EF3E881A}.Debug|x86.Build.0 = Debug|Win32
+		{5F06DADF-35EB-4BD4-AA64-C975EF3E881A}.Preview|x64.ActiveCfg = Release|x64
+		{5F06DADF-35EB-4BD4-AA64-C975EF3E881A}.Preview|x64.Build.0 = Release|x64
+		{5F06DADF-35EB-4BD4-AA64-C975EF3E881A}.Preview|x86.ActiveCfg = Release|Win32
+		{5F06DADF-35EB-4BD4-AA64-C975EF3E881A}.Preview|x86.Build.0 = Release|Win32
+		{5F06DADF-35EB-4BD4-AA64-C975EF3E881A}.Release|x64.ActiveCfg = Release|x64
+		{5F06DADF-35EB-4BD4-AA64-C975EF3E881A}.Release|x64.Build.0 = Release|x64
+		{5F06DADF-35EB-4BD4-AA64-C975EF3E881A}.Release|x86.ActiveCfg = Release|Win32
+		{5F06DADF-35EB-4BD4-AA64-C975EF3E881A}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

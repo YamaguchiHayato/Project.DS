@@ -10,6 +10,7 @@ namespace nsApp
 	{
 		/* 前方宣言。*/
 		class Player;
+		class Stage;
 		class CommonEnemy;
 	}
 
@@ -84,6 +85,7 @@ namespace nsApp
 
 		private:
 			nsActor::Player* pPlayer_ = nullptr;			//! プレイヤー。
+			nsActor::Stage* pStage_ = nullptr;			//! ステージ。
 			ModelRender stGroundModel_;				//! 地面。
 			PhysicsStaticObject stGroundCollider_;		//! 地面の静的コライダ(キャラクターが接地・衝突するために必要)。
 			nsDirector::EnemyDirector* pEnemyDirector_ = nullptr;	//! 敵の湧き係。CommonEnemy を時間・上限で湧かせる。

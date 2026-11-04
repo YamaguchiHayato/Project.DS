@@ -102,6 +102,8 @@ namespace nsApp
 			//! Shiftキーを押しているか(スプリント。押しっぱなし判定)。
 			inline bool IsSprintPress() const { return bSprintPress_; }
 
+			//! 右クリックを押した瞬間か(ADS=覗き込みの切り替え用)。
+			inline bool IsAdsTrigger() const { return bAdsTrigger_; }
 
 		private:
 			/**
@@ -168,6 +170,7 @@ namespace nsApp
 			bool bPrevShovePress_ = false;		//! 前回フレームのVキー押下状態。
 			bool bPrevMainWeaponPress_ = false;	//! 前回フレームの1キー押下状態。
 			bool bPrevSubWeaponPress_ = false;	//! 前回フレームの2キー押下状態。
+			bool bAdsTrigger_ = false;			//! 右クリックを押した瞬間か(ADS)。
 		};
 	}
 }

@@ -3,6 +3,7 @@
 #include "Src/Actor/Character/Player/Player.h"
 #include "Tracer.h"
 #include "Src/Actor/Character/Enemy/CommonEnemy.h"
+#include "Src/Actor/Stage/Stage.h"
 #include "Src/Scene/GameFlow.h"
 #include "Src/Event/EventBus.h"
 #include "Src/Rule/ResolveGameWinner.h"
@@ -11,6 +12,7 @@
 #include "Src/System/GamePause.h"
 #include "Src/Item/PipeBomb.h"
 #include "Src/InputObserver.h"
+#include "GraphicsSetting.h" //! 別ソリューション。
 
 namespace
 {
@@ -54,6 +56,7 @@ namespace
 	const float fSafeRoomMarkerHeight_ = 120.0f;					//! ゴール目印を目線あたりに浮かせる高さ。
 }
 
+
 namespace nsApp
 {
 	namespace nsScene
@@ -90,6 +93,13 @@ namespace nsApp
 			{
 				DeleteGO(pPlayer_);
 				pPlayer_ = nullptr;
+			}
+
+			/** ステージ破棄 */
+			if (pStage_ != nullptr)
+			{
+				DeleteGO(pStage_);
+				pStage_ = nullptr;
 			}
 
 			/* HUDを破棄する。*/
@@ -162,11 +172,14 @@ namespace nsApp
 			/* 戦績を数えるため、シーン自身も通知を購読する。*/
 			pEventBus_->Subscribe(this);
 
+			/** ステージ生成 */
+			pStage_ = NewGO<nsActor::Stage>(0, "stage");
+
 			/* 地面を読み込んで大きく敷く。*/
-			stGroundModel_.Init(sGroundModelPath_, nullptr, 0, enModelUpAxisY);
+			/*stGroundModel_.Init(sGroundModelPath_, nullptr, 0, enModelUpAxisY);
 			stGroundModel_.SetScale(Vector3(fGroundScale_, fGroundScale_, fGroundScale_));
 			stGroundModel_.SetPosition(Vector3(0.0f, 0.0f, 0.0f));
-			stGroundModel_.Update();
+			stGroundModel_.Update();*/
 
 			/*
 			 * 地面の当たり判定は、床のあるステージが入ってから用意する。
@@ -247,7 +260,7 @@ namespace nsApp
 		void InGameScene::Render(RenderContext& rc)
 		{
 			/* 地面を描画する。*/
-			stGroundModel_.Draw(rc);
+			//stGroundModel_.Draw(rc);
 
 			/* ゴールの目印を描画する。*/
 			stSafeRoomModel_.Draw(rc);
@@ -256,10 +269,11 @@ namespace nsApp
 
 		void InGameScene::InitCamera()
 		{
-			/* 覗き込みで倍率を掛けるため、もとの画角を覚えておく。*/
-			fBaseViewAngle_ = g_camera3D->GetViewAngle();
+			/* 起動時の画角を保存しておく。*/
+			fBaseViewAngle_ = Math::DegToRad(nsData::GraphicsSetting::Get().GetFOV());
+			g_camera3D->SetViewAngle(fBaseViewAngle_);
 
-			/* ニアクリップ・ファークリップを設定する。*/
+			/* ニアとファーを設定する。*/
 			g_camera3D->SetNear(1.0f);
 			g_camera3D->SetFar(10000.0f);
 		}

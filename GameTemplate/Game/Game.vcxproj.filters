@@ -91,6 +91,15 @@
     <Filter Include="Src\UI\KeyConfig">
       <UniqueIdentifier>{1c1008eb-d6bb-4a06-b4b2-cad4afafd61b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Src\UI\Config">
+      <UniqueIdentifier>{c05c48eb-7488-4bea-9471-105f690675d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\Scene\Menu">
+      <UniqueIdentifier>{dd50cdc6-9a8d-49c3-b36c-f4ee66b18713}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Src\UI\Option">
+      <UniqueIdentifier>{57e77458-25e0-4fc0-9c9d-435569bb298e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
@@ -186,6 +195,9 @@
     </ClCompile>
     <ClCompile Include="Src\StateMachine\StateMachine.cpp">
       <Filter>Src\StateMachine</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\UI\Title\TitleStage.cpp">
+      <Filter>Src\UI\Title</Filter>
     </ClCompile>
     <ClCompile Include="Src\UI\Title\TitleUI.cpp">
       <Filter>Src\UI\Title</Filter>
@@ -337,8 +349,42 @@
     <ClCompile Include="Src\UI\KeyConfig\KeyConfigUI.cpp">
       <Filter>Src\UI\KeyConfig</Filter>
     </ClCompile>
+    <ClCompile Include="Src\UI\BackgroundSprite.cpp">
+      <Filter>Src\UI</Filter>
+    </ClCompile>
     <ClCompile Include="Src\UI\VideoScreen.cpp">
       <Filter>Src\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Actor\Stage\Stage.cpp" />
+    <ClCompile Include="Src\UI\Config\SettingUI.cpp">
+      <Filter>Src\UI\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Menu\MenuScene.cpp">
+      <Filter>Src\Scene\Menu</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Scene\Menu\OptionScene.cpp">
+      <Filter>Src\Scene\Menu</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\UI\Option\OptionUI.cpp">
+      <Filter>Src\UI\Option</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\UI\Option\OptionCanvas.cpp">
+      <Filter>Src\UI\Option</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\UI\Option\OptionEntry.cpp">
+      <Filter>Src\UI\Option</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\UI\Option\OptionModel.cpp">
+      <Filter>Src\UI\Option</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\UI\Option\OptionRowList.cpp">
+      <Filter>Src\UI\Option</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\UI\Option\OptionFooter.cpp">
+      <Filter>Src\UI\Option</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\UI\Option\OptionTabBar.cpp">
+      <Filter>Src\UI\Option</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -447,6 +493,9 @@
     </ClInclude>
     <ClInclude Include="Src\StateMachine\IState.h">
       <Filter>Src\StateMachine</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\UI\Title\TitleStage.h">
+      <Filter>Src\UI\Title</Filter>
     </ClInclude>
     <ClInclude Include="Src\UI\Title\TitleUI.h">
       <Filter>Src\UI\Title</Filter>
@@ -631,8 +680,48 @@
     <ClInclude Include="Src\UI\KeyConfig\KeyConfigUI.h">
       <Filter>Src\UI\KeyConfig</Filter>
     </ClInclude>
+    <ClInclude Include="Src\UI\BackgroundSprite.h">
+      <Filter>Src\UI</Filter>
+    </ClInclude>
     <ClInclude Include="Src\UI\VideoScreen.h">
       <Filter>Src\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Actor\Stage\Stage.h" />
+    <ClInclude Include="Src\UI\Config\SettingUI.h">
+      <Filter>Src\UI\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Scene\Menu\MenuScene.h">
+      <Filter>Src\Scene\Menu</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Scene\Menu\OptionScene.h">
+      <Filter>Src\Scene\Menu</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\UI\Option\OptionUI.h">
+      <Filter>Src\UI\Option</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\UI\Option\OptionCanvas.h">
+      <Filter>Src\UI\Option</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\UI\Option\OptionEntry.h">
+      <Filter>Src\UI\Option</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\UI\Option\OptionStyle.h">
+      <Filter>Src\UI\Option</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\UI\Option\OptionValue.h">
+      <Filter>Src\UI\Option</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\UI\Option\OptionModel.h">
+      <Filter>Src\UI\Option</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\UI\Option\OptionTabBar.h">
+      <Filter>Src\UI\Option</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\UI\Option\OptionRowList.h">
+      <Filter>Src\UI\Option</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\UI\Option\OptionFooter.h">
+      <Filter>Src\UI\Option</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

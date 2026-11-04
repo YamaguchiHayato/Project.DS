@@ -1,0 +1,14 @@
+name	value
+invertY	0
+invertX	0
+fov	60
+sensitivity	1
+adsSensitivity	1
+adsToggle	0
+brightness	1
+windowSize	2
+motionBlur	1
+frameRate	1
+masterVolume	1
+bgmVolume	1
+seVolume	1
