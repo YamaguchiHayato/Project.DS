@@ -1,7 +1,13 @@
 ﻿#include "pch.h"
 #include "GraphicsSetting.h"
+#include <cstdlib>
 #include <fstream>
 #include <string>
+
+namespace
+{
+	const char* SETTING_PATH = "Assets/data/graphicSetting.tsv"; //! 設定ファイルの場所。
+}
 
 namespace nsApp
 {
@@ -9,28 +15,27 @@ namespace nsApp
 	{
 		void GraphicsSetting::FillDefault()
 		{
-			fov_.FillDefault();
-			sensitivity_.FillDefault();
-			brightnessSetting_.FillDefault();
-			windowSetting_.FillDefault();
+			camera_.FillDefault();
+			control_.FillDefault();
+			video_.FillDefault();
+			sound_.FillDefault();
 		}
 
 
 		bool GraphicsSetting::Load()
 		{
-			/* 設定項目を反映するTSVファイルを読み込む。*/
-			std::fstream file("Assets/data/graphicSetting.tsv");
+			/* 先にデフォルトの値を設定する。ファイルに無い項目はこのまま残る。*/
+			FillDefault();
 
-			/* ファイルが開けなかった場合、デフォルトの値を設定する。*/
+			/* 設定項目を反映するTSVファイルを読み込む。*/
+			std::ifstream file(SETTING_PATH);
+
+			/* ファイルが開けなかった場合、デフォルトの値のまま終わる。*/
 			if (!file.is_open())
-			{
-				
-				FillDefault();
 				return false;
-			}
 
 			/* 1行目は項目名なので読み飛ばす。*/
-			std::string line; //! メンバ変数
+			std::string line;
 			std::getline(file, line);
 
 			while (std::getline(file, line))
@@ -40,23 +45,16 @@ namespace nsApp
 				if (tab == std::string::npos)
 					continue;
 
-				/* 項目名と値を取得する。*/
+				/* 項目名と値を取得する。stof は数字でない値で例外を投げるので、落ちない strtof を使う。*/
 				const std::string name = line.substr(0, tab);
-				const std::string value = line.substr(tab + 1);
+				const float value = std::strtof(line.c_str() + tab + 1, nullptr);
 
-				/* 項目名に応じて値を設定する。*/
-				if (name == "fov")
-					fov_.Set(std::stof(value));
-				else if (name == "sensitivity")
-					sensitivity_.Set(std::stof(value));
-				else if (name == "brightness")
-					brightnessSetting_.Set(std::stof(value));
-				else if (name == "windowWidth")
-					windowSetting_.SetWidth(static_cast<unsigned int>(std::stoul(value)));
-				else if (name == "windowHeight")
-					windowSetting_.SetHeight(static_cast<unsigned int>(std::stoul(value)));
+				/* 項目名を持っているカテゴリが受け取る。*/
+				if (camera_.Read(name, value)) continue;
+				if (control_.Read(name, value)) continue;
+				if (video_.Read(name, value)) continue;
+				sound_.Read(name, value);
 			}
-
 
 			return true;
 		}
@@ -65,17 +63,16 @@ namespace nsApp
 		bool GraphicsSetting::Save()
 		{
 			/* 設定項目を反映するTSVファイルを保存する。*/
-			std::ofstream file("Assets/data/graphicSetting.tsv");
+			std::ofstream file(SETTING_PATH);
 			if (!file.is_open())
 				return false;
 
-			/* ヘッダー行を書き込む。*/
+			/* ヘッダー行のあと、カテゴリごとに書き込む。*/
 			file << "name\tvalue\n";
-			file << "fov\t" << fov_.Get() << "\n";
-			file << "sensitivity\t" << sensitivity_.Get() << "\n";
-			file << "brightness\t" << brightnessSetting_.Get() << "\n";
-			file << "windowWidth\t" << windowSetting_.GetWidth() << "\n";
-			file << "windowHeight\t" << windowSetting_.GetHeight() << "\n";
+			camera_.Write(file);
+			control_.Write(file);
+			video_.Write(file);
+			sound_.Write(file);
 
 			return true;
 		}
@@ -83,25 +80,85 @@ namespace nsApp
 
 		void GraphicsSetting::SetFOV(float fov)
 		{
-			fov_.Set(fov);
+			camera_.Set(CameraItem::Fov, fov);
 		}
 
 
 		void GraphicsSetting::SetSensitivity(float sensitivity)
 		{
-			sensitivity_.Set(sensitivity);
+			control_.Set(ControlItem::Sensitivity, sensitivity);
 		}
 
 
 		void GraphicsSetting::SetBrightness(float brightness)
 		{
-			brightnessSetting_.Set(brightness);	
+			video_.Set(VideoItem::Brightness, brightness);
 		}
 
 
 		void GraphicsSetting::SetWindowSize(unsigned int width, unsigned int height)
 		{
-			windowSetting_.Set(width, height);
+			video_.SetWindowSize(width, height);
+		}
+
+
+		float GraphicsSetting::GetValue(SettingCategory category, int index)const
+		{
+			/* カテゴリごとに項目の列挙が違うので、番号を各カテゴリの列挙に変えて読む。*/
+			switch (category)
+			{
+			case SettingCategory::Camera:
+				return camera_.Get(static_cast<CameraItem>(index));
+			case SettingCategory::Control:
+				return control_.Get(static_cast<ControlItem>(index));
+			case SettingCategory::Video:
+				return video_.Get(static_cast<VideoItem>(index));
+			case SettingCategory::Sound:
+				return sound_.Get(static_cast<SoundItem>(index));
+			default:
+				return 0.0f;
+			}
+		}
+
+
+		void GraphicsSetting::SetValue(SettingCategory category, int index, float value)
+		{
+			/* カテゴリごとに項目の列挙が違うので、番号を各カテゴリの列挙に変えて入れる。*/
+			switch (category)
+			{
+			case SettingCategory::Camera:
+				camera_.Set(static_cast<CameraItem>(index), value);
+				break;
+			case SettingCategory::Control:
+				control_.Set(static_cast<ControlItem>(index), value);
+				break;
+			case SettingCategory::Video:
+				video_.Set(static_cast<VideoItem>(index), value);
+				break;
+			case SettingCategory::Sound:
+				sound_.Set(static_cast<SoundItem>(index), value);
+				break;
+			default:
+				break;
+			}
+		}
+
+
+		const SettingRange& GraphicsSetting::GetRange(SettingCategory category, int index)const
+		{
+			/* カテゴリごとに項目の列挙が違うので、番号を各カテゴリの列挙に変えて引く。*/
+			switch (category)
+			{
+			case SettingCategory::Control:
+				return control_.GetRange(static_cast<ControlItem>(index));
+			case SettingCategory::Video:
+				return video_.GetRange(static_cast<VideoItem>(index));
+			case SettingCategory::Sound:
+				return sound_.GetRange(static_cast<SoundItem>(index));
+			case SettingCategory::Camera:
+			default:
+				return camera_.GetRange(static_cast<CameraItem>(index));
+			}
 		}
 	}
 }

@@ -21,13 +21,28 @@
     <ClInclude Include="pch.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Src\FOVSetting.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Src\GraphicsSetting.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Src\SensitivitySetting.h">
+    <ClInclude Include="Src\CameraSetting.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\ControlSetting.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\SettingGroup.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\SettingRange.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\SoundSetting.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\VideoSetting.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="SettingGroup.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
@@ -38,10 +53,16 @@
     <ClCompile Include="Src\GraphicsSetting.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="Src\SensitivitySetting.cpp">
+    <ClCompile Include="Src\CameraSetting.cpp">
       <Filter>Src</Filter>
     </ClCompile>
-    <ClCompile Include="Src\FOVSetting.cpp">
+    <ClCompile Include="Src\ControlSetting.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\SoundSetting.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\VideoSetting.cpp">
       <Filter>Src</Filter>
     </ClCompile>
   </ItemGroup>
