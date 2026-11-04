@@ -110,6 +110,11 @@ namespace nsK2EngineLow {
 
 		Flashlight& GetFlashlight() { return m_flashlight; }
 
+		// 3D画面の明るさを設定する。UIと文字には掛からない。
+		void SetSceneBrightness(float brightness)
+		{
+			m_mainSprite.SetMulColor({ brightness, brightness, brightness, 1.0f });
+		}
 
 	private:
 		void InitMainRenderTarget();

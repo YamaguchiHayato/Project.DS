@@ -2,6 +2,7 @@
 #include "OptionScene.h"
 #include "Src/Scene/GameFlow.h"
 #include "Src/UI/Option/OptionUI.h"
+#include "Src/UI/Title/TitleStage.h"
 
 namespace nsApp
 {
@@ -15,11 +16,21 @@ namespace nsApp
 				DeleteGO(pOptionUI_);
 				pOptionUI_ = nullptr;
 			}
+
+			if (pTitleStage_ != nullptr)
+			{
+				DeleteGO(pTitleStage_);
+				pTitleStage_ = nullptr;
+			}
 		}
 
 
 		bool OptionScene::Start()
 		{
+			/* メニューと同じモデルを後ろに残す。 */
+			pTitleStage_ = NewGO<nsUI::TitleStage>(0, "titleStage");
+			pTitleStage_->SetVisible(true);
+
 			/* 設定の表示を生成する。 */
 			pOptionUI_ = NewGO<nsUI::OptionUI>(0, "option");
 			return true;

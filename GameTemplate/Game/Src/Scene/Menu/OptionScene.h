@@ -6,15 +6,16 @@ namespace nsApp
 	namespace nsUI
 	{
 		class OptionUI;
+		class TitleStage;
 	}
 
 	namespace nsScene
 	{
 		/**
-	     * @file   OptionScene.h
-		 * @brief  設定シーン。OptionUI を開く。
+		 * @file   OptionScene.h
+		 * @brief  設定シーン。タイトルのモデルの上に OptionUI を開く。
 		 * @author Yamaguchi Hayato
-		 * @date   2026/11/03
+		 * @date   2026/11/04: 最終更新日。背景に TitleStage を残すようにした。
 		 */
 		class OptionScene : public IScene
 		{
@@ -33,6 +34,7 @@ namespace nsApp
 
 		private:
 			nsUI::OptionUI* pOptionUI_ = nullptr; //! 設定の表示。
+			nsUI::TitleStage* pTitleStage_ = nullptr; //! タイトルのモデル。暗い膜の下に残す。
 		};
 	}
 }
