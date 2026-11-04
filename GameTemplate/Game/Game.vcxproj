@@ -144,7 +144,7 @@
       <PrecompiledHeaderOutputFile>$(Platform)\$(Configuration)\$(TargetName).pch</PrecompiledHeaderOutputFile>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(SolutionDir)packages\directxtk12_desktop_2019.2025.10.28.1\include;$(SolutionDir)..\System\Input;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\System\Input;$(SolutionDir)..\System\GraphicSetting\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -511,6 +511,9 @@
     <ResourceCompile Include="Game.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\System\GraphicSetting\GraphicSetting.vcxproj">
+      <Project>{5f06dadf-35eb-4bd4-aa64-c975ef3e881a}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\System\Video\Video\Video.vcxproj">
       <Project>{5652da6d-b2bf-47b8-8d7d-6e52b139836e}</Project>
     </ProjectReference>
