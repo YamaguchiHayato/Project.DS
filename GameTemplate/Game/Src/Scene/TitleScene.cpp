@@ -4,26 +4,14 @@
 #include "Src/Scene/GameFlow.h"
 #include "Src/Scene/IScene.h"
 #include "Src/UI/Title/TitleUI.h"
-#include "Src/UI/Title/TitleStage.h"
-#include "Src/UI/KeyConfig/KeyConfigUI.h"
 #include "Src/InputObserver.h"
 #include "Src/UI/VideoScreen.h"
 
-#pragma comment(lib, "Shell32.lib")
 
 namespace
 {
 	/* GITHUB の行で開くページ。@todo 公開用のページを分けるなら差し替える。*/
 	const wchar_t* sRepositoryUrl_ = L"https://github.com/YamaguchiHayato/Project.DS";
-
-	/**
-	 * @brief 既定のブラウザでリポジトリのページを開く。
-	 * @details 開けなくてもタイトルはそのまま続ける。ゲームを止めるほどのことではないため。
-	 */
-	void OpenRepositoryPage()
-	{
-		ShellExecuteW(nullptr, L"open", sRepositoryUrl_, nullptr, nullptr, SW_SHOWNORMAL);
-	}
 }
 
 namespace nsApp
@@ -37,19 +25,6 @@ namespace nsApp
 			{
 				DeleteGO(pTitleUI_);
 				pTitleUI_ = nullptr;
-			}
-
-			/* 立たせていたモデルを破棄する。カメラとライトはこの中で元へ戻る。*/
-			if (pTitleStage_ != nullptr)
-			{
-				DeleteGO(pTitleStage_);
-				pTitleStage_ = nullptr;
-			}
-
-			if (pKeyConfig_ != nullptr)
-			{
-				DeleteGO(pKeyConfig_);
-				pKeyConfig_ = nullptr;
 			}
 
 			if (pVideoScreen_ != nullptr)
@@ -73,14 +48,6 @@ namespace nsApp
 			/* 動画の再生中は、タイトルの入力を受け付けない。*/
 			if (UpdateVideo())
 				return;
-
-			/* 設定画面を開いている間も、タイトルの入力を受け付けない。*/
-			if (UpdateKeyConfig())
-				return;
-
-			/* モデルは、PRESS ANY KEY を抜けてメニューの画面になってから見せる。*/
-			if (pTitleUI_ != nullptr && pTitleStage_ != nullptr)
-				pTitleStage_->SetVisible(pTitleUI_->IsMenuPhase());
 
 			/* メニューで決まった行き先を実行する。*/
 			if (pTitleUI_ != nullptr)
@@ -121,9 +88,6 @@ namespace nsApp
 				pTitleUI_->SetInputActive(false);
 			}
 
-			if (pTitleStage_ != nullptr)
-				pTitleStage_->SetVisible(false);
-
 			/* 動画は流すたびに作り直す。VideoScreen は生成時に開いて最後まで読むと終わる作りのため。*/
 			pVideoScreen_ = NewGO<nsUI::VideoScreen>(0, "videoScreen");
 		}
@@ -148,39 +112,12 @@ namespace nsApp
 		}
 
 
-		bool TitleScene::UpdateKeyConfig()
-		{
-			/* 設定画面を開いていなければ、何もせずに先へ進ませる。*/
-			if (pKeyConfig_ == nullptr)
-				return false;
-
-			/* 閉じられるまでは開いたままにする。*/
-			if (!pKeyConfig_->IsClose())
-				return true;
-
-			DeleteGO(pKeyConfig_);
-			pKeyConfig_ = nullptr;
-
-			/* 閉じたので、タイトルの入力を元に戻す。*/
-			if (pTitleUI_ != nullptr)
-				pTitleUI_->SetInputActive(true);
-
-			return true;
-		}
-
-
 		void TitleScene::CreateTitle()
 		{
 			/* 2D表示(タイトル画像・メニュー)を生成する。*/
 			if (pTitleUI_ == nullptr)
 				pTitleUI_ = NewGO<nsUI::TitleUI>(0, "title");
 
-			/*
-			 * 3D表示(立たせるモデル)を生成する。
-			 * 見せるのはメニューの画面からだが、キーを押した瞬間に読み込みで止まらないよう、ここで先に読んでおく。
-			 */
-			if (pTitleStage_ == nullptr)
-				pTitleStage_ = NewGO<nsUI::TitleStage>(0, "titleStage");
 		}
 
 
@@ -188,30 +125,13 @@ namespace nsApp
 		{
 			switch (enCommand)
 			{
-			case nsUI::EnTitleCommand::StartGame:
-				/* 本編へ切り替える。*/
-				pGameFlow_->ChangeScene(EnSceneID::InGame);
+				/* メニューを開く。*/
+			case nsUI::EnTitleCommand::OpenMenu:
+				pGameFlow_->ChangeScene(EnSceneID::Menu);
 				break;
 
-			case nsUI::EnTitleCommand::Option:
-				/* 設定はキーコンフィグを開く。開いている間はタイトルの入力を止める。*/
-				pKeyConfig_ = NewGO<nsUI::KeyConfigUI>(0, "keyConfig");
-				if (pTitleUI_ != nullptr)
-					pTitleUI_->SetInputActive(false);
-				break;
-
-			case nsUI::EnTitleCommand::OpenGitHub:
-				/* リポジトリのページをブラウザで開く。ゲームはタイトルのまま続ける。*/
-				OpenRepositoryPage();
-				break;
-
-			case nsUI::EnTitleCommand::ExitGame:
-				/* ゲームループを抜けてウィンドウを閉じる。*/
-				g_gameLoop.m_isLoop = false;
-				break;
-
+				/* GitHub の行で開くページ。*/
 			case nsUI::EnTitleCommand::PlayDemo:
-				/* しばらく操作が無かったので、動画を流す。*/
 				StartDemoVideo();
 				break;
 

@@ -12,6 +12,7 @@
 #include "Src/System/GamePause.h"
 #include "Src/Item/PipeBomb.h"
 #include "Src/InputObserver.h"
+#include "GraphicsSetting.h" //! 別ソリューション。
 
 namespace
 {
@@ -54,6 +55,7 @@ namespace
 	const float fSafeRoomMarkerScale_ = 80.0f;						//! ゴール目印の拡大率(遠くからでも見える大きさ)。
 	const float fSafeRoomMarkerHeight_ = 120.0f;					//! ゴール目印を目線あたりに浮かせる高さ。
 }
+
 
 namespace nsApp
 {
@@ -267,10 +269,11 @@ namespace nsApp
 
 		void InGameScene::InitCamera()
 		{
-			/* 覗き込みで倍率を掛けるため、もとの画角を覚えておく。*/
-			fBaseViewAngle_ = g_camera3D->GetViewAngle();
+			/* 起動時の画角を保存しておく。*/
+			fBaseViewAngle_ = Math::DegToRad(nsData::GraphicsSetting::Get().GetFOV());
+			g_camera3D->SetViewAngle(fBaseViewAngle_);
 
-			/* ニアクリップ・ファークリップを設定する。*/
+			/* ニアとファーを設定する。*/
 			g_camera3D->SetNear(1.0f);
 			g_camera3D->SetFar(10000.0f);
 		}
