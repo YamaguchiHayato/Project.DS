@@ -12,8 +12,6 @@
 namespace nsApp
 {
 	namespace nsUI {
-		class TitleStage;
-		class KeyConfigUI;
 		class VideoScreen;
 	}
 
@@ -52,12 +50,6 @@ namespace nsApp
 			void StopDemoVideo();
 
 			/**
-			 * @brief 設定画面を開いている間の更新。閉じられたら破棄して入力を戻す。
-			 * @return 設定画面を開いている間は true。
-			 */
-			bool UpdateKeyConfig();
-
-			/**
 			 * @brief タイトルの表示を生成する。
 			 */
 			void CreateTitle();
@@ -71,8 +63,6 @@ namespace nsApp
 
 		private:
 			nsUI::TitleUI* pTitleUI_ = nullptr; //! タイトル本体。
-			nsUI::TitleStage* pTitleStage_ = nullptr; //! タイトルに立たせるモデル。
-			nsUI::KeyConfigUI* pKeyConfig_ = nullptr; //! キーコンフィグUI。
 			nsUI::VideoScreen* pVideoScreen_ = nullptr; //! 動画の再生画面。タイトルでしばらく操作が無いときだけ作る。
 		};
 	}

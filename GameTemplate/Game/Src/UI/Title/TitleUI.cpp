@@ -204,6 +204,11 @@ namespace nsApp
 			bWasAnyKeyPress_ = IsAnyKeyPress();
 			RefreshMenuColor();
 			UpdateMenuCursor();
+
+			/* 最初の画面でメニューを開くかどうかは、呼び出し側の判断に任せる。*/
+			if (bOpenAsMenu_)
+				EnterMenuPhase();
+
 			return true;
 		}
 
@@ -369,7 +374,7 @@ namespace nsApp
 		{
 			/* 何かを押した瞬間だけメニューへ移る。*/
 			if (bIsAnyKeyPress && !bWasAnyKeyPress_)
-				EnterMenuPhase();
+				enDecidedCommand_ = EnTitleCommand::OpenMenu;
 		}
 
 

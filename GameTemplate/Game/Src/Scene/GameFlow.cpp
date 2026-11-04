@@ -4,6 +4,8 @@
 #include "Src/Scene/TitleScene.h"
 #include "Src/Scene/Debug/DebugPlayer.h"
 #include "Src/Scene/ResultScene.h"
+#include "Src/Scene/Menu/MenuScene.h"
+#include "Src/Scene/Menu/OptionScene.h"
 #include "Src/Scene/Debug/DebugEnemyScene.h"
 #include "Src/Scene/Debug/DebugSelectScene.h"
 #include "Src/Scene/Debug/DebugShootingRangeScene.h"
@@ -53,6 +55,22 @@ namespace nsApp
 			mapSceneFactory_[MakeSceneKey(EnSceneID::Title, EnDebugSceneID::None)] = [](GameFlow* pGameFlow) -> IScene*
 				{
 					TitleScene* pScene = NewGO<TitleScene>(0, "titleScene");
+					pScene->SetGameFlow(pGameFlow);
+					return pScene;
+				};
+
+			/* メニューシーン。*/
+			mapSceneFactory_[MakeSceneKey(EnSceneID::Menu, EnDebugSceneID::None)] = [](GameFlow* pGameFlow) -> IScene*
+				{
+					MenuScene* pScene = NewGO<MenuScene>(0, "menuScene");
+					pScene->SetGameFlow(pGameFlow);
+					return pScene;
+				};
+
+			/* オプションシーン。*/
+			mapSceneFactory_[MakeSceneKey(EnSceneID::Option, EnDebugSceneID::None)] = [](GameFlow* pGameFlow) -> IScene*
+				{
+					OptionScene* pScene = NewGO<OptionScene>(0, "optionScene");
 					pScene->SetGameFlow(pGameFlow);
 					return pScene;
 				};

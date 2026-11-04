@@ -15,6 +15,8 @@ namespace nsApp
 		enum class EnSceneID : uint8_t
 		{
 			Title,		//! タイトル。
+			Menu,		// メニュー。
+			Option,		//! オプション。
 			Loading,	//! ローディング（予約）。
 			InGame,		//! 本編。
 			Debug,		//! デバッグ親。

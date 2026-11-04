@@ -26,6 +26,7 @@ namespace nsApp
 			OpenGitHub,	//! リポジトリのページをブラウザで開く。
 			ExitGame,	//! ゲームを終える。
 			PlayDemo,	//! 動画を流す。メニューで選ぶものではなく、しばらく操作が無かったときに決まる。
+			OpenMenu,	//! メニューシーンへ移る。
 		};
 
 
@@ -115,6 +116,14 @@ namespace nsApp
 				return bIsAnyKeyTrigger_;
 			}
 
+			/**
+			 * @brief メニューシーン用に、最初からメニュー段階で開く。
+			 */
+			void SetOpenAsMenu()
+			{
+				bOpenAsMenu_ = true;
+			}
+
 
 		public:
 			static constexpr int iMenuCount_ = 4;	//! メニューの行数。表示する文字の数と合わせること。
@@ -182,6 +191,7 @@ namespace nsApp
 			bool bWasAnyKeyPress_ = false;			//! 前フレームで何か押されていたか。
 			bool bWasPressUp_ = false;				//! 前フレームで上キーが押されていたか。
 			bool bWasPressDown_ = false;			//! 前フレームで下キーが押されていたか。
+			bool bOpenAsMenu_ = false;			    //! 最初からメニュー段階で開くか。
 		};
 	}
 }

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "LocalPlayerController.h"
+#include "GraphicsSetting.h"
 
 namespace nsApp
 {
@@ -13,9 +14,13 @@ namespace nsApp
 			/* 移動入力(カメラ相対の軸)。*/
 			stOut.vMoveAxis_ = stInput_.GetMoveAxis();
 
-			/* 視点旋回: デバイスの横移動量(px)に感度を掛けてラジアン化し、Playerには角度で渡す。*/
-			stOut.fLookYawDelta_ = stInput_.GetMouseDeltaX() * fLookSensitivity_;
-			stOut.fLookPitchDelta_ = -stInput_.GetMouseDeltaY() * fLookPitchSensitivity_;	/* 上下反転なし: マウス上=視点上。縦は専用感度。*/
+			/* 視点旋回。設定の感度と上下左右の反転を掛ける。 */
+			nsData::GraphicsSetting& setting = nsData::GraphicsSetting::Get();
+			const float sensitivity = setting.GetSensitivity();
+			const float invertX = setting.GetCamera().IsON(nsData::CameraItem::InvertX) ? -1.0f : 1.0f;
+			const float invertY = setting.GetCamera().IsON(nsData::CameraItem::InvertY) ? -1.0f : 1.0f;
+			stOut.fLookYawDelta_ = stInput_.GetMouseDeltaX() * fLookSensitivity_ * sensitivity * invertX;
+			stOut.fLookPitchDelta_ = -stInput_.GetMouseDeltaY() * fLookPitchSensitivity_ * sensitivity * invertY;
 
 			/* 射撃。*/
 			stOut.bFirePress_ = stInput_.IsFirePress();
@@ -52,7 +57,21 @@ namespace nsApp
 			stOut.bShoveTrigger_ = stInput_.IsShoveTrigger();
 
 			/* 覗き込み(右クリック)。*/
-			stOut.bAdsPress_ = stInput_.IsAdsPress();
+			/* 覗き込み。設定が切り替えなら、押した瞬間にオンオフする。 */
+			if (nsData::GraphicsSetting::Get().GetControl().IsON(nsData::ControlItem::AdsToggle))
+			{
+				/* 右クリックを押した瞬間に、構え状態を切り替える。 */
+				if (stInput_.IsAdsTrigger())
+					bAdsToggleOn_ = !bAdsToggleOn_;
+
+				/* 現在の構え状態を Intent に反映する。 */
+				stOut.bAdsPress_ = bAdsToggleOn_;
+			}
+			else
+			{
+				bAdsToggleOn_ = false;
+				stOut.bAdsPress_ = stInput_.IsAdsPress();
+			}
 
 			/*
 			 * TODO(Phase2): 蘇生ホールド(Eキー長押し)を PlayerInput に追加してここで充填する。

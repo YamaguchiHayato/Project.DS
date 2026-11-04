@@ -1,0 +1,54 @@
+#include "stdafx.h"
+#include "OptionScene.h"
+#include "Src/Scene/GameFlow.h"
+#include "Src/UI/Option/OptionUI.h"
+#include "Src/UI/Title/TitleStage.h"
+
+namespace nsApp
+{
+	namespace nsScene
+	{
+		OptionScene::~OptionScene()
+		{
+			/* 生成した設定画面を破棄する。 */
+			if (pOptionUI_ != nullptr)
+			{
+				DeleteGO(pOptionUI_);
+				pOptionUI_ = nullptr;
+			}
+
+			if (pTitleStage_ != nullptr)
+			{
+				DeleteGO(pTitleStage_);
+				pTitleStage_ = nullptr;
+			}
+		}
+
+
+		bool OptionScene::Start()
+		{
+			/* メニューと同じモデルを後ろに残す。 */
+			pTitleStage_ = NewGO<nsUI::TitleStage>(0, "titleStage");
+			pTitleStage_->SetVisible(true);
+
+			/* 設定の表示を生成する。 */
+			pOptionUI_ = NewGO<nsUI::OptionUI>(0, "option");
+			return true;
+		}
+
+
+		void OptionScene::Update()
+		{
+			/* まだ開いていなければ何もしない。 */
+			if (pOptionUI_ == nullptr)
+				return;
+
+			/* 閉じられるまでは開いたままにする。 */
+			if (!pOptionUI_->IsClose())
+				return;
+
+			/* 閉じたのでメニューへ戻る。保存は OptionUI 側で済んでいる。 */
+			pGameFlow_->ChangeScene(EnSceneID::Menu);
+		}
+	}
+}

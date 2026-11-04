@@ -31,9 +31,10 @@ namespace nsApp
 
 
 		private:
-			PlayerInput	stInput_;					//! キーボード＆マウスの生入力→論理コマンド変換。
-			float		fLookSensitivity_ = 0.002f;		//! マウス横移動量(px)→ヨー角(ラジアン)の感度。
-			float		fLookPitchSensitivity_ = 0.0018f;	//! マウス縦移動量(px)→ピッチ角(ラジアン)の感度(縦は少し控えめ)。
+			PlayerInput	stInput_; //! キーボード＆マウスの生入力→論理コマンド変換。
+			float		fLookSensitivity_ = 0.002f; //! マウス横移動量(px)→ヨー角(ラジアン)の感度。
+			float		fLookPitchSensitivity_ = 0.0018f; //! マウス縦移動量(px)→ピッチ角(ラジアン)の感度(縦は少し控えめ)。
+			bool		bAdsToggleOn_ = false; //! 覗き込み操作が「切り替え」のときの、今構えているか。
 		};
 	}
 }

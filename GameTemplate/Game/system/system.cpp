@@ -2,6 +2,8 @@
 #include "system.h"
 #include "graphics/GraphicsEngine.h"
 #include "sound/SoundEngine.h"
+#include "../System/GraphicSetting/Src/GraphicsSetting.h"
+
 
 HWND			g_hWnd = NULL;				//ウィンドウハンドル。
 
@@ -67,8 +69,8 @@ void InitWindow(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, 
 		WS_OVERLAPPEDWINDOW,	//ウィンドウスタイル。ゲームでは基本的にWS_OVERLAPPEDWINDOWでいい、
 		0,						//ウィンドウの初期X座標。
 		0,						//ウィンドウの初期Y座標。
-		FRAME_BUFFER_W,			//ウィンドウの幅。
-		FRAME_BUFFER_H,			//ウィンドウの高さ。
+		nsApp::nsData::GraphicsSetting::Get().GetWindowWidth(),	//ウィンドウの幅。
+		nsApp::nsData::GraphicsSetting::Get().GetWindowHeight(),	//ウィンドウの高さ。
 		NULL,					//親ウィンドウ。ゲームでは基本的にNULLでいい。
 		NULL,					//メニュー。今はNULLでいい。
 		hInstance,				//アプリケーションのインスタンス。
