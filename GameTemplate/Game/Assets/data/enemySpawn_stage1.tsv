@@ -1,4 +1,3 @@
-type	x	y	z	shape	radius	interval	amount	total
-Bomber	-1000	300	1000	Point	0	0	3	0
-Common	0	300	1000	Ring	400	0	8	0
-Common	1000	300	1000	Circle	400	0	8	0
+type		x		z	radius	interval	amount	activateRange	maxNearby
+Bomber	 1000	 1000	   300		2.0			1			 800			3
+Common		0	 1000	   400		0.5			1			 800			100

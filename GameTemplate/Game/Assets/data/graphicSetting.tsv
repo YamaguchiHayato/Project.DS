@@ -1,8 +1,8 @@
 name	value
-invertY	1
-invertX	1
+invertY	0
+invertX	0
 fov	60
-sensitivity	1
+sensitivity	1.5
 adsSensitivity	1
 adsToggle	0
 vibration	1

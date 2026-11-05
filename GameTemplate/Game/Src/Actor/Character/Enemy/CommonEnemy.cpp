@@ -5,6 +5,7 @@
 #include "Src/Actor/Character/Enemy/State/EnemyChaseState.h"
 #include "Src/Actor/Character/Enemy/State/EnemyAttackState.h"
 #include "Src/Actor/Character/Enemy/State/EnemyDeadState.h"
+#include "Src/Data/EnemyStatusTable.h"
 
 namespace
 {
@@ -52,9 +53,9 @@ namespace nsApp
 			stSightCheck_.SetEyeHeight(120.0f);
 
 			/* 体力を初期化する。*/
-			/* todo 外部Parameter化。*/
-			stCharacterStatus_.stHp_.iMaxHP_ = 30;
-			stCharacterStatus_.stHp_.iCurrentHP_ = 30;
+			stStatus_ = nsData::EnemyStatusTable::Get(nsActor::EnEnemyType::Common);
+			stCharacterStatus_.stHp_.iMaxHP_ = stStatus_.iMaxHp_;
+			stCharacterStatus_.stHp_.iCurrentHP_ = stStatus_.iMaxHp_;
 
 			/* 本番モデルとアニメーションをロードする。*/
 			InitCharacterModel();
@@ -157,14 +158,14 @@ namespace nsApp
 		bool CommonEnemy::IsTargetInAggroRange()
 		{
 			/* アグロ円以内なら true。*/
-			return GetDistanceToTarget() <= fAggroRange_;
+			return GetDistanceToTarget() <= stStatus_.fAggroRange_;
 		}
 
 
 		bool CommonEnemy::IsTargetInAttackRange()
 		{
 			/* 攻撃距離以内ならtrue。*/
-			return GetDistanceToTarget() <= fAttackRange_;
+			return GetDistanceToTarget() <= stStatus_.fAttackRange_;
 		}
 
 
@@ -250,7 +251,7 @@ namespace nsApp
 			}
 
 			/* 目標へ向かう移動計算はCharacterMovementクラスに一任する。*/
-			vPosition_ = stMovement_.MoveToward(pTarget_->GetPosition(), fChaseSpeed_, g_gameTime->GetFrameDeltaTime());
+			vPosition_ = stMovement_.MoveToward(pTarget_->GetPosition(), stStatus_.fChaseSpeed_, g_gameTime->GetFrameDeltaTime());
 		}
 
 
@@ -295,12 +296,6 @@ namespace nsApp
 			/* 指定アニメを再生する。*/
 			iPlayingAnimation_ = iAnimationNumber;
 			stModel_.PlayAnimation(iAnimationNumber, fAnimInterpolateTime_);
-		}
-
-
-		void CommonEnemy::PlayAnimationList(ANIM_LIST state)
-		{
-
 		}
 
 

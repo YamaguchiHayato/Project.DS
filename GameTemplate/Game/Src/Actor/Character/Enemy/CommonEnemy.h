@@ -5,6 +5,7 @@
 #include "Src/Actor/Character/Common/CharacterAnimation.h"
 #include "Src/Actor/Character/Enemy/Transition/EnemyTransition.h"
 #include "Src/System/RayTest/SightCheck.h"
+#include "Src/Data/EnemyStatus.h"
 
 namespace nsApp
 {
@@ -320,12 +321,6 @@ namespace nsApp
 			void PlayAnimation(int iAnimationNumber);
 
 			/**
-			 * @brief アニメーションを再生する。
-			 * @param state 再生するアニメーションの種類。
-			 */
-			void PlayAnimationList(ANIM_LIST state);
-
-			/**
 			 * @brief 死亡ステートか。
 			 * @return 死亡ステートならtrue。
 			 */
@@ -367,9 +362,6 @@ namespace nsApp
 			Vector3 vToTarget_ = Vector3::Zero; //! 対象への水平ベクトル。
 			Quaternion qLook_ = Quaternion::Identity; //! 対象方向の回転。
 			Vector3 vSpeed_ = Vector3::Zero; //! 移動速度。
-			float fAggroRange_ = 250.0f; //! アグロ円の半径。
-			float fChaseSpeed_ = 120.0f; //! 追跡速度。
-			float fAttackRange_ = 120.0f; //! 攻撃距離。
 			float fAttackInterval_ = 1.0f; //! 攻撃間隔。
 			float fAttackTimer_ = 0.0f; //! 攻撃タイマー。
 			int iAttackPower_ = 10; //! 攻撃力。
@@ -394,6 +386,7 @@ namespace nsApp
 			float fModelAlpha_ = 1.0f; //! 表示用のα値。
 			bool bDeathEffectPlayed_ = false; //! 死亡エフェクトを出したか。
 			bool bPoolInactive_ = true;	//! true ならプール待機中。
+			nsData::EnemyStatus stStatus_; //! TSV の Common 行。		
 		};
 	}
 }

@@ -4,15 +4,21 @@
 namespace
 {
 	/* 配置表の列名。*/
-	const char* sTypeColumn_ = "type"; //! ゾンビの種類名。
-	const char* sPosXColumn_ = "x"; //! 中心X。
-	const char* sPosYColumn_ = "y"; //! 中心Y。
-	const char* sPosZColumn_ = "z"; //! 中心Z。
-	const char* sShapeColumn_ = "shape"; //! 湧き方の形。
-	const char* sRadiusColumn_ = "radius"; //! 半径。
-	const char* sIntervalColumn_ = "interval"; //! 湧く間隔。
-	const char* sAmountColumn_ = "amount"; //! 1回に湧かせる数。
-	const char* sTotalColumn_ = "total"; //! 合計の上限。
+	const char* TYPE_COLUMN = "type"; //! ゾンビの種類名。
+	const char* POS_X_COLUMN = "x"; //! 中心X。
+	const char* POS_Z_COLUMN = "z"; //! 中心Z。
+	const char* RADIUS_COLUMN = "radius"; //! 湧き円の半径。
+	const char* INTERVAL_COLUMN = "interval"; //! 湧く間隔。
+	const char* AMOUNT_COLUMN = "amount"; //! 1回に湧かせる数。
+	const char* ACTIVATE_RANGE_COLUMN = "activateRange"; //! 作動距離。
+	const char* MAX_NEARBY_COLUMN = "maxNearby"; //! 付近の敵の上限。
+
+	/* 列が空のときの既定値。*/
+	const float DEFAULT_RADIUS = 0.0f; //! 半径の既定。0なら中心そのもの。
+	const float DEFAULT_INTERVAL = 2.0f; //! 間隔の既定(秒)。
+	const int DEFAULT_AMOUNT = 1; //! 1回に湧かせる数の既定。
+	const float DEFAULT_ACTIVATE_RANGE = 800.0f; //! 作動距離の既定(cm)。
+	const int DEFAULT_MAX_NEARBY = 8; //! 付近上限の既定。
 
 	/**
 	 * @struct EnemyTypeName
@@ -20,12 +26,12 @@ namespace
 	 */
 	struct EnemyTypeName
 	{
-		const char* pName_; //! TSVに書く種類名。
-		nsApp::nsActor::EnEnemyType enEnemyType_; //! ゾンビの種類。
+		const char* pName; //! TSVに書く種類名。
+		nsApp::nsActor::EnEnemyType enEnemyType; //! ゾンビの種類。
 	};
 
 	/* 種類を増やすときは、ここに1行足す。*/
-	const EnemyTypeName aEnemyTypeNames_[] =
+	const EnemyTypeName ENEMY_TYPE_NAMES[] =
 	{
 		{ "Common", nsApp::nsActor::EnEnemyType::Common },
 		{ "Bile", nsApp::nsActor::EnEnemyType::Bile },
@@ -40,39 +46,15 @@ namespace
 	 */
 	bool ToEnemyType(const std::string& typeName, nsApp::nsActor::EnEnemyType& outEnemyType)
 	{
-		for (const EnemyTypeName& entry : aEnemyTypeNames_)
+		/* 種類名の対応表を順に見ていく。*/
+		for (const EnemyTypeName& entry : ENEMY_TYPE_NAMES)
 		{
-			if (typeName != entry.pName_)
+			/* 一致する名前が見つかったら種類を返す。*/
+			if (typeName != entry.pName)
 				continue;
 
-			outEnemyType = entry.enEnemyType_;
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
-	 * @brief TSVに書いた形の名前を湧き方の形へ変換する。空欄は Point として扱う。
-	 * @param shapeName 形の名前。
-	 * @param outShape 変換した形。
-	 * @return 知っている名前ならtrue。
-	 */
-	bool ToSpawnShape(const std::string& shapeName, nsApp::nsDirector::EnSpawnShape& outShape)
-	{
-		if (shapeName.empty() || shapeName == "Point")
-		{
-			outShape = nsApp::nsDirector::EnSpawnShape::Point;
-			return true;
-		}
-		if (shapeName == "Circle")
-		{
-			outShape = nsApp::nsDirector::EnSpawnShape::Circle;
-			return true;
-		}
-		if (shapeName == "Ring")
-		{
-			outShape = nsApp::nsDirector::EnSpawnShape::Ring;
+			/* 一致した種類を返す。*/
+			outEnemyType = entry.enEnemyType;
 			return true;
 		}
 
@@ -87,28 +69,22 @@ namespace nsApp
 	{
 		bool EnemySpawnSetting::Create(const nsK2EngineLow::nsSystem::nsTSVFile::TSVTable& table, int row, EnemySpawnSetting& outSetting)
 		{
-			/* 種類名・形が分からない行は使わない(打ち間違いで意図しない湧き方をさせない)。*/
-			if (!ToEnemyType(table.GetString(row, sTypeColumn_), outSetting.enEnemyType_))
-				return false;
-			if (!ToSpawnShape(table.GetString(row, sShapeColumn_), outSetting.enShape_))
+			/* 種類名が分からない行は使わない(打ち間違いで意図しない種類を湧かせない)。*/
+			if (!ToEnemyType(table.GetString(row, TYPE_COLUMN), outSetting.enEnemyType))
 				return false;
 
-			/* 中心と湧き方を読む。空欄は既定値。*/
-			outSetting.vCenter_.Set
-			(
-				table.GetFloat(row, sPosXColumn_),
-				table.GetFloat(row, sPosYColumn_),
-				table.GetFloat(row, sPosZColumn_)
-			);
+			/* 中心を読む。Yは使わないので常に0。空欄の列は既定値。*/
+			outSetting.vCenter.Set(table.GetFloat(row, POS_X_COLUMN), 0.0f, table.GetFloat(row, POS_Z_COLUMN));
 
-			/* 半径・間隔・数を読む。空欄は既定値。*/
-			outSetting.fRadius_ = table.GetFloat(row, sRadiusColumn_, 0.0f);
-			outSetting.fInterval_ = table.GetFloat(row, sIntervalColumn_, 0.0f);
-			outSetting.iAmount_ = table.GetInt(row, sAmountColumn_, 1);
-			outSetting.iTotal_ = table.GetInt(row, sTotalColumn_, 0);
+			/* 湧き方の数値を読む。空欄は既定値。*/
+			outSetting.fRadius = table.GetFloat(row, RADIUS_COLUMN, DEFAULT_RADIUS);
+			outSetting.fInterval = table.GetFloat(row, INTERVAL_COLUMN, DEFAULT_INTERVAL);
+			outSetting.iAmount = table.GetInt(row, AMOUNT_COLUMN, DEFAULT_AMOUNT);
+			outSetting.fActivateRange = table.GetFloat(row, ACTIVATE_RANGE_COLUMN, DEFAULT_ACTIVATE_RANGE);
+			outSetting.iMaxNearby = table.GetInt(row, MAX_NEARBY_COLUMN, DEFAULT_MAX_NEARBY);
 
-			/* 1回に湧かせる数が0以下、半径が負の行は使わない。*/
-			return outSetting.iAmount_ > 0 && outSetting.fRadius_ >= 0.0f;
+			/* 1回に湧かせる数が0以下、半径・間隔・作動距離が負の行は使わない。*/
+			return outSetting.iAmount > 0 && outSetting.fRadius >= 0.0f && outSetting.fInterval >= 0.0f && outSetting.fActivateRange >= 0.0f;
 		}
 	}
 }

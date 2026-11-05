@@ -1,29 +1,29 @@
 #pragma once
-#include"EnemyPool.h"
-
+#include "EnemyPool.h"
+#include "Src/Director/EnemySpawnSetting.h"
+#include <vector>
 
 namespace nsApp
 {
-	namespace nsActor
-	{
-		/* 前方宣言。*/
-		class Player;
-	}
-
 	namespace nsDirector
 	{
+		class EnemySpawner;
+
 		/**
 		 * @file   EnemyDirector.h
-		 * @brief  雑魚敵の湧き(スポーン)を一元管理する係。L4D2のAI Directorの簡易版。
+		 * @brief  雑魚敵の湧きを一元管理する係。
+		 * @details プールを持ち、配置表(TSV)の行ごとに EnemySpawner を立てる。
+		 *          射撃場(DebugShootingRangeScene)と同じ表・同じ湧き方を本編でも使う。
 		 * @author Izumida Kiryu
-		 * @date   2026/10:05: 最終更新日。
+		 * @date   2026/10/05: 最終更新日。
+		 * @date   2026/11/05: 間隔直湧きをやめ、TSV＋EnemySpawner 方式に統一。
 		 */
 		class EnemyDirector : public IGameObject
 		{
 		public:
 			/* コンストラクタとデストラクタ。*/
 			EnemyDirector() = default;
-			virtual ~EnemyDirector() = default;
+			virtual ~EnemyDirector();
 
 
 		public:
@@ -35,7 +35,7 @@ namespace nsApp
 		public:
 			/**
 			 * @brief 使用するプールを取得する。
-			 * @return 使用するプールのポインタ。nullptr の場合はセットされていない。
+			 * @return 使用するプールのポインタ。
 			 */
 			inline IEnemyPool* GetPool()
 			{
@@ -45,15 +45,14 @@ namespace nsApp
 
 		private:
 			/**
-			 * @brief プレイヤーの周囲に敵を1体湧かせて、プレイヤーを標的にする。
-			 * @param pPlayer 標的にするプレイヤー。
+			 * @brief 配置表を読み、行ごとにスポナーを置く。
 			 */
-			void SpawnEnemy(nsActor::Player* pPlayer);
+			void SpawnFromTable();
 
 
 		private:
-			float fSpawnTimer_ = 0.0f;	//! 次の湧きまでの経過時間(秒)。
-			EnemyPool enemyPool_;	//! 敵を生成するためのスポナー用プール。
+			EnemyPool enemyPool_; //! 敵を生成するためのスポナー用プール。
+			std::vector<EnemySpawner*> vecSpawners_; //! 配置表の行ごとに置いたスポナー。
 		};
 	}
 }
