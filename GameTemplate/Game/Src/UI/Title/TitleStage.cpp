@@ -8,7 +8,7 @@ namespace
 	 * @todo 使う PMX が決まったらパスを差し替える。モーションは無くても立ち姿で出る。
 	 */
 	const char* sModelPath_ = "Assets/modelData/title/player.pmx";	//! 立たせるモデル。
-	const char* sMotionPath_ = "Assets/animData/title/Idle.vmd";	//! 待機モーション。
+	const char* sMotionPath_ = "Assets/modelData/title/Rabbit_Hole.vmd";	//! 待機モーション。
 
 	const DirectX::XMFLOAT3 vModelPosition_ = { 0.0f, 0.0f, 0.0f };	//! モデルを置く位置。
 	const float fModelTurnDegree_ = 20.0f;	//! モデルの向き(度)。PMXは最初からカメラの方を向くので、少しだけ斜めに振る。
@@ -176,6 +176,13 @@ namespace nsApp
 
 			/* モーションにカメラを乗っ取らせない。こちらで置いたカメラが動いてしまうため。*/
 			stPmxRender_.SetEnableCameraVMD(false);
+
+			/*
+			 * このモデルだけモーションブラーから外す。
+			 * 踊るモデルは毎フレーム大きく動くので、そのままだと残像で溶けたように見えるため。
+			 * 効果そのものを止めるのではなくモデル側で外すので、本編のブラーには影響しない。
+			 */
+			stPmxRender_.SetMotionBlurEnable(false);
 			stPmxRender_.SetAnimPlaySpeed(1.0f);
 			stPmxRender_.SetRootTransform(vModelPosition_, MakeTurnY(fModelTurnDegree_));
 			stPmxRender_.ResetPhysics();
