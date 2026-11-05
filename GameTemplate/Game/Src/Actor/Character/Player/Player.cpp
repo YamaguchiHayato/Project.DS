@@ -232,6 +232,7 @@ namespace nsApp
 			if (iDamage < 1)
 				iDamage = 1;
 
+			/* 敵にダメージを与える。*/
 			pEnemy->ApplyDamage(iDamage);
 
 			/* 命中の演出(当たった位置に出す)。*/
@@ -245,8 +246,6 @@ namespace nsApp
 			Vector3 vKillPos = pEnemy->GetPosition();
 			vKillPos.y += nsCombat::HitBoxSet::GetShared(CharacterModelType::Common).GetHeight() * 0.5f;
 			PublishGameEvent(nsEvent::EnGameEvent::EnemyKilled, vKillPos);
-
-			DeleteGO(pEnemy);
 		}
 
 

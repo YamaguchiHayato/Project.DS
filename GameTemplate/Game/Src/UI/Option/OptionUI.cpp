@@ -63,12 +63,14 @@ namespace nsApp
 
 		void OptionUI::Update()
 		{
+			/* 画面の更新前に、行の内容を最新にする。 */
 			FillRows();
 
 			/* キー設定が開いているあいだは、設定画面の入力を止める。 */
 			if (UpdateKeyConfig())
 				return;
 
+			/* キー設定が閉じたフレームの Escape で、設定画面まで閉じないようにする。 */
 			UpdateKeyboard();
 			UpdateMouse();
 		}
@@ -76,6 +78,11 @@ namespace nsApp
 
 		void OptionUI::Render(RenderContext& rc)
 		{
+			/* キー設定が開いているあいだは、設定画面の描画を止める。 */
+			if (pKeyConfig_ != nullptr)
+				return;
+
+			/* 画面の更新前に、行の内容を最新にする。 */
 			FillRows();
 
 			/* 枠を先に登録する。膜も枠の1枚目として描くので、タブや行より下になる。 */
@@ -84,9 +91,12 @@ namespace nsApp
 			tabBar_.Draw(rc, canvas_, tab_);
 			rowList_.Draw(rc, canvas_, model_, rows_, rowCount_, top_, cursor_);
 
+			/* 選択中の行をフッターに表示する。 */
 			const OptionEntry* selected = nullptr;
 			if (cursor_ >= 0 && cursor_ < rowCount_)
 				selected = rows_[cursor_];
+
+			/* フッターは、行の下に描く。 */
 			footer_.Draw(rc, canvas_, selected);
 		}
 
