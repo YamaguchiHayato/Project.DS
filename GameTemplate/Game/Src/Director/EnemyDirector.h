@@ -64,6 +64,15 @@ namespace nsApp
 			void SetTarget(nsActor::Player* pTarget);
 
 
+		public:
+			/**
+			 * @brief 全スポナーに追跡対象のプレイヤーを渡す。
+			 * @details スポナー側で FindGO しないための入口。生成後でも呼び直せる。
+			 * @param pTarget プレイヤー(非所有)。
+			 */
+			void SetTarget(nsActor::Player* pTarget);
+
+
 		private:
 			/**
 			 * @brief 配置表を読み、行ごとにスポナーを置く。
