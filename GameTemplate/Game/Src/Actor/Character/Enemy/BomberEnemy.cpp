@@ -159,14 +159,14 @@ namespace nsApp
 		bool BomberEnemy::IsTargetInAggroRange()
 		{
 			/* アグロ円以内なら true。*/
-			return GetDistanceToTarget() <= fAggroRange_;
+			return GetDistanceToTarget() <= stStatus_.fAggroRange_;
 		}
 
 
 		bool BomberEnemy::IsTargetInAttackRange()
 		{
 			/* 自爆距離以内なら true。*/
-			return GetDistanceToTarget() <= fAttackRange_;
+			return GetDistanceToTarget() <= stStatus_.fAttackRange_;
 		}
 
 
@@ -247,7 +247,7 @@ namespace nsApp
 			}
 
 			/* 目標へ向かう移動計算は CharacterMovement に一任する。*/
-			vPosition_ = stMovement_.MoveToward(pTarget_->GetPosition(), fChaseSpeed_, g_gameTime->GetFrameDeltaTime());
+			vPosition_ = stMovement_.MoveToward(pTarget_->GetPosition(), stStatus_.fChaseSpeed_, g_gameTime->GetFrameDeltaTime());
 		}
 
 
@@ -288,11 +288,11 @@ namespace nsApp
 				return;
 
 			/* 爆発半径外ならダメージを出さない。*/
-			if (GetDistanceToTarget() > fExplodeRange_)
+			if (GetDistanceToTarget() > stStatus_.fExplodeRange_)
 				return;
 
 			/* 範囲内の対象へダメージを出す。*/
-			pTarget_->ApplyDamage(iExplodeDamage_);
+			pTarget_->ApplyDamage(stStatus_.iExplodeDamage_);
 		}
 
 

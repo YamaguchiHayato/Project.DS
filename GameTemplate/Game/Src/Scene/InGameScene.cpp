@@ -205,6 +205,7 @@ namespace nsApp
 
 			/* 敵の湧き係(EnemyDirector)を生成する。時間・同時数上限に応じて雑魚敵を湧かせ続ける。*/
 			pEnemyDirector_ = NewGO<nsDirector::EnemyDirector>(0, "enemyDirector");
+			pEnemyDirector_->SetTarget(pPlayer_);
 
 			/* HUDを生成する(毎フレーム player を参照して数値を表示)。*/
 			pHud_ = NewGO<nsUI::InGameHud>(0, "inGameHud");

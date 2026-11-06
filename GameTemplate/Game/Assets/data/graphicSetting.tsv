@@ -2,13 +2,15 @@ name	value
 invertY	0
 invertX	0
 fov	60
-sensitivity	1
+sensitivity	1.5
 adsSensitivity	1
 adsToggle	0
+vibration	1
 brightness	1
 windowSize	2
 motionBlur	1
 frameRate	1
+mute	0
 masterVolume	1
 bgmVolume	1
-seVolume	1
+seVolume	0.9

@@ -207,8 +207,6 @@ namespace nsApp
 					stKillEvent.vPosition_ = vHitPos;
 					pBus->Publish(stKillEvent);
 				}
-
-				DeleteGO(pEnemy);
 			}
 
 			/* 自分が消える前に、生き残った敵の追跡対象をプレイヤーへ戻す。*/

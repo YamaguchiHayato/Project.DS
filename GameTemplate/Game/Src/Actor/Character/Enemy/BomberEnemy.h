@@ -366,9 +366,6 @@ namespace nsApp
 			Vector3 vToTarget_ = Vector3::Zero; //! 対象への水平ベクトル。
 			Quaternion qLook_ = Quaternion::Identity; //! 対象方向の回転。
 			Vector3 vSpeed_ = Vector3::Zero; //! 移動速度。
-			float fAggroRange_ = 600.0f; //! アグロ円の半径。
-			float fChaseSpeed_ = 120; //! 追跡速度（Common より遅い）。
-			float fAttackRange_ = 120.0f; //! 自爆距離。
 			float fAttackInterval_ = 0.0f; //! 自爆は間隔なし。
 			float fAttackTimer_ = 0.0f; //! 攻撃タイマー。
 			int iPlayingAnimation_ = -1; //! 再生中のアニメーション番号。
@@ -387,8 +384,6 @@ namespace nsApp
 			float fModelAlpha_ = 1.0f; //! 表示用のα値。
 			bool bDeathEffectPlayed_ = false; //! 死亡エフェクトを出したか。
 			bool bPoolInactive_ = true; //! true ならプール待機中。
-			float fExplodeRange_ = 250.0f; //! 爆発の半径(cm)。
-			int iExplodeDamage_ = 20; //! 爆発のダメージ。
 			bool bExploded_ = false; //! 接近爆発と死亡爆発で2回入らないようにする。
 			nsData::EnemyStatus stStatus_; //! TSV の Bomber 行。
 		};

@@ -1,34 +1,36 @@
 #include "stdafx.h"
 #include "EnemyDirector.h"
+#include "Src/Director/EnemySpawner.h"
 #include "Src/Actor/Character/Player/Player.h"
-#include "Src/Actor/Character/Enemy/CommonEnemy.h"
-#include "Src/System/GamePause.h"
-#include <cstdlib>
 
 namespace
 {
-	const float fSpawnInterval_ = 2.0f;		//! 敵を湧かせる間隔(秒)。
-	const int iMaxAliveEnemies_ = 6;		//! 同時に存在できる敵の最大数。
-	/*
-	 * プレイヤーからどれだけ離して湧かせるか。
-	 * CommonEnemy の発見距離(fDetectRange_=250)より内側に湧かせないと、
-	 * 湧いた敵が待機のまま追ってこない。攻撃距離(fAttackRange_=120)よりは
-	 * 外にして、湧いた瞬間に殴られないようにする。
-	 * ※プレイヤーの移動速度(200)が敵の追跡速度(120)より速いため、
-	 *   離れられると追いつけない。敵側のパラメータは要調整(山口担当領域)。
-	 */
-	const float fSpawnRadius_ = 200.0f;
-	const float fPi_ = 3.14159265f;			//! 円周率。
+	/* 射撃場と同じ配置表。ステージを増やすときはパスを切り替えるか、stage列付き表にする。*/
+	const char* ENEMY_SPAWN_FILE_PATH = "Assets/data/enemySpawn_stage1.tsv";
 }
+
 
 namespace nsApp
 {
 	namespace nsDirector
 	{
+		EnemyDirector::~EnemyDirector()
+		{
+			/* スポナーを先に消して、以降の湧きを止める。*/
+			for (EnemySpawner* pSpawner : vecSpawners_)
+			{
+				if (pSpawner != nullptr)
+					DeleteGO(pSpawner);
+			}
+			vecSpawners_.clear();
+		}
+
+
 		bool EnemyDirector::Start()
 		{
-			/* 起動直後から間隔を数えて湧かせ始める。*/
-			fSpawnTimer_ = 0.0f;
+			/* プールを用意してから、射撃場と同じ表でスポナーを立てる。*/
+			enemyPool_.Init();
+			SpawnFromTable();
 
 			return true;
 		}
@@ -36,39 +38,40 @@ namespace nsApp
 
 		void EnemyDirector::Update()
 		{
-			/* ポーズ中は湧かせない。*/
-			if (nsSystem::IsGamePaused())
-				return;
-
-			/* プレイヤーがいなければ湧かせない。*/
-			nsActor::Player* pPlayer = FindGO<nsActor::Player>("player");
-			if (pPlayer == nullptr)
-				return;
-
-			/* 同時出現数が上限に達していれば湧かせない。*/
-			const int iAlive = static_cast<int>(enemyPool_.ActiveCount());
-			if (iAlive >= iMaxAliveEnemies_)
-				return;
-
-			/* 一定間隔ごとに1体湧かせる。*/
-			fSpawnTimer_ += g_gameTime->GetFrameDeltaTime();
-			if (fSpawnTimer_ >= fSpawnInterval_)
-				fSpawnTimer_ = 0.0f;
+			/* 湧きの進行は各 EnemySpawner の Update に任せる。*/
 		}
 
 
-		void EnemyDirector::SpawnEnemy(nsActor::Player* pPlayer)
+		void EnemyDirector::SpawnFromTable()
 		{
-			/* プレイヤーを中心に、ランダムな方角・一定距離の地点を湧き位置にする。*/
-			const float fAngle = (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * 2.0f * fPi_;
-			Vector3 vSpawnPos = pPlayer->GetPosition();
-			vSpawnPos.x += sinf(fAngle) * fSpawnRadius_;
-			vSpawnPos.z += cosf(fAngle) * fSpawnRadius_;
-			vSpawnPos.y = 0.0f;
+			/* 配置表を読む。読めなければ敵は置かない(失敗はウィンドウで知らせる)。*/
+			std::vector<EnemySpawnSetting> vecSettings;
+			if (!nsK2EngineLow::nsSystem::nsTSVFile::TSVTableLoader::LoadList(ENEMY_SPAWN_FILE_PATH, vecSettings))
+				return;
 
-			/* 敵を生成する。*/
-			/* todo 敵の種類増加により生成方式を切り替える必要あり。*/
-			enemyPool_.Spawn(CharacterModelType::Common, vSpawnPos, pPlayer);
+			/* 1行につき1つスポナーを置く。*/
+			for (const EnemySpawnSetting& setting : vecSettings)
+			{
+				EnemySpawner* pSpawner = NewGO<EnemySpawner>(0, "enemySpawner");
+				pSpawner->SetPool(&enemyPool_);
+				pSpawner->SetTarget(pTarget_);
+				pSpawner->SetSetting(setting);
+				vecSpawners_.push_back(pSpawner);
+			}
+		}
+
+
+		void EnemyDirector::SetTarget(nsActor::Player* pTarget)
+		{
+			/* 後から来た SetTarget でも全スポナーへ行き渡るように保持する。*/
+			pTarget_ = pTarget;
+
+			for (EnemySpawner* pSpawner : vecSpawners_)
+			{
+				if (pSpawner == nullptr)
+					continue;
+				pSpawner->SetTarget(pTarget_);
+			}
 		}
 	}
 }

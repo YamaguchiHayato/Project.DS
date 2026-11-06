@@ -99,10 +99,7 @@ namespace nsApp
 
 				/* 敵が死んでいれば、敵撃破イベントを発行して敵を削除する。*/
 				if (pEnemy->IsDead())
-				{
 					pPlayer->PublishGameEvent(nsEvent::EnGameEvent::EnemyKilled, pEnemy->GetPosition());
-					DeleteGO(pEnemy);
-				}
 			}
 
 			/* デバッグ用。*/
