@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "EnemyDirector.h"
 #include "Src/Director/EnemySpawner.h"
+#include "Src/Actor/Character/Player/Player.h"
 
 namespace
 {
@@ -53,8 +54,23 @@ namespace nsApp
 			{
 				EnemySpawner* pSpawner = NewGO<EnemySpawner>(0, "enemySpawner");
 				pSpawner->SetPool(&enemyPool_);
+				pSpawner->SetTarget(pTarget_);
 				pSpawner->SetSetting(setting);
 				vecSpawners_.push_back(pSpawner);
+			}
+		}
+
+
+		void EnemyDirector::SetTarget(nsActor::Player* pTarget)
+		{
+			/* 後から来た SetTarget でも全スポナーへ行き渡るように保持する。*/
+			pTarget_ = pTarget;
+
+			for (EnemySpawner* pSpawner : vecSpawners_)
+			{
+				if (pSpawner == nullptr)
+					continue;
+				pSpawner->SetTarget(pTarget_);
 			}
 		}
 	}

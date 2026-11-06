@@ -5,6 +5,12 @@
 
 namespace nsApp
 {
+	namespace nsActor
+	{
+		class Player;
+	}
+
+
 	namespace nsDirector
 	{
 		class EnemySpawner;
@@ -43,6 +49,15 @@ namespace nsApp
 			}
 
 
+		public:
+			/**
+			 * @brief 全スポナーに追跡対象のプレイヤーを渡す。
+			 * @details スポナー側で FindGO しないための入口。生成後でも呼び直せる。
+			 * @param pTarget プレイヤー(非所有)。
+			 */
+			void SetTarget(nsActor::Player* pTarget);
+
+
 		private:
 			/**
 			 * @brief 配置表を読み、行ごとにスポナーを置く。
@@ -51,6 +66,7 @@ namespace nsApp
 
 
 		private:
+			nsActor::Player* pTarget_ = nullptr; //! 追跡対象のプレイヤー(非所有)。
 			EnemyPool enemyPool_; //! 敵を生成するためのスポナー用プール。
 			std::vector<EnemySpawner*> vecSpawners_; //! 配置表の行ごとに置いたスポナー。
 		};
