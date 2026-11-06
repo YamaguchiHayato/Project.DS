@@ -59,6 +59,16 @@ namespace nsApp
 				stSetting_ = setting;
 			}
 
+			/**
+			 * @brief 追跡・作動判定に使うプレイヤーをセットする。
+			 * @details FindGO で探さない。シーンや Director が生成時に渡す。
+			 * @param pTarget プレイヤー。
+			 */
+			inline void SetTarget(nsActor::Player* pTarget)
+			{
+				pTarget_ = pTarget;
+			}
+
 
 		private:
 			/**
@@ -118,6 +128,13 @@ namespace nsApp
 			 * @return 見つかったらtrue。
 			 */
 			bool TryMakeValidSpawnPosition(Vector3& vOutPos) const;
+
+			/**
+			 * @brief 床の上に置けるか。空洞や範囲外は不可。
+			 * @param vGround 床の位置。
+			 * @return 置けるならtrue。
+			 */
+			bool IsEmbeddedInObstacle(const Vector3& vGround) const;
 
 
 		private:
